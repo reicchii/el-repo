@@ -95,11 +95,11 @@ _SPECTRAL_CHANNELS_DTYPE = np.dtype(
 )
 
 BENCHMARK_TARGETS = (
-    {"slug": "Barnards_Star", "target_name": "Barnards_Star", "ra_deg": 269.452075, "dec_deg": 4.693365, "pmra": -798.58, "pmdec": 10328.12, "ref_epoch": 2016.0, "ml_class": "Star", "label_grade": "silver"},
+    {"slug": "Barnards_Star", "target_name": "Barnards_Star", "ra_deg": 269.452075, "dec_deg": 4.693364, "pmra": -801.55, "pmdec": 10362.39, "ref_epoch": 2000.0, "ml_class": "Star", "label_grade": "silver"},
     {"slug": "WISE_0855", "target_name": "WISE_0855", "ra_deg": 133.786245, "dec_deg": -7.244372, "pmra": -8118.0, "pmdec": 680.0, "ref_epoch": 2015.5, "ml_class": "Ultracool dwarf", "label_grade": "gold"},
-    {"slug": "Eps_Indi_B", "target_name": "Epsilon_Indi_B", "ra_deg": 331.077167, "dec_deg": -56.790500, "pmra": 3960.93, "pmdec": -2539.23, "ref_epoch": 2000.0, "ml_class": "Ultracool dwarf", "label_grade": "gold"},
-    {"slug": "RW_Aurigae", "target_name": "RW_Aurigae", "ra_deg": 76.956529, "dec_deg": 30.401440, "pmra": 3.55, "pmdec": -23.09, "ref_epoch": 2016.0, "ml_class": "Young star with ice or dust", "label_grade": "gold"},
-    {"slug": "R_Draconis", "target_name": "R_Draconis", "ra_deg": 248.155875, "dec_deg": 66.703167, "pmra": -7.12, "pmdec": -34.21, "ref_epoch": 2016.0, "ml_class": "Evolved giant star", "label_grade": "silver"},
+    {"slug": "Eps_Indi_B", "target_name": "Epsilon_Indi_B", "ra_deg": 331.043833, "dec_deg": -56.782694, "pmra": 3976.0, "pmdec": -2499.0, "ref_epoch": 2000.0, "ml_class": "Ultracool dwarf", "label_grade": "gold"},
+    {"slug": "RW_Aurigae", "target_name": "RW_Aurigae", "ra_deg": 76.9565, "dec_deg": 30.401417, "pmra": 2.9, "pmdec": -24.1, "ref_epoch": 2000.0, "ml_class": "Young star with ice or dust", "label_grade": "gold"},
+    {"slug": "R_Draconis", "target_name": "R_Draconis", "ra_deg": 248.167625, "dec_deg": 66.754972, "pmra": -14.2, "pmdec": -33.1, "ref_epoch": 2000.0, "ml_class": "Evolved giant star", "label_grade": "silver"},
 )
 
 
@@ -293,28 +293,31 @@ def load_spiff_hybrid_templates(spiff_paths, target_wl_um):
     return out
 
 
-def _select_balanced_spiff_bds(records, max_per_letter=80, max_total=240):
+def _select_balanced_spiff_bds(records, max_per_letter=80, max_total=80):
     buckets = {"M": [], "L": [], "T": [], "Y": [], "OTHER": []}
     for rec in records:
         spt = str(rec.get("subclass", "")).strip()
         key = spt[0].upper() if spt and spt[0].upper() in ("M", "L", "T", "Y") else "OTHER"
         buckets[key].append(rec)
     selected = []
-    # Include rare M/Y/OTHER spectra first, then evenly spaced L/T spectra for broad coverage.
-    for key in ("Y", "M", "OTHER", "T", "L"):
+    # Preserve rare Y/M/OTHER spectral types first, then allocate remaining budget evenly across T and L.
+    for key in ("Y", "OTHER", "M"):
         grp = sorted(buckets[key], key=lambda r: str(r["target_name"]))
-        if len(grp) <= max_per_letter:
-            selected.extend(grp)
-        else:
-            step = np.linspace(0, len(grp) - 1, max_per_letter, dtype=int)
-            selected.extend(grp[i] for i in step)
-    if len(selected) > max_total:
-        step = np.linspace(0, len(selected) - 1, max_total, dtype=int)
-        selected = [selected[i] for i in step]
-    return selected
+        take = grp if len(grp) <= max_per_letter else [grp[i] for i in np.linspace(0, len(grp) - 1, max_per_letter, dtype=int)]
+        selected.extend(take)
+    rem = max(0, int(max_total) - len(selected))
+    large_keys = ("T", "L")
+    for idx_k, key in enumerate(large_keys):
+        grp = sorted(buckets[key], key=lambda r: str(r["target_name"]))
+        cap = min(max_per_letter, max(1, (rem + len(large_keys) - idx_k - 1) // (len(large_keys) - idx_k))) if rem > 0 else 0
+        rem = max(0, rem - cap)
+        if cap > 0 and grp:
+            take = grp if len(grp) <= cap else [grp[i] for i in np.linspace(0, len(grp) - 1, cap, dtype=int)]
+            selected.extend(take)
+    return selected[:max_total]
 
 
-def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_bds=240):
+def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_bds=80):
     """Load real SPHEREx 102-band brown dwarf spectra with published J2000 coordinates."""
     tables_zip = spiff_paths["spiff_tables.zip"]
     bds_zip = spiff_paths["spiff_known_bds_binned_csv.zip"]
@@ -383,7 +386,7 @@ def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_
                     "gaia_g_mag": float("nan"),
                 }
             )
-    return _select_balanced_spiff_bds(records, max_per_letter=80, max_total=max_bds)
+    return _select_balanced_spiff_bds(records, max_per_letter=max(12, int(max_bds)), max_total=max_bds)
 
 
 def _strip_axis3_wcs(img_header):
@@ -395,11 +398,15 @@ def _strip_axis3_wcs(img_header):
     return WCS(h2)
 
 
-def _read_range_retry(reader, start, length, max_attempts=3):
+def _read_range_retry(reader, start, length, max_attempts=5):
     for attempt in range(max_attempts):
         try:
             return reader.read_range(start, length)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+            requests.exceptions.ChunkedEncodingError,
+        ):
             if attempt + 1 >= max_attempts:
                 raise
             time.sleep(0.5 * (2 ** attempt))
@@ -527,23 +534,31 @@ def _extract_point_spectrum_from_slabs(px, py, slab_img, slab_nh, slab_flg, y_of
     return flux_out, err_out
 
 
+def _target_coord_sig(t):
+    return f"{t['target_name']}:{float(t['ra_deg']):.6f}:{float(t['dec_deg']):.6f}:{float(t.get('ref_epoch', 2016.0)):.2f}"
+
+
 def extract_cube_tile_spectra(
     ipix5,
     targets,
     session=None,
     url=None,
     cache_dir=DEFAULT_CUBE_CACHE_DIR,
-    max_workers=12,
+    max_workers=6,
     use_cache=True,
 ):
     """Extract 102-band SPHEREx spectra for targets inside Norder5 cube ipix5 using HTTP Range slabs."""
     cube_url = validate_remote_url(url) if url is not None else s3_cube_url_for_ipix(ipix5)
     cache_path = os.path.join(cache_dir, f"Npix{int(ipix5)}_spectra.npz") if (cache_dir and use_cache) else None
+    req_sigs = {_target_coord_sig(t) for t in targets}
     if cache_path and os.path.exists(cache_path):
         with np.load(cache_path, allow_pickle=False) as cached:
             cached_names = set(str(x) for x in cached["target_names"].tolist())
             req_names = {str(t["target_name"]) for t in targets}
-            if req_names.issubset(cached_names):
+            sigs_ok = True
+            if "coord_sigs" in cached.files:
+                sigs_ok = req_sigs.issubset(set(str(x) for x in cached["coord_sigs"].tolist()))
+            if req_names.issubset(cached_names) and sigs_ok:
                 wl = cached["wavelength_um"].astype(np.float64)
                 bw = cached["bandwidth_um"].astype(np.float64)
                 by_name = {str(n): i for i, n in enumerate(cached["target_names"].tolist())}
@@ -682,6 +697,7 @@ def extract_cube_tile_spectra(
                 "flux_err_ujy": err_ujy,
                 "px": px_val,
                 "py": py_val,
+                "sig": _target_coord_sig(t),
             }
 
         if cache_path and extracted:
@@ -690,6 +706,7 @@ def extract_cube_tile_spectra(
             np.savez_compressed(
                 cache_path,
                 target_names=np.array(names, dtype="U96"),
+                coord_sigs=np.array([extracted[n]["sig"] for n in names], dtype="U160"),
                 wavelength_um=wl_um,
                 bandwidth_um=bw_um,
                 flux_ujy=np.vstack([extracted[n]["flux_ujy"] for n in names]),
@@ -751,14 +768,130 @@ def _global_hpx_wcs():
     return WCS(hdr)
 
 
+_FULL_BAND_STAR_TILES = (3428, 3622, 4801, 4802, 7198, 7348, 7370, 7419, 7467, 7489, 7631, 8001)
+
+
+def select_isolated_gaia_stars(
+    meta_dir=DEFAULT_CURATED_META_DIR,
+    candidate_tiles=_FULL_BAND_STAR_TILES,
+    max_stars=45,
+    wcs=None,
+):
+    """Select clean, isolated Gaia DR3 main-sequence stars inside full-6-detector SPHEREx tiles."""
+    cols = [
+        "target_name",
+        "source_id",
+        "ra_deg",
+        "dec_deg",
+        "pmra",
+        "pmdec",
+        "ref_epoch",
+        "ml_class",
+        "subclass",
+        "label_grade",
+        "label_source",
+        "gaia_parallax_mas",
+        "gaia_g_mag",
+    ]
+    if not meta_dir or not os.path.isdir(meta_dir):
+        return pd.DataFrame(columns=cols)
+
+    tile_filter = set(int(t) for t in candidate_tiles) if candidate_tiles is not None else None
+    w = wcs or _global_hpx_wcs()
+    seen_sid = set()
+    candidates = []
+    req_cols = {"source_id", "ra", "dec", "phot_g_mean_mag", "parallax", "phot_bp_mean_mag", "phot_rp_mean_mag", "ruwe"}
+
+    for fname in sorted(f for f in os.listdir(meta_dir) if f.endswith("_gaia_dr3.csv")):
+        gdf = pd.read_csv(os.path.join(meta_dir, fname), dtype={"source_id": str})
+        if gdf.empty or not req_cols.issubset(gdf.columns):
+            continue
+        sids = gdf["source_id"].fillna("").astype(str).str.strip().tolist()
+        ra = gdf["ra"].to_numpy(dtype=np.float64)
+        dec = gdf["dec"].to_numpy(dtype=np.float64)
+        gmag = gdf["phot_g_mean_mag"].to_numpy(dtype=np.float64)
+        plx = gdf["parallax"].to_numpy(dtype=np.float64)
+        ruwe = gdf["ruwe"].to_numpy(dtype=np.float64)
+        bprp = gdf["phot_bp_mean_mag"].to_numpy(dtype=np.float64) - gdf["phot_rp_mean_mag"].to_numpy(dtype=np.float64)
+        pmra_arr = gdf["pmra"].to_numpy(dtype=np.float64) if "pmra" in gdf.columns else np.zeros(len(gdf))
+        pmdec_arr = gdf["pmdec"].to_numpy(dtype=np.float64) if "pmdec" in gdf.columns else np.zeros(len(gdf))
+        good = (
+            np.isfinite(ra)
+            & np.isfinite(dec)
+            & np.isfinite(gmag)
+            & np.isfinite(plx)
+            & np.isfinite(ruwe)
+            & np.isfinite(bprp)
+            & (plx > 1.5)
+            & (gmag >= 11.8)
+            & (gmag <= 15.0)
+            & (ruwe < 1.25)
+            & (bprp >= 0.5)
+            & (bprp <= 2.5)
+        )
+        for i in np.where(good)[0]:
+            sid = sids[i]
+            if not sid or sid in seen_sid:
+                continue
+            cosd = max(math.cos(math.radians(dec[i])), 1e-4)
+            sep_arcsec = np.hypot((ra - ra[i]) * cosd, dec - dec[i]) * 3600.0
+            if np.any((sep_arcsec > 0.05) & (sep_arcsec < 28.0) & (gmag < gmag[i] + 2.5)):
+                continue
+            ipix5 = ang2pix_nest32(ra[i], dec[i])
+            if tile_filter is not None and ipix5 not in tile_filter:
+                continue
+            gx_i, gy_i = w.world_to_pixel_values(np.array([ra[i]]), np.array([dec[i]]))
+            px_i = float(gx_i[0] - 512.0 * math.floor(gx_i[0] / 512.0))
+            py_i = float(gy_i[0] - 512.0 * math.floor(gy_i[0] / 512.0))
+            if not (3.0 <= px_i <= 508.0 and 3.0 <= py_i <= 508.0):
+                continue
+            seen_sid.add(sid)
+            pmra_val = float(pmra_arr[i]) if np.isfinite(pmra_arr[i]) else 0.0
+            pmdec_val = float(pmdec_arr[i]) if np.isfinite(pmdec_arr[i]) else 0.0
+            candidates.append(
+                {
+                    "target_name": f"GAIA_MS_{sid}",
+                    "source_id": sid,
+                    "ra_deg": float(ra[i]),
+                    "dec_deg": float(dec[i]),
+                    "pmra": pmra_val,
+                    "pmdec": pmdec_val,
+                    "ref_epoch": 2016.0,
+                    "ml_class": "Star",
+                    "subclass": "AFGKM_MS",
+                    "label_grade": "silver",
+                    "label_source": "Gaia_DR3_MS_Isolated",
+                    "gaia_parallax_mas": float(plx[i]),
+                    "gaia_g_mag": float(gmag[i]),
+                    "_h8": ang2pix_nest(256, ra[i], dec[i]),
+                    "_ipix5": ipix5,
+                }
+            )
+
+    if not candidates:
+        return pd.DataFrame(columns=cols)
+
+    # Spread picks across unique Norder8 tiles before taking multiple stars per tile.
+    candidates.sort(key=lambda r: (r["_ipix5"], r["_h8"], r["source_id"]))
+    h8_used = {}
+    chosen = []
+    pool = list(candidates)
+    while pool and len(chosen) < int(max_stars):
+        best_i = min(range(len(pool)), key=lambda idx: (h8_used.get(pool[idx]["_h8"], 0), pool[idx]["_ipix5"], idx))
+        pick = pool.pop(best_i)
+        h8_used[pick["_h8"]] = h8_used.get(pick["_h8"], 0) + 1
+        chosen.append({k: pick[k] for k in cols})
+    return pd.DataFrame(chosen, columns=cols)
+
+
 def select_curated_cube_targets(curated_df, tiles_per_class=None):
     """Select compact, multi-Norder8-tile clusters per class so extraction stays fast on S3 cubes."""
     default_plan = {
-        "Evolved giant star": {"max_targets": 24, "candidate_tiles": [7370, 7467, 7198, 7199, 8001, 7348, 7631, 7419]},
+        "Evolved giant star": {"max_targets": 30, "candidate_tiles": [7370, 7467, 7198, 7199, 8001, 7348, 7631, 7419]},
         "Galaxy": {"max_targets": 45, "candidate_tiles": [7370, 7467, 3622, 7198, 7199]},
-        "Active galaxy or quasar": {"max_targets": 24, "candidate_tiles": [3428, 4802, 4804, 4805, 4801, 7489]},
-        "Young star with ice or dust": {"max_targets": 55, "candidate_tiles": [5701, 5359]},
-        "Star": {"max_targets": 38, "candidate_tiles": [2559, 2557, 2901]},
+        "Active galaxy or quasar": {"max_targets": 30, "candidate_tiles": [3428, 4802, 4804, 4805, 4801, 7489]},
+        "Young star with ice or dust": {"max_targets": 60, "candidate_tiles": [5701, 5359]},
+        "Star": {"max_targets": 45, "candidate_tiles": list(_FULL_BAND_STAR_TILES)},
     }
     plan = tiles_per_class or default_plan
     work = curated_df.copy()
@@ -785,10 +918,12 @@ def select_curated_cube_targets(curated_df, tiles_per_class=None):
         h8_counts = {}
         picked = 0
         while remaining and picked < cap:
+            # Spread picks across unique Norder8 tiles first so train/cal/test stay spatially disjoint.
             best_idx = min(
                 remaining,
                 key=lambda i: (
-                    len(remaining[i][2] - covered_rows.get(remaining[i][0], set())) + 0.35 * h8_counts.get(remaining[i][1], 0),
+                    h8_counts.get(remaining[i][1], 0),
+                    len(remaining[i][2] - covered_rows.get(remaining[i][0], set())),
                     i,
                 ),
             )
@@ -799,11 +934,14 @@ def select_curated_cube_targets(curated_df, tiles_per_class=None):
             picked += 1
 
     selected = work.loc[sorted(selected_indices)].copy()
-    # Include any bonus targets sitting inside rows already scheduled for download.
+    # Include free bonus targets in planned tiles sitting inside rows already scheduled for download.
     active_tiles = set(selected["ipix5"].unique().tolist())
     bonus_rows = []
     for idx, row in work[work["ipix5"].isin(active_tiles)].iterrows():
         if idx in selected_indices:
+            continue
+        cfg = plan.get(str(row.ml_class))
+        if not cfg or int(row.ipix5) not in cfg["candidate_tiles"]:
             continue
         rset = set(range(max(0, int(round(row.py)) - _HALF_BOX), min(512, int(round(row.py)) + _HALF_BOX + 1)))
         if rset.issubset(covered_rows.get(int(row.ipix5), set())):
@@ -821,8 +959,8 @@ def build_real_training_dataset(
     cube_cache_dir=DEFAULT_CUBE_CACHE_DIR,
     data_manifest_path=DEFAULT_DATA_MANIFEST,
     meta_dir=DEFAULT_CURATED_META_DIR,
-    max_bds=240,
-    max_workers=12,
+    max_bds=80,
+    max_workers=6,
     use_cache=True,
 ):
     """Build real SPHEREx 102-band spectral dataset across all 6 classes + 5 benchmark targets."""
@@ -830,12 +968,17 @@ def build_real_training_dataset(
     spiff_paths = ensure_spiff_archives(spiff_dir=spiff_dir, manifest_path=data_manifest_path)
 
     curated_df = pd.read_csv(curated_csv)
+    gaia_stars_df = select_isolated_gaia_stars(meta_dir=meta_dir, candidate_tiles=_FULL_BAND_STAR_TILES, max_stars=45)
+    if not gaia_stars_df.empty:
+        curated_df = pd.concat([curated_df[curated_df["ml_class"] != "Star"], gaia_stars_df], ignore_index=True)
     chosen_df = select_curated_cube_targets(curated_df)
 
     # Group curated targets and the 5 benchmark targets by Norder5 cube tile.
     tile_groups = {}
     for row in chosen_df.itertuples(index=False):
         ipix = int(row.ipix5)
+        plx_val = float(row.gaia_parallax_mas) if (hasattr(row, "gaia_parallax_mas") and pd.notna(row.gaia_parallax_mas)) else float("nan")
+        g_val = float(row.gaia_g_mag) if (hasattr(row, "gaia_g_mag") and pd.notna(row.gaia_g_mag)) else float("nan")
         tile_groups.setdefault(ipix, []).append(
             {
                 "target_name": str(row.target_name),
@@ -848,6 +991,8 @@ def build_real_training_dataset(
                 "subclass": str(row.subclass) if pd.notna(row.subclass) else "",
                 "label_grade": str(row.label_grade).strip().lower(),
                 "label_source": str(row.label_source),
+                "gaia_parallax_mas": plx_val,
+                "gaia_g_mag": g_val,
             }
         )
 
@@ -891,9 +1036,6 @@ def build_real_training_dataset(
             if needs_resample:
                 fl, ferr = resample_spectrum_to_grid(wl_um, fl, canonical_wl, src_err=ferr)
             n_valid = int(np.count_nonzero(np.isfinite(fl) & (fl > 0.0)))
-            if n_valid < 20:
-                continue
-
             if tname in bench_name_to_slug:
                 bench_extracted[bench_name_to_slug[tname]] = {
                     "flux_ujy": fl,
@@ -905,12 +1047,19 @@ def build_real_training_dataset(
                     "ipix5": ipix,
                 }
                 continue
+            if n_valid < 20:
+                continue
 
             if tname in seen_targets:
                 continue
             seen_targets.add(tname)
 
-            gaia_plx, gaia_g = _lookup_gaia_metadata(tname, t["ra_deg"], t["dec_deg"], meta_dir=meta_dir)
+            row_plx = float(t.get("gaia_parallax_mas", float("nan")))
+            row_g = float(t.get("gaia_g_mag", float("nan")))
+            if not (math.isfinite(row_plx) and math.isfinite(row_g)):
+                gaia_plx, gaia_g = _lookup_gaia_metadata(tname, t["ra_deg"], t["dec_deg"], meta_dir=meta_dir)
+            else:
+                gaia_plx, gaia_g = row_plx, row_g
             all_records.append(
                 {
                     "target_name": tname,
@@ -999,12 +1148,78 @@ def build_real_training_dataset(
     return manifest
 
 
+def load_real_training_dataset(npz_path=os.path.join(DEFAULT_ML_DIR, "real_training_dataset.npz")):
+    """Load saved SPHEREx 102-band spectral dataset strictly without pickle deserialization."""
+    with np.load(npz_path, allow_pickle=False) as archive:
+        return {k: archive[k] for k in archive.files}
+
+
+def _safe_normalized_nanmedian(rows):
+    arr = np.asarray(rows, dtype=np.float64)
+    if arr.ndim == 1:
+        arr = arr.reshape(1, -1)
+    normed = np.empty_like(arr)
+    for i, row in enumerate(arr):
+        finite = np.isfinite(row) & (row > 0.0)
+        denom = float(np.mean(np.abs(row[finite]))) if np.any(finite) else 1.0
+        normed[i] = row / max(denom, 1e-6)
+    counts = np.sum(np.isfinite(normed) & (normed > 0.0), axis=0)
+    min_req = 2 if len(normed) >= 4 else 1
+    out = np.full(normed.shape[1], np.nan, dtype=np.float64)
+    for j in range(normed.shape[1]):
+        col = normed[:, j]
+        valid = np.isfinite(col) & (col > 0.0)
+        if int(counts[j]) >= min_req or (min_req > 1 and int(counts[j]) == 1):
+            out[j] = float(np.median(col[valid]))
+    fin_out = np.isfinite(out)
+    denom_out = float(np.mean(np.abs(out[fin_out]))) if np.any(fin_out) else 1.0
+    return out / max(denom_out, 1e-6)
+
+
+def _color_slope_archetypes(rows, k=6):
+    arr = np.asarray(rows, dtype=np.float64)
+    if arr.ndim == 1 or len(arr) <= 1:
+        return [_safe_normalized_nanmedian(arr)]
+    mid = max(1, arr.shape[1] // 2)
+    slopes = np.empty(len(arr), dtype=np.float64)
+    for i, r in enumerate(arr):
+        b = r[:mid]
+        d = r[mid:]
+        bf = b[np.isfinite(b) & (b > 0.0)]
+        df = d[np.isfinite(d) & (d > 0.0)]
+        if len(bf) > 0 and len(df) > 0:
+            slopes[i] = math.log(float(np.median(df))) - math.log(float(np.median(bf)))
+        else:
+            slopes[i] = 0.0
+    order = np.argsort(slopes, kind="mergesort")
+    n_bins = max(1, min(int(k), len(order)))
+    return [_safe_normalized_nanmedian(arr[chunk]) for chunk in np.array_split(order, n_bins) if len(chunk) > 0]
+
+
+def build_balanced_e1_templates(X_train, y_train, hybrid_templates=None, max_per_class=6):
+    """Build equal-capacity E1 template variants per class strictly from training-split spectra."""
+    X_arr = np.asarray(X_train, dtype=np.float64)
+    y_arr = np.asarray(y_train)
+    templates = {}
+    for cls in sorted(set(str(c) for c in y_arr.tolist())):
+        cls_rows = X_arr[y_arr == cls]
+        if cls == "Ultracool dwarf" and hybrid_templates is not None and len(hybrid_templates) > 0:
+            n_hyb = max(1, int(max_per_class) - 1) if len(cls_rows) > 0 else int(max_per_class)
+            variants = _color_slope_archetypes(hybrid_templates, k=n_hyb)
+            if len(cls_rows) > 0:
+                variants.append(_safe_normalized_nanmedian(cls_rows))
+            templates[cls] = variants[:max_per_class]
+        else:
+            templates[cls] = _color_slope_archetypes(cls_rows, k=max_per_class)
+    return templates
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Build real SPHEREx 102-band training dataset from S3 cubes and SPIFF.")
     parser.add_argument("--output-npz", default=os.path.join(DEFAULT_ML_DIR, "real_training_dataset.npz"))
     parser.add_argument("--output-manifest", default=os.path.join(DEFAULT_ML_DIR, "dataset_manifest.json"))
-    parser.add_argument("--max-bds", type=int, default=240)
-    parser.add_argument("--workers", type=int, default=12)
+    parser.add_argument("--max-bds", type=int, default=80)
+    parser.add_argument("--workers", type=int, default=6)
     parser.add_argument("--no-cache", action="store_true")
     args = parser.parse_args(argv)
     summary = build_real_training_dataset(
