@@ -3201,6 +3201,49 @@ class TestFastAPIBackend(unittest.TestCase):
         chi2_weighted = pipe_asc._reduced_chi2(perturbed, pipe_asc.template_library["Star"], norm_err=large_err)
         self.assertLess(chi2_weighted, chi2_default)
 
+    def test_tier_a_metrics_and_proof_summary_endpoints(self):
+        r_m2 = self.client.get("/api/patch/metrics", params={"target_id": "TGT-02"})
+        self.assertEqual(r_m2.status_code, 200)
+        m2 = r_m2.json()
+        self.assertEqual(m2["cutout_origin"], "real_spherex_s3_wcs_cutout")
+        self.assertEqual(m2["motion"]["status"], "NOT_MEASURED")
+        self.assertIn("S/N >= 5.0", m2["motion"]["reason"])
+
+        r_m3 = self.client.get("/api/patch/metrics", params={"target_id": "TGT-03"})
+        self.assertEqual(r_m3.status_code, 200)
+        m3 = r_m3.json()
+        self.assertEqual(m3["motion"]["status"], "MEASURED")
+        self.assertIsNotNone(m3["motion"]["residual_arcsec_yr"])
+        self.assertLessEqual(m3["motion"]["residual_arcsec_yr"], 1.5)
+
+        r_m5 = self.client.get("/api/patch/metrics", params={"target_id": "TGT-05"})
+        self.assertEqual(r_m5.status_code, 200)
+        self.assertEqual(r_m5.json()["motion"]["status"], "NOT_MEASURED")
+
+        r_proof = self.client.get("/api/proof/summary")
+        self.assertEqual(r_proof.status_code, 200)
+        proof = r_proof.json()
+        self.assertEqual([t["target_id"] for t in proof["tier_a_targets"]], ["TGT-01", "TGT-02", "TGT-03", "TGT-04", "TGT-05"])
+        self.assertEqual(proof["ml_evaluation"]["release_status"], "UNPUBLISHED")
+
+        # Verify offline fallback_data.js carries matching Tier-A metrics & proof summary
+        fb_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "phantom_worlds", "static", "fallback_data.js")
+        with open(fb_path, encoding="utf-8") as f:
+            raw_js = f.read()
+        prefix = "globalThis.__PHANTOM_STATIC_FALLBACK__ = "
+        self.assertTrue(raw_js.startswith(prefix))
+        bundle = json.loads(raw_js[len(prefix) : -2])
+        self.assertEqual(bundle["targets"]["TGT-03"]["tier_a_metrics"]["motion"]["measured_total_arcsec_yr"], m3["motion"]["measured_total_arcsec_yr"])
+        self.assertEqual(bundle["targets"]["TGT-02"]["tier_a_metrics"]["motion"]["status"], "NOT_MEASURED")
+        self.assertEqual([t["target_id"] for t in bundle["proof_summary"]["tier_a_targets"]], ["TGT-01", "TGT-02", "TGT-03", "TGT-04", "TGT-05"])
+
+        # Missing evaluation report yields honest NOT_MEASURED without fabricated ML scores
+        from phantom_worlds.tier_a_metrics import build_proof_summary
+
+        missing_proof = build_proof_summary(report_json_path=os.path.join(self.tmpdir.name if hasattr(self, "tmpdir") else ".", "does_not_exist.json"))
+        self.assertEqual(missing_proof["ml_evaluation"]["status"], "NOT_MEASURED")
+        self.assertEqual(missing_proof["ml_evaluation"]["release_status"], "UNPUBLISHED")
+
 
 if __name__ == "__main__":
     unittest.main()

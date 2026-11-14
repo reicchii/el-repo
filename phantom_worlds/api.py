@@ -38,6 +38,7 @@ from phantom_worlds.contracts import (
     safe_remote_url,
     safe_s3_cloud_access_url,
 )
+from phantom_worlds.tier_a_metrics import build_proof_summary, compute_target_tier_a_metrics
 from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings, train_from_real_dataset
 from phantom_worlds.real_ml_data import (
     DEFAULT_ML_DIR,
@@ -520,7 +521,7 @@ def create_app(
 ):
     """Build FastAPI application wired to Hour-0 contracts, ML Layer-1, Sky Time-Series API, and Web UI."""
     resolved_dataset_npz = (
-        (DEFAULT_REAL_DATASET_NPZ if csv_dir == DEFAULT_CSV_DIR else None)
+        (DEFAULT_REAL_DATASET_NPZ if os.path.abspath(csv_dir) == os.path.abspath(DEFAULT_CSV_DIR) else None)
         if dataset_npz_path is _UNSET_DATASET
         else dataset_npz_path
     )
@@ -532,6 +533,7 @@ def create_app(
     )
     spectra_ref = load_spectra_table(csv_dir)
     targets_list = load_targets(csv_dir)
+    targets_by_id = {row["target_id"]: row for row in targets_list}
     default_manifest = load_manifest(contracts_dir)
     default_target_id = default_manifest.get("target_id", "TGT-02")
     cache_lock = threading.Lock()
@@ -708,6 +710,31 @@ def create_app(
         manifest, flux_cube, mask_cube = _get_patch_arrays(target_id=target_id)
         _, det_img = _get_detector_stack(detector, target_id=target_id)
         return _serialize_detector_timeseries(manifest, flux_cube, mask_cube, detector, spectra_ref, stack_grid=det_img)
+
+    @app.get("/api/patch/metrics")
+    def get_patch_metrics(
+        target_id: Optional[Literal["TGT-01", "TGT-02", "TGT-03", "TGT-04", "TGT-05"]] = None,
+    ):
+        manifest, flux_cube, mask_cube = _get_patch_arrays(target_id=target_id)
+        tid = target_id or manifest.get("target_id", "TGT-01")
+        row = targets_by_id.get(tid)
+        return _cached(
+            json_cache,
+            ("metrics", tid, manifest.get("data_as_of")),
+            lambda: compute_target_tier_a_metrics(manifest, flux_cube, mask_cube, target_row=row),
+        )
+
+    @app.get("/api/proof/summary")
+    def get_proof_summary():
+        return _cached(
+            json_cache,
+            ("proof_summary", os.path.abspath(contracts_dir), os.path.abspath(csv_dir)),
+            lambda: build_proof_summary(
+                contracts_dir=contracts_dir,
+                csv_dir=csv_dir,
+                root_manifest=default_manifest,
+            ),
+        )
 
     @app.get("/api/sky/timeseries")
     def query_sky_timeseries(

@@ -739,6 +739,7 @@ def build_static_fallback_js(
 ):
     """Compile zero-downtime ADR-003 static fallback bundle for all 5 mandatory targets."""
     from phantom_worlds.ml_pipeline import compute_molecule_readings
+    from phantom_worlds.tier_a_metrics import build_proof_summary, compute_target_tier_a_metrics
 
     spectra = load_spectra_table(csv_dir)
     targets = {row["target_id"]: row for row in load_targets(csv_dir)}
@@ -760,6 +761,8 @@ def build_static_fallback_js(
             pack_b64 = base64.b64encode(fp.read()).decode("ascii")
         with open(_safe_under_dir(patch_dir, manifest["quality_mask_layout"]["file"]), "rb") as fm:
             mask_b64 = base64.b64encode(fm.read()).decode("ascii")
+        _, flux_cube, mask_cube = load_patch_arrays(contracts_dir, target_id=tid, manifest=manifest)
+        tier_a_metrics = compute_target_tier_a_metrics(manifest, flux_cube, mask_cube, target_row=tgt)
 
         spec_102 = build_target_spectrum_102(tgt["name"], spec, spectra)
         mol_readings = compute_molecule_readings(
@@ -810,6 +813,7 @@ def build_static_fallback_js(
             "mask_b64": mask_b64,
             "spectrum_102": spec_102,
             "molecule_readings": mol_readings,
+            "tier_a_metrics": tier_a_metrics,
             "gaia_sources": gaia_compact,
             "frames": _compact_fallback_frames(data_real_dir, spec["slug"]),
         }
@@ -819,6 +823,7 @@ def build_static_fallback_js(
         "mode": "hour0_static_fallback",
         "detector_wavelength_ranges_um": det_wl_ranges,
         "targets": target_payloads,
+        "proof_summary": build_proof_summary(contracts_dir=contracts_dir, csv_dir=csv_dir),
     }
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as out_f:
@@ -845,7 +850,19 @@ def sync_hour0_contracts(contracts_dir=DEFAULT_CONTRACTS_DIR, csv_dir=DEFAULT_CS
             writer.writerows(cases)
 
 
+def _has_real_cutouts(contracts_dir=DEFAULT_CONTRACTS_DIR):
+    for tid in TARGET_SPECS:
+        try:
+            manifest = load_manifest(contracts_dir, target_id=tid)
+        except OSError:
+            return False
+        if manifest.get("cutout_origin") != "real_spherex_s3_wcs_cutout":
+            return False
+    return True
+
+
 if __name__ == "__main__":
-    build_target_hour0_cutouts()
+    if not _has_real_cutouts():
+        build_target_hour0_cutouts()
     sync_hour0_contracts()
     build_static_fallback_js()
