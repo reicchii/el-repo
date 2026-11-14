@@ -35,10 +35,12 @@ class TestPackBinaryContract(unittest.TestCase):
         self.assertEqual(raw.nbytes, self.layout["byte_length"])
         self.assertEqual(raw.size, int(np.prod(self.layout["shape"])))
 
-        # Negative calibrated flux must be representable for PSF-subtraction residuals.
-        calibrated = raw.astype(np.float64) * self.layout["flux_scale"] + self.layout["flux_zero"]
+        # Negative calibrated flux must be representable for PSF-subtraction residuals on valid samples,
+        # while invalid_u16 sentinel samples decode cleanly to NaN.
+        valid_mask = raw != self.layout["invalid_u16"]
+        self.assertTrue(np.any(valid_mask))
+        calibrated = raw[valid_mask].astype(np.float64) * self.layout["flux_scale"] + self.layout["flux_zero"]
         self.assertLess(calibrated.min(), 0.0)
-        self.assertNotIn(self.layout["invalid_u16"], raw)
 
     def test_quality_mask_contract_and_binary_file_exist(self):
         self.assertIn("quality_mask_layout", self.manifest)
@@ -69,17 +71,21 @@ class TestPackBinaryContract(unittest.TestCase):
         expected_keys = set(self.manifest.keys())
         self.assertIn("cutout_origin", expected_keys)
         self.assertIn("searched_depth_mag_d6", expected_keys)
-        self.assertEqual(self.manifest.get("cutout_origin"), "synthetic_hour0_mock_cutout")
+        self.assertIn("source_exposures", expected_keys)
+        self.assertEqual(self.manifest.get("cutout_origin"), "real_spherex_s3_wcs_cutout")
 
         for tid in TARGET_SPECS:
             m = load_manifest(CONTRACTS_DIR, target_id=tid)
             self.assertEqual(set(m.keys()), expected_keys, f"Schema key mismatch in manifest for {tid}")
             self.assertEqual(
                 m.get("cutout_origin"),
-                "synthetic_hour0_mock_cutout",
+                "real_spherex_s3_wcs_cutout",
                 f"Dishonest or missing cutout_origin in {tid}",
             )
-            self.assertEqual(m.get("searched_depth_mag_d6"), 19.8, f"Missing searched_depth_mag_d6 in {tid}")
+            self.assertEqual(len(m.get("source_exposures", [])), 18, f"Expected 18 source exposures in {tid}")
+            depth = m.get("searched_depth_mag_d6")
+            self.assertIsInstance(depth, (int, float), f"Missing searched_depth_mag_d6 in {tid}")
+            self.assertTrue(12.0 <= float(depth) <= 22.0, f"Unphysical searched_depth_mag_d6={depth} in {tid}")
             self.assertAlmostEqual(
                 m["fov_arcmin"],
                 round(m["cutout_size_px"][0] * m["pixel_scale_arcsec"] / 60.0, 4),
