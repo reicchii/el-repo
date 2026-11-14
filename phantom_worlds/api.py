@@ -51,6 +51,13 @@ from phantom_worlds.tier_b_engine import (
     evaluate_b1_b2_2mass_check,
     list_processed_fields,
 )
+from phantom_worlds.tier_b_detectors import (
+    SEARCH_CATEGORY_FILTERS,
+    analyze_field_candidates,
+    evaluate_slice2_benchmarks,
+    get_source_identity_v2,
+    search_field_sources,
+)
 from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings, train_from_real_dataset
 from phantom_worlds.real_ml_data import (
     DEFAULT_ML_DIR,
@@ -969,6 +976,67 @@ def create_app(
                     if os.path.exists(os.path.join(contracts_dir, "fields", fid, "scene.json"))
                 },
             },
+        )
+
+    @app.get("/api/field/search")
+    def get_field_search(
+        field_id: Literal["all", "w1925", "rwaur"] = "all",
+        categories: Optional[str] = Query(None, max_length=256),
+        min_snr: float = Query(5.0, ge=0.0, le=500.0),
+        max_blend: float = Query(1.0, ge=0.0, le=1.0),
+        only_unexplained: bool = False,
+        sort_by: Literal["priority", "snr", "weirdness"] = "priority",
+        limit: int = Query(80, ge=1, le=200),
+    ):
+        allowed_cats = {c["id"] for c in SEARCH_CATEGORY_FILTERS}
+        cats_parsed = tuple(c.strip() for c in (categories or "").split(",") if c.strip())
+        invalid = [c for c in cats_parsed if c not in allowed_cats]
+        if invalid:
+            raise HTTPException(status_code=422, detail=f"Unsupported category filter(s): {invalid}")
+        cache_key = ("field_search", field_id, cats_parsed, round(min_snr, 3), round(max_blend, 4), only_unexplained, sort_by, limit)
+        return _cached(
+            json_cache,
+            cache_key,
+            lambda: search_field_sources(
+                field_id=field_id,
+                categories=cats_parsed,
+                min_snr=min_snr,
+                max_blend=max_blend,
+                only_unexplained=only_unexplained,
+                sort_by=sort_by,
+                limit=limit,
+                contracts_dir=contracts_dir,
+            ),
+        )
+
+    @app.get("/api/field/{field_id}/source/{source_id}")
+    def get_field_source_identity(field_id: str, source_id: str):
+        fid = field_id.strip().lower()
+        if fid not in FIELD_SPECS:
+            raise HTTPException(status_code=404, detail=f"Unknown field_id: {field_id!r}")
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,64}", source_id):
+            raise HTTPException(status_code=422, detail="Invalid source_id format")
+        try:
+            return _cached(
+                json_cache,
+                ("field_source", fid, source_id),
+                lambda: get_source_identity_v2(fid, source_id, contracts_dir=contracts_dir),
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.get("/api/field/{field_id}/analyze")
+    def get_field_analyze(field_id: str, include_skybot: bool = False):
+        fid = field_id.strip().lower()
+        if fid not in FIELD_SPECS:
+            raise HTTPException(status_code=404, detail=f"Unknown field_id: {field_id!r}")
+        scene_file = os.path.join(contracts_dir, "fields", fid, "scene.json")
+        if not os.path.exists(scene_file):
+            raise HTTPException(status_code=404, detail=f"Processed scene for field {fid!r} not built yet")
+        return _cached(
+            json_cache,
+            ("field_analyze", fid, include_skybot),
+            lambda: analyze_field_candidates(fid, contracts_dir=contracts_dir, include_skybot=include_skybot),
         )
 
     @app.get("/api/field/{field_id}/remove_known")

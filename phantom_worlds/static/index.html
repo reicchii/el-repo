@@ -137,9 +137,69 @@
           <div id="external-links" class="external-links"></div>
         </div>
         <div id="pixel-readout" class="readout">Hover over canvas to inspect calibrated pixel flux and mask flags.</div>
+
+        <div id="search-light-panel" class="search-panel" aria-label="Search by light">
+          <div class="search-panel-header">
+            <h3>Search by light</h3>
+            <span id="search-match-count" class="presets-label">0 sources</span>
+          </div>
+          <p id="search-coverage-note" class="proof-meta">Loading processed Tier-B sky fields…</p>
+          <div id="search-category-pills" class="controls-row" role="group" aria-label="Category filters">
+            <button class="btn search-cat-btn" type="button" data-cat="ultracool_dwarf" aria-pressed="false">Ultracool dwarf</button>
+            <button class="btn search-cat-btn" type="button" data-cat="yso" aria-pressed="false">Young star (YSO)</button>
+            <button class="btn search-cat-btn" type="button" data-cat="star" aria-pressed="false">Star</button>
+            <button class="btn search-cat-btn" type="button" data-cat="evolved_giant" aria-pressed="false">Evolved giant</button>
+            <button class="btn search-cat-btn" type="button" data-cat="galaxy" aria-pressed="false">Galaxy</button>
+            <button class="btn search-cat-btn" type="button" data-cat="agn_quasar" aria-pressed="false">Active galaxy / QSO</button>
+            <button class="btn search-cat-btn" type="button" data-cat="water_ice" aria-pressed="false">H2O ice (3.05 um)</button>
+            <button class="btn search-cat-btn" type="button" data-cat="co2_ice" aria-pressed="false">CO2 ice (4.27 um)</button>
+            <button class="btn search-cat-btn" type="button" data-cat="co_ice" aria-pressed="false">CO ice (4.67 um)</button>
+            <button class="btn search-cat-btn" type="button" data-cat="moving_source" aria-pressed="false">Moving</button>
+            <button class="btn search-cat-btn" type="button" data-cat="variable_source" aria-pressed="false">Variable</button>
+          </div>
+          <div class="search-filters-row">
+            <label for="search-field-scope">Field
+              <select id="search-field-scope">
+                <option value="all" selected>All Tier-B fields</option>
+                <option value="w1925">W1925 Galactic Plane</option>
+                <option value="rwaur">RW Aurigae Field</option>
+              </select>
+            </label>
+            <label for="search-min-snr">Min S/N: <span id="search-min-snr-val">5</span>
+              <input id="search-min-snr" type="range" min="0" max="50" step="1" value="5">
+            </label>
+            <label for="search-max-blend">Max blend: <span id="search-max-blend-val">1.00</span>
+              <input id="search-max-blend" type="range" min="0.1" max="1.0" step="0.05" value="1.0">
+            </label>
+            <label class="checkbox-label" for="search-unexplained-only">
+              <input id="search-unexplained-only" type="checkbox"> Unexplained only
+            </label>
+            <label for="search-sort-select">Sort
+              <select id="search-sort-select">
+                <option value="priority" selected>Priority</option>
+                <option value="snr">S/N</option>
+                <option value="weirdness">Weirdness</option>
+              </select>
+            </label>
+          </div>
+          <div id="search-results-list" class="search-results-list" role="listbox" aria-label="Matching sources"></div>
+        </div>
       </section>
 
       <div class="right-stack">
+        <section id="identity-v2-card" class="card" aria-label="Identity v2 source report" hidden>
+          <div class="search-panel-header">
+            <h2 id="identity-v2-title">Identity v2</h2>
+            <button id="model-card-open-btn" class="btn" type="button">Model Card &amp; Gates</button>
+          </div>
+          <div id="identity-v2-header" class="metrics-strip">Select a source from Search by light to inspect Identity v2.</div>
+          <div id="identity-v2-bands" class="band-pills"></div>
+          <canvas id="identity-strip-canvas" width="640" height="150"></canvas>
+          <div id="identity-v2-top3" class="molecule-list"></div>
+          <div id="identity-v2-checks" class="band-pills"></div>
+          <div id="identity-v2-meta" class="metrics-strip"></div>
+        </section>
+
         <section id="metrics-card" class="card" aria-label="Light curve, change spectrum, and motion">
           <h2 id="metrics-heading">Light Curve, Change Spectrum &amp; Motion</h2>
           <canvas id="lightcurve-canvas" width="640" height="140"></canvas>
@@ -180,6 +240,16 @@
       </div>
     </div>
   </main>
+
+  <div id="model-card-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="model-card-heading" hidden>
+    <div class="modal-card">
+      <div class="search-panel-header">
+        <h2 id="model-card-heading">Model Card &amp; Release Gates</h2>
+        <button id="model-card-close-btn" class="btn" type="button">Close</button>
+      </div>
+      <div id="model-card-body" class="proof-body">Loading model provenance…</div>
+    </div>
+  </div>
 
   <script src="/static/fallback_data.js"></script>
   <script src="/static/viewer.js"></script>

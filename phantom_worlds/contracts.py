@@ -826,8 +826,25 @@ def build_static_fallback_js(
         evaluate_b1_b2_2mass_check,
         list_processed_fields,
     )
+    from phantom_worlds.tier_b_detectors import (
+        SEARCH_CATEGORY_FILTERS,
+        analyze_field_candidates,
+        evaluate_slice2_benchmarks,
+        get_cached_ml_pipeline,
+    )
 
     fields_payload = {}
+    search_records = []
+    coverage_notes = []
+    slice2_bench = evaluate_slice2_benchmarks(contracts_dir=contracts_dir)
+    ml_bundle = get_cached_ml_pipeline()
+    eval_rpt = ml_bundle.get("evaluation_report") or {}
+    model_card_meta = {
+        "model_version": ml_bundle.get("model_version", "spherex-dr1-e1e2-v2"),
+        "release_status": ((eval_rpt.get("release_gates") or {}).get("release_status")) or "UNPUBLISHED",
+        "gold_high_snr": ((eval_rpt.get("release_gates") or {}).get("high_snr_gold")) or {},
+    }
+
     for fmeta in list_processed_fields(contracts_dir=contracts_dir):
         fid = fmeta["field_id"]
         b_check = evaluate_b1_b2_2mass_check(fid, contracts_dir=contracts_dir)
@@ -845,14 +862,63 @@ def build_static_fallback_js(
             ]
             rk["fitted_sources"] = rk["fitted_sources"][:120]
             by_det[det_id] = rk
-        fields_payload[fid] = {**fmeta, "b_check": b_check, "remove_known": by_det}
+        ana = analyze_field_candidates(fid, contracts_dir=contracts_dir, include_skybot=False)
+        coverage_notes.append(f"{ana['field_name']} (3.3' radius)")
+        # Ensure every represented category has offline parity while keeping bundle compact
+        picked_ids = set()
+        per_field_picks = []
+        for rec in ana["records"][:35]:
+            picked_ids.add(rec["source_id"])
+            per_field_picks.append(rec)
+        from phantom_worlds.tier_b_detectors import _matches_category
 
+        for cat_meta in SEARCH_CATEGORY_FILTERS:
+            c_id = cat_meta["id"]
+            added = 0
+            for rec in ana["records"]:
+                if _matches_category(rec, c_id):
+                    if rec["source_id"] not in picked_ids:
+                        picked_ids.add(rec["source_id"])
+                        per_field_picks.append(rec)
+                    added += 1
+                    if added >= 4:
+                        break
+        for rec in per_field_picks:
+            compact_top3 = [
+                {
+                    "class_name": t["class_name"],
+                    "score": t["score"],
+                    "chi2_red": t["chi2_red"],
+                    "strip_wavelength_um": t["strip_wavelength_um"],
+                    "strip_norm_flux": [round(float(x), 3) if x is not None else None for x in t["strip_norm_flux"]],
+                }
+                for t in (rec.get("top_3_classes") or [])
+            ]
+            search_records.append({**rec, "top_3_classes": compact_top3})
+        fields_payload[fid] = {
+            **fmeta,
+            "b_check": b_check,
+            "m1_calibration": ana["m1_calibration"],
+            "b10_steady_edge_stats": ana["b10_steady_edge_stats"],
+            "remove_known": by_det,
+        }
+
+    search_records.sort(key=lambda r: float(r.get("priority") or 0.0), reverse=True)
     bundle = {
         "schema_version": "1.0.0-hour0",
         "mode": "hour0_static_fallback",
         "detector_wavelength_ranges_um": det_wl_ranges,
         "targets": target_payloads,
         "fields": fields_payload,
+        "field_search": {
+            "field_scope": "all",
+            "coverage_statement": f"Covers {', '.join(coverage_notes) or 'no fields'}; full-sky catalog search not active.",
+            "categories_available": SEARCH_CATEGORY_FILTERS,
+            "total_matched": len(search_records),
+            "results": search_records,
+            "model_card": {**model_card_meta, "m1_calibration": (slice2_bench.get("B6") or {})},
+            "slice2_benchmarks": slice2_bench,
+        },
         "proof_summary": build_proof_summary(contracts_dir=contracts_dir, csv_dir=csv_dir),
     }
     os.makedirs(os.path.dirname(out_path), exist_ok=True)

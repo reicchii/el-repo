@@ -56,6 +56,15 @@
     fieldFadeProgress: 1.0,
     fieldFadeFrom: "image",
     fieldFadeRaf: null,
+    searchCategories: [],
+    searchFieldScope: "all",
+    searchMinSnr: 5,
+    searchMaxBlend: 1.0,
+    searchOnlyUnexplained: false,
+    searchSortBy: "priority",
+    searchResults: [],
+    selectedFieldSource: null,
+    lastModelCard: null,
     timerId: null,
     querySeq: 0,
     abortController: null,
@@ -99,6 +108,28 @@
     spectrumHeading: document.getElementById("spectrum-heading"),
     copyUrlBtn: document.getElementById("copy-url-btn"),
     removeKnownRow: document.getElementById("remove-known-row"),
+    searchCoverageNote: document.getElementById("search-coverage-note"),
+    searchMatchCount: document.getElementById("search-match-count"),
+    searchFieldScope: document.getElementById("search-field-scope"),
+    searchMinSnr: document.getElementById("search-min-snr"),
+    searchMinSnrVal: document.getElementById("search-min-snr-val"),
+    searchMaxBlend: document.getElementById("search-max-blend"),
+    searchMaxBlendVal: document.getElementById("search-max-blend-val"),
+    searchUnexplainedOnly: document.getElementById("search-unexplained-only"),
+    searchSortSelect: document.getElementById("search-sort-select"),
+    searchResultsList: document.getElementById("search-results-list"),
+    identityCard: document.getElementById("identity-v2-card"),
+    identityTitle: document.getElementById("identity-v2-title"),
+    identityHeader: document.getElementById("identity-v2-header"),
+    identityBands: document.getElementById("identity-v2-bands"),
+    identityStripCanvas: document.getElementById("identity-strip-canvas"),
+    identityTop3: document.getElementById("identity-v2-top3"),
+    identityChecks: document.getElementById("identity-v2-checks"),
+    identityMeta: document.getElementById("identity-v2-meta"),
+    modelCardOpenBtn: document.getElementById("model-card-open-btn"),
+    modelCardModal: document.getElementById("model-card-modal"),
+    modelCardCloseBtn: document.getElementById("model-card-close-btn"),
+    modelCardBody: document.getElementById("model-card-body"),
   };
 
   function setStatus(text, isError) {
@@ -895,6 +926,25 @@
         ctx.arc((s.x_px + 0.5) * sx, (s.y_px + 0.5) * sy, Math.max(4, sx * 0.7), 0, Math.PI * 2);
         ctx.stroke();
       });
+    }
+    const sel = state.selectedFieldSource;
+    if (sel && sel.field_id === state.activeFieldId && isFiniteNumber(sel.x_px) && isFiniteNumber(sel.y_px)) {
+      const sx = w / nx;
+      const sy = h / ny;
+      const cx = (sel.x_px + 0.5) * sx;
+      const cy = (sel.y_px + 0.5) * sy;
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(9, sx * 1.4), 0, Math.PI * 2);
+      ctx.moveTo(cx - 14, cy);
+      ctx.lineTo(cx + 14, cy);
+      ctx.moveTo(cx, cy - 14);
+      ctx.lineTo(cx, cy + 14);
+      ctx.stroke();
+      ctx.fillStyle = "#f59e0b";
+      ctx.font = "11px monospace";
+      ctx.fillText(sel.source_id || "Selected", Math.min(w - 110, cx + 10), Math.max(14, cy - 10));
     }
     const layerLabel = state.fieldLayer === "model" ? "Model" : state.fieldLayer === "residual" ? "Residual" : "Image";
     if (els.visitLabel) {
@@ -1872,7 +1922,333 @@
     setStatus("Exported CSV data.", false);
   }
 
-  async function loadFieldScene(fieldId) {
+  function matchesOfflineCategory(rec, catId) {
+    const estAll = rec.estimate_all_data || {};
+    const estSpec = rec.estimate_spectrum_alone || {};
+    const names = new Set([estAll.top_class || "", estSpec.top_class || "", estSpec.template_class || "", estSpec.tree_class || ""]);
+    (estAll.conformal_set || []).forEach((c) => names.add(c));
+    (estSpec.conformal_set || []).forEach((c) => names.add(c));
+    const mols = rec.molecules || {};
+    if (catId === "ultracool_dwarf") return names.has("Ultracool dwarf");
+    if (catId === "yso") return names.has("Young star with ice or dust");
+    if (catId === "star") return names.has("Star");
+    if (catId === "evolved_giant") return names.has("Evolved giant star");
+    if (catId === "galaxy") return names.has("Galaxy");
+    if (catId === "agn_quasar") return names.has("Active galaxy or quasar");
+    if (catId === "moving_source") return rec.detector_hit === "mover" || rec.kind === "Moving candidate";
+    if (catId === "variable_source") return Boolean(rec.is_variable);
+    if (catId === "water_ice" || catId === "co2_ice" || catId === "co_ice") {
+      const feats = (mols && mols.features) || {};
+      const kMap = { water_ice: "H2O_ice_3_05", co2_ice: "CO2_4_26", co_ice: "CO_4_67" };
+      const m = feats[kMap[catId]] || {};
+      return m.status === "MEASURED" && isFiniteNumber(m.integrated_tau) && m.integrated_tau >= 0.1;
+    }
+    return true;
+  }
+
+  function filterOfflineFieldSearch() {
+    const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
+    const fs = bundle && bundle.field_search;
+    if (!fs || !Array.isArray(fs.results)) return null;
+    if (fs.model_card) state.lastModelCard = fs.model_card;
+    const rows = fs.results.filter((r) => {
+      if (state.searchFieldScope !== "all" && r.field_id !== state.searchFieldScope) return false;
+      if ((r.snr || 0) < state.searchMinSnr) return false;
+      if ((r.blend_share || 0) > state.searchMaxBlend) return false;
+      if (state.searchOnlyUnexplained && (r.unexplained_score || 0) < 0.45) return false;
+      if (state.searchCategories.length && !state.searchCategories.some((c) => matchesOfflineCategory(r, c))) return false;
+      return true;
+    });
+    rows.sort((a, b) => {
+      if (state.searchSortBy === "snr") return (b.snr || 0) - (a.snr || 0);
+      if (state.searchSortBy === "weirdness") {
+        return ((b.novelty && b.novelty.weirdness_score) || 0) - ((a.novelty && a.novelty.weirdness_score) || 0);
+      }
+      return (b.priority || 0) - (a.priority || 0);
+    });
+    return {
+      coverage_statement: fs.coverage_statement,
+      total_matched: rows.length,
+      results: rows.slice(0, 80),
+    };
+  }
+
+  function makePill(text, toneClass) {
+    const span = document.createElement("span");
+    span.className = `pill ${toneClass || ""}`.trim();
+    span.textContent = text;
+    return span;
+  }
+
+  function renderIdentityStripCanvas(rec) {
+    if (!els.identityStripCanvas) return;
+    const canvas = els.identityStripCanvas;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.fillStyle = "#04070e";
+    ctx.fillRect(0, 0, w, h);
+
+    const padL = 42;
+    const padR = 16;
+    const padT = 16;
+    const padB = 24;
+    const pw = Math.max(10, w - padL - padR);
+    const ph = Math.max(10, h - padT - padB);
+    const toX = (wl) => padL + ((wl - 0.75) / (5.0 - 0.75)) * pw;
+
+    // SPHEREx 0.75..5.0 um rainbow backdrop band
+    const bandColors = ["#6366f1", "#38bdf8", "#34d399", "#facc15", "#fb923c", "#f87171"];
+    DETECTORS.forEach((_d, i) => {
+      const bx0 = padL + (i / DETECTORS.length) * pw;
+      const bw = pw / DETECTORS.length;
+      ctx.fillStyle = bandColors[i];
+      ctx.fillRect(bx0, padT, bw, 4);
+    });
+    ctx.strokeStyle = "#26344d";
+    ctx.strokeRect(padL, padT, pw, ph);
+    ctx.fillStyle = "#93a4bd";
+    ctx.font = "11px monospace";
+    ctx.fillText("0.75 um", padL, h - 6);
+    ctx.fillText("5.0 um", w - padR - 46, h - 6);
+
+    const top3 = rec.top_3_classes || [];
+    const meas6 = rec.measured_6band || [];
+    const measMean = meas6.length
+      ? meas6.reduce((acc, m) => acc + Math.max(m.flux_uJy || 0, 0), 0) / Math.max(meas6.length, 1)
+      : 1.0;
+
+    // Collect normalized curve values to auto-scale cleanly
+    const allY = [];
+    meas6.forEach((m) => { if (isFiniteNumber(m.flux_uJy) && m.flux_uJy > 0) allY.push(m.flux_uJy / Math.max(measMean, 1e-6)); });
+    top3.slice(0, 3).forEach((t) => {
+      (t.strip_norm_flux || []).forEach((v) => { if (isFiniteNumber(v) && v > 0) allY.push(v); });
+    });
+    const maxY = allY.length ? Math.max(...allY, 1.2) : 2.0;
+    const toY = (nv) => padT + ph - (Math.max(0, Math.min(maxY, nv)) / maxY) * (ph - 10);
+
+    const stripPalette = ["#38bdf8", "#a78bfa", "#64748b"];
+    top3.slice(0, 3).forEach((t, idx) => {
+      const wls = t.strip_wavelength_um || [];
+      const fls = t.strip_norm_flux || [];
+      if (!wls.length || wls.length !== fls.length) return;
+      ctx.strokeStyle = stripPalette[idx] || "#64748b";
+      ctx.lineWidth = idx === 0 ? 1.8 : 1.0;
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < wls.length; i++) {
+        if (!isFiniteNumber(wls[i]) || !isFiniteNumber(fls[i])) continue;
+        const x = toX(wls[i]);
+        const y = toY(fls[i]);
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+
+    meas6.forEach((m) => {
+      if (!isFiniteNumber(m.wavelength_um) || !isFiniteNumber(m.flux_uJy)) return;
+      const x = toX(m.wavelength_um);
+      const y = toY(m.flux_uJy / Math.max(measMean, 1e-6));
+      ctx.fillStyle = "#f59e0b";
+      ctx.beginPath();
+      ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function renderModelCardModal() {
+    if (!els.modelCardBody) return;
+    els.modelCardBody.replaceChildren();
+    const mc = state.lastModelCard || ((globalThis.__PHANTOM_STATIC_FALLBACK__ && globalThis.__PHANTOM_STATIC_FALLBACK__.field_search) || {}).model_card;
+    if (!mc) {
+      els.modelCardBody.textContent = "Model provenance metadata unavailable.";
+      return;
+    }
+    const g = mc.gold_high_snr || {};
+    const m1 = mc.m1_calibration || {};
+    const lines = [
+      `Model version: ${mc.model_version || "unknown"} | Release gate status: ${mc.release_status || "UNPUBLISHED"}`,
+      `Gold test set (W2<=14): count=${g.count ?? "not measured"}, min recall=${g.min_recall ?? "not measured"}, ECE=${g.ece ?? "not measured"}, conformal coverage=${g.conformal_coverage ?? "not measured"}`,
+      `M1 artefact screen: P(real) >= ${m1.p_threshold_1pct_fpr ?? "not measured"}, val FPR=${m1.val_false_pass_rate ?? "not measured"}, B6 recall=${m1.b6_recall_at_1pct_fpr ?? m1.recall_at_1pct_fpr ?? "not measured"}`,
+      "Honest limits: broad D1..D6 field stacks measure 6 detector averages (not full 102 LVF channels); model outputs are calibrated estimates, never confirmed truth.",
+    ];
+    lines.forEach((txt) => {
+      const p = document.createElement("p");
+      p.className = "proof-meta";
+      p.textContent = txt;
+      els.modelCardBody.appendChild(p);
+    });
+  }
+
+  function renderIdentityV2(rec) {
+    if (!els.identityCard) return;
+    if (!rec) {
+      els.identityCard.hidden = true;
+      return;
+    }
+    els.identityCard.hidden = false;
+    state.selectedFieldSource = rec;
+    if (rec.model_card) state.lastModelCard = rec.model_card;
+    if (els.identityTitle) els.identityTitle.textContent = `Identity v2 · ${rec.source_id}`;
+
+    const estSpec = rec.estimate_spectrum_alone || {};
+    const estAll = rec.estimate_all_data || {};
+    if (els.identityHeader) {
+      els.identityHeader.replaceChildren();
+      const d1 = document.createElement("div");
+      const confAll = isFiniteNumber(estAll.confidence) ? `${Math.round(estAll.confidence * 100)}%` : "n/a";
+      const confSpec = isFiniteNumber(estSpec.confidence) ? `${Math.round(estSpec.confidence * 100)}%` : "n/a";
+      d1.textContent = `${rec.kind} in ${rec.field_name} (${Number(rec.ra_deg).toFixed(5)}, ${Number(rec.dec_deg).toFixed(5)}) | Estimate all data: ${estAll.top_class || "Unclassified"} (${confAll}) | Spectrum alone: ${estSpec.top_class || "Unclassified"} (${confSpec})`;
+      const d2 = document.createElement("div");
+      d2.className = "status-warn";
+      d2.textContent = rec.spectral_sampling || "6-band broadband stack; unmeasured channels marked explicitly.";
+      els.identityHeader.append(d1, d2);
+    }
+
+    if (els.identityBands) {
+      els.identityBands.replaceChildren();
+      (rec.deciding_bands || []).forEach((b) => {
+        const isM = b.status === "MEASURED";
+        const label = isM ? `${b.detector} (${b.cwave_um}um): ${b.flux_uJy} uJy` : `${b.detector} (${b.cwave_um}um): UNMEASURED`;
+        els.identityBands.appendChild(makePill(label, isM ? "pill-ok" : "pill-muted"));
+      });
+    }
+
+    renderIdentityStripCanvas(rec);
+
+    if (els.identityTop3) {
+      els.identityTop3.replaceChildren();
+      (rec.top_3_classes || []).forEach((t, idx) => {
+        const card = document.createElement("div");
+        card.className = "mol-item";
+        const n = document.createElement("div");
+        n.className = "mol-name";
+        n.textContent = `#${idx + 1} Estimate: ${t.class_name}`;
+        const v = document.createElement("div");
+        v.className = "mol-val";
+        v.textContent = `Score ${Math.round((t.score || 0) * 100)}% · chi2_red ${t.chi2_red ?? "n/a"}`;
+        card.append(n, v);
+        els.identityTop3.appendChild(card);
+      });
+    }
+
+    if (els.identityChecks) {
+      els.identityChecks.replaceChildren();
+      const mc = rec.machine_checks || {};
+      els.identityChecks.appendChild(makePill(`M1 P(real)=${rec.p_real}`, rec.m1_passed_1pct_fpr ? "pill-ok" : "pill-fail"));
+      els.identityChecks.appendChild(makePill(`PSF shape: ${mc.psflike_shape ? "OK" : "FAIL"}`, mc.psflike_shape ? "pill-ok" : "pill-warn"));
+      els.identityChecks.appendChild(makePill(`Multi-exp: ${mc.multi_exposure_repeat ? "OK" : "1x"}`, mc.multi_exposure_repeat ? "pill-ok" : "pill-warn"));
+      els.identityChecks.appendChild(makePill(`Halo: ${mc.saturated_halo_clear ? "Clear" : "Flagged"}`, mc.saturated_halo_clear ? "pill-ok" : "pill-fail"));
+      els.identityChecks.appendChild(makePill(`Xtalk/Ghost: ${mc.crosstalk_ghost_clear ? "Clear" : "Flagged"}`, mc.crosstalk_ghost_clear ? "pill-ok" : "pill-fail"));
+      const ec = rec.edge_check || {};
+      if (ec.status && ec.status !== "NOT_MEASURED") {
+        els.identityChecks.appendChild(makePill(`Edge: ${ec.status}`, ec.flagged ? "pill-warn" : "pill-ok"));
+      }
+      (rec.crosstalk_ghost_reasons || []).forEach((rsn) => {
+        els.identityChecks.appendChild(makePill(rsn, "pill-fail"));
+      });
+    }
+
+    if (els.identityMeta) {
+      els.identityMeta.replaceChildren();
+      const mo = rec.motion_mas_yr || {};
+      const mLine = document.createElement("div");
+      const pmTxt = isFiniteNumber(mo.pmra_mas_yr) ? `pmRA ${mo.pmra_mas_yr}, pmDec ${mo.pmdec_mas_yr} mas/yr, plx ${mo.parallax_mas ?? "n/a"} mas` : (isFiniteNumber(mo.rate_arcsec_hr) ? `Track rate ${mo.rate_arcsec_hr} "/hr` : "No catalogue PM measured");
+      mLine.textContent = `S/N ${rec.snr} | Blend share ${rec.blend_share} | Motion: ${pmTxt}`;
+      const ep = rec.epochs || {};
+      const epLine = document.createElement("div");
+      const m2 = ep["2MASS_J2000"] || {};
+      const w2 = ep.WISE_2015 || {};
+      const g3 = ep.GaiaDR3_2016 || {};
+      epLine.textContent = `Epochs: 2MASS Ks=${m2.ks_mag ?? "n/a"} · WISE W1=${w2.w1_mag ?? "n/a"} · Gaia G=${g3.g_mag ?? "n/a"} · SPHEREx ${(ep.SPHEREx_2025_2026 || []).length} visits`;
+      const molLine = document.createElement("div");
+      const molObj = rec.molecules || {};
+      molLine.textContent = molObj.status === "REFUSED"
+        ? `Molecules: ${molObj.refusal_reason || "Refused"}`
+        : `Molecules: ${molObj.status || "Not measured"}`;
+      els.identityMeta.append(mLine, epLine, molLine);
+    }
+    drawSkyCanvas();
+  }
+
+  async function selectFieldSearchResult(rec) {
+    if (!rec) return;
+    let detail = rec;
+    try {
+      const resp = await fetch(`/api/field/${encodeURIComponent(rec.field_id)}/source/${encodeURIComponent(rec.source_id)}`);
+      if (resp && resp.ok) detail = await resp.json();
+    } catch (_err) {
+      // Keep offline record when API is unreachable
+    }
+    renderIdentityV2(detail);
+    renderSearchResultsList();
+    if (state.activeFieldId !== detail.field_id) {
+      await loadFieldScene(detail.field_id, { preserveSelection: true });
+    } else {
+      drawSkyCanvas();
+    }
+  }
+
+  function renderSearchResultsList() {
+    if (!els.searchResultsList) return;
+    els.searchResultsList.replaceChildren();
+    if (els.searchMatchCount) els.searchMatchCount.textContent = `${state.searchResults.length} shown`;
+    if (!state.searchResults.length) {
+      const empty = document.createElement("div");
+      empty.className = "proof-meta";
+      empty.textContent = "No sources match the active Search-by-Light filters.";
+      els.searchResultsList.appendChild(empty);
+      return;
+    }
+    state.searchResults.forEach((rec) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const isSel = state.selectedFieldSource && state.selectedFieldSource.source_id === rec.source_id && state.selectedFieldSource.field_id === rec.field_id;
+      btn.className = `search-result-row${isSel ? " active" : ""}`;
+      const clsTxt = (rec.estimate_all_data && rec.estimate_all_data.top_class) || rec.kind;
+      const left = document.createElement("span");
+      left.textContent = `${rec.source_id} · ${clsTxt}`;
+      const right = document.createElement("span");
+      right.textContent = `${rec.field_id.toUpperCase()} S/N ${rec.snr} · P=${rec.p_real}`;
+      btn.append(left, right);
+      btn.addEventListener("click", () => {
+        selectFieldSearchResult(rec);
+      });
+      els.searchResultsList.appendChild(btn);
+    });
+  }
+
+  async function loadFieldSearch() {
+    if (!els.searchResultsList) return;
+    let payload = null;
+    try {
+      const params = new URLSearchParams({
+        field_id: state.searchFieldScope,
+        categories: state.searchCategories.join(","),
+        min_snr: String(state.searchMinSnr),
+        max_blend: String(state.searchMaxBlend),
+        only_unexplained: String(state.searchOnlyUnexplained),
+        sort_by: state.searchSortBy,
+        limit: "80",
+      });
+      const resp = await fetch(`/api/field/search?${params.toString()}`);
+      if (resp && resp.ok) payload = await resp.json();
+    } catch (_err) {
+      // Offline fallback when API is stopped
+    }
+    if (!payload) payload = filterOfflineFieldSearch();
+    if (!payload) return;
+    if (els.searchCoverageNote && payload.coverage_statement) {
+      els.searchCoverageNote.textContent = payload.coverage_statement;
+    }
+    state.searchResults = payload.results || [];
+    if (els.searchMatchCount) {
+      els.searchMatchCount.textContent = `${payload.total_matched ?? state.searchResults.length} matched`;
+    }
+    renderSearchResultsList();
+  }
+
+  async function loadFieldScene(fieldId, options) {
     const seq = ++state.querySeq;
     if (state.abortController) state.abortController.abort();
     const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -1880,6 +2256,10 @@
     const signal = controller ? controller.signal : undefined;
 
     state.activeFieldId = fieldId;
+    if (!options || !options.preserveSelection) {
+      state.selectedFieldSource = null;
+      renderIdentityV2(null);
+    }
     state.fieldFadeProgress = 1.0;
     state.fieldFadeFrom = state.fieldLayer;
     state.playing = false;
@@ -1940,6 +2320,8 @@
   async function loadSkyQuery() {
     state.activeFieldId = null;
     state.fieldData = null;
+    state.selectedFieldSource = null;
+    renderIdentityV2(null);
     setActiveButtons();
     const seq = ++state.querySeq;
     if (state.abortController) state.abortController.abort();
@@ -2318,9 +2700,79 @@
     }
   });
 
+  document.querySelectorAll(".search-cat-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const c = btn.dataset.cat;
+      if (!c) return;
+      const idx = state.searchCategories.indexOf(c);
+      if (idx >= 0) {
+        state.searchCategories.splice(idx, 1);
+        btn.classList.toggle("active", false);
+        btn.setAttribute("aria-pressed", "false");
+      } else {
+        state.searchCategories.push(c);
+        btn.classList.toggle("active", true);
+        btn.setAttribute("aria-pressed", "true");
+      }
+      loadFieldSearch();
+    });
+  });
+
+  if (els.searchFieldScope) {
+    els.searchFieldScope.addEventListener("change", () => {
+      state.searchFieldScope = els.searchFieldScope.value;
+      loadFieldSearch();
+    });
+  }
+  if (els.searchMinSnr) {
+    els.searchMinSnr.addEventListener("input", () => {
+      state.searchMinSnr = Number(els.searchMinSnr.value) || 0;
+      if (els.searchMinSnrVal) els.searchMinSnrVal.textContent = String(state.searchMinSnr);
+      loadFieldSearch();
+    });
+  }
+  if (els.searchMaxBlend) {
+    els.searchMaxBlend.addEventListener("input", () => {
+      state.searchMaxBlend = Number(els.searchMaxBlend.value) || 1.0;
+      if (els.searchMaxBlendVal) els.searchMaxBlendVal.textContent = state.searchMaxBlend.toFixed(2);
+      loadFieldSearch();
+    });
+  }
+  if (els.searchUnexplainedOnly) {
+    els.searchUnexplainedOnly.addEventListener("change", () => {
+      state.searchOnlyUnexplained = Boolean(els.searchUnexplainedOnly.checked);
+      loadFieldSearch();
+    });
+  }
+  if (els.searchSortSelect) {
+    els.searchSortSelect.addEventListener("change", () => {
+      state.searchSortBy = els.searchSortSelect.value || "priority";
+      loadFieldSearch();
+    });
+  }
+  if (els.modelCardOpenBtn && els.modelCardModal) {
+    els.modelCardOpenBtn.addEventListener("click", () => {
+      renderModelCardModal();
+      els.modelCardModal.hidden = false;
+    });
+  }
+  if (els.modelCardCloseBtn && els.modelCardModal) {
+    els.modelCardCloseBtn.addEventListener("click", () => {
+      els.modelCardModal.hidden = true;
+    });
+  }
+  if (typeof document.addEventListener === "function" && els.modelCardModal) {
+    document.addEventListener("keydown", (ev) => {
+      if (ev && ev.key === "Escape" && !els.modelCardModal.hidden) {
+        els.modelCardModal.hidden = true;
+      }
+    });
+  }
+
   applyUrlParams();
   setActiveButtons();
   startLoop();
   if (els.proofBody) loadProofSummary();
+  loadFieldSearch();
   loadSkyQuery();
 })();
