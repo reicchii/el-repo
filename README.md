@@ -54,6 +54,7 @@ docs/              PROJECT-CONTEXT.md   the product, decisions, methods, build p
                    ai-log.md            one line per task, for the AI-use statement
                    cloud-environment.md the Claude Code cloud environment
 prompts/           prompts that start sessions, tasks and reviews
+design/prototype/  the UI prototype: every view, real SPHEREx stacks, example values where the models will go
 scripts/           bootstrap.sh, check-network.sh, check-docs.py, hosts.txt
 
 contracts/         JSON Schemas for data products, OpenAPI for the API, URL contract   (T02-E)

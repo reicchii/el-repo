@@ -50,6 +50,7 @@ AGENTS.md  CLAUDE.md  SETUP.md  CONTRIBUTING.md  README.md  LICENSE
 docs/        PROJECT-CONTEXT.md, DATA-LINKS.md, decisions.md, ai-log.md, cloud-environment.md
 prompts/     prompts that start sessions and tasks
 scripts/     bootstrap.sh (tools and packages), check-network.sh and hosts.txt (hosts we call), check-docs.py
+design/prototype/   the UI prototype the Web lane builds from (README inside)
 contracts/   JSON Schemas for data products, OpenAPI for the API, URL contract
 engine/      Python package `phantom`: archive access, cutouts, registration, stacks,
              photometry, spectra, features, detectors, checks, predictions, searched map, CLI

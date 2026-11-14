@@ -1364,7 +1364,7 @@ Words and number formats come from section 5. This section decides where things 
 
 ### 10.1 Principles
 
-1. **One surface.** The sky is always on screen. Everything else is a panel over it. There are no separate pages.
+1. **Few, clear views.** Home, Viewer, Source details, Search by light, Signals and cases, Proof, Member, joined by one top bar. Inside the Viewer the image stays on screen and everything else is a panel beside it. (Changed 14 Nov from "one surface, no separate pages" at the owner's request. Reference design: `design/prototype/`.)
 2. **One anatomy.** Selecting a source, a frame or a case opens the same panel in the same place with the same four parts in the same order: what it is, evidence, status, actions.
 3. **One primary action per panel.** Other actions are secondary.
 4. **Everything is a link.** The URL holds the whole view.
@@ -1471,7 +1471,7 @@ Opens from the top bar. Report card table (target, test, pass mark, measured, pa
 
 A guest who lands on `/` sees the sky and one button: `Find the coldest known brown dwarf`. It runs four steps on WISE 0855, each driving the real viewer:
 1. Go to the position. Both marks appear: the challenge's coordinates and where the object is now.
-2. Six detector stacks side by side. Four show nothing, the fifth a trace, the sixth a dot.
+2. Six detector stacks side by side, zoomed around the ring. In D1 to D4 the light beside the ring comes from a Gaia DR3 star (G 16.3) that WISE 0855 is passing. WISE 0855 itself shows only in D5 and D6. (Measured 14 Nov in prototype stacks, see `docs/decisions.md`. The earlier wording, "four show nothing", does not hold at today's position.)
 3. Play the detector 6 visit stacks. The dot shifts.
 4. Open Identity. The spectrum rises only past 4 µm.
 
@@ -1496,9 +1496,9 @@ Detector label colours, used only for small labels and matrix dots: D1 `#A98BFF`
 
 Member class badges use approximate blackbody colours (Charity 2001 table): O `#9BB0FF`, B `#AABFFF`, A `#CAD7FF`, F `#F8F7FF`, G `#FFF4EA`, K `#FFD2A1`, M `#FFCC6F`. L and T are deep red. Y is near black with an infrared outline, because Y dwarfs give off almost no visible light.
 
-**Type.** Space Grotesk for headings. Inter for text and numbers with tabular figures. Sizes 12, 14, 16, 20, 28. No other sizes.
+**Type.** Atkinson Hyperlegible Next for headings and text, Atkinson Hyperlegible Mono for every reading, coordinate and identifier, with tabular figures. Designed by the Braille Institute so I, l, 1 and O, 0 never mix. Sizes 12, 13, 15, 18, 24, and a display size from 30 to 46 used only on Home. (Changed 14 Nov from Space Grotesk and Inter, which read as a default choice.)
 
-**Shape.** 8 px spacing grid. Radius 8 for controls, 12 for panels. One level of shadow, used only for floating panels. No gradients, no glow, no glass blur.
+**Shape.** Spacing steps 4, 8, 12, 16, 24, 32. Radius 4 for controls, 6 for panels. One level of shadow, used only for floating panels. No gradients, no glow, no glass blur. Pixels with no data (flagged or outside the frame) show in one muted blue, never as black, so they cannot be mistaken for a fainter source.
 
 **Icons.** One stroke set, 24 px grid, 1.75 px stroke, as inline SVG. No emoji.
 

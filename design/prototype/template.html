@@ -1,0 +1,1223 @@
+<title>Phantom Worlds</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500;600&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&display=swap">
+<style>
+/* Direction: an observing instrument's console. Dense, precise, quiet around the images.
+   Single dark theme by decision: images need a neutral surround that does not tint what the eye sees.
+   Colour sources: accent = blackbody colour of a B star, warm = the infrared end, reserved for
+   uncatalogued sources, signals and cases. Detector colours run violet to red in wavelength order.
+   Type: Atkinson Hyperlegible (Braille Institute) so I/l/1 and O/0 never mix in designations
+   and coordinates. Mono for every reading so digits line up. */
+:root {
+  color-scheme: dark;
+  --canvas: #08090b;
+  --surface: #111317;
+  --raised: #181b20;
+  --raised-2: #20242a;
+  --line: #262a31;
+  --line-strong: #363c45;
+  --text: #e8eaed;
+  --muted: #a3aab4;
+  --accent: #9db8ff;
+  --accent-soft: #1b2438;
+  --accent-ink: #0a1226;
+  --warm: #ff9a52;
+  --warm-soft: #2b1c10;
+  --pass: #7fcfa9;
+  --fail: #f2917f;
+  --d1: #a98bff; --d2: #63a9ff; --d3: #4fd4c4; --d4: #bedf5a; --d5: #ffb04d; --d6: #ff6a5c;
+  --r1: 4px;
+  --r2: 6px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+  --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --t-xs: 12px; --t-sm: 13px; --t-md: 15px; --t-lg: 18px; --t-xl: 24px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; background: var(--canvas); color: var(--text);
+  font: 400 var(--t-md)/1.45 var(--font); -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, p { margin: 0; }
+h1 { font-size: var(--t-xl); font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: var(--t-lg); font-weight: 600; text-wrap: balance; }
+h3 { font-size: var(--t-md); font-weight: 600; }
+a { color: var(--accent); text-underline-offset: 3px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.label { font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+
+/* ---------- buttons and controls ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--s2); min-height: 36px; padding: 0 var(--s3);
+  border: 1px solid var(--line-strong); border-radius: var(--r1); background: var(--raised);
+  font-size: var(--t-sm); font-weight: 500; cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--text);
+}
+.btn:hover { background: var(--raised-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.primary:hover { background: #b4c8ff; }
+.btn.quiet { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.quiet:hover { color: var(--text); background: var(--raised); }
+.btn svg { flex: none; }
+.seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r1); overflow: hidden; background: var(--raised); }
+.seg button { min-height: 34px; padding: 0 var(--s3); border: 0; border-right: 1px solid var(--line); background: transparent; font-size: var(--t-sm); cursor: pointer; color: var(--muted); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+.seg button:hover { color: var(--text); }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 var(--s2);
+  border: 1px solid var(--line-strong); border-radius: var(--r1); font-size: var(--t-xs); font-weight: 600; color: var(--muted); white-space: nowrap;
+}
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.known { color: var(--accent); border-color: #34446a; }
+.chip.unclassified { color: var(--text); }
+.chip.uncatalogued { color: var(--warm); border-color: #5a3a1f; }
+.chip.example { color: #d9c7a3; border-color: #4a4232; border-style: dashed; font-weight: 500; }
+.chip.pending { color: var(--muted); }
+.chip.pass { color: var(--pass); border-color: #2e5544; }
+.chip.fail { color: var(--fail); border-color: #5e3029; }
+.toggle { display: inline-flex; align-items: center; gap: var(--s2); font-size: var(--t-sm); cursor: pointer; min-height: 32px; }
+.toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+.field { display: grid; gap: 6px; font-size: var(--t-sm); }
+.field input[type="range"] { width: 100%; accent-color: var(--accent); }
+select.select { min-height: 34px; padding: 0 var(--s2); border: 1px solid var(--line-strong); border-radius: var(--r1); background: var(--raised); font-size: var(--t-sm); }
+
+/* ---------- app frame ---------- */
+.app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); min-height: 100vh; }
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; gap: var(--s4);
+  padding-block: var(--s2); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 700; font-size: var(--t-md); letter-spacing: 0.01em; }
+.brand small { font-weight: 500; font-size: var(--t-xs); color: var(--muted); border: 1px dashed var(--line-strong); padding: 1px 6px; border-radius: var(--r1); letter-spacing: 0; }
+.goto { display: flex; flex: 1 1 360px; max-width: 560px; gap: var(--s2); }
+.goto label { position: relative; flex: 1; display: flex; min-width: 0; }
+.goto svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.goto input {
+  width: 100%; min-width: 0; min-height: 38px; padding: 0 var(--s3) 0 34px; border: 1px solid var(--line-strong); border-radius: var(--r1);
+  background: var(--canvas); font-family: var(--mono); font-size: var(--t-sm);
+}
+.goto input::placeholder { color: #858d98; font-family: var(--font); }
+.nav { display: flex; gap: 2px; margin-left: auto; overflow-x: auto; }
+.nav a {
+  display: inline-flex; align-items: center; min-height: 38px; padding: 0 var(--s3); border-radius: var(--r1);
+  color: var(--muted); text-decoration: none; font-size: var(--t-sm); font-weight: 500; white-space: nowrap;
+}
+.nav a:hover { color: var(--text); background: var(--raised); }
+.nav a[aria-current="page"] { color: var(--text); background: var(--raised); box-shadow: inset 0 -2px 0 var(--accent); }
+.nav .member { display: inline-flex; align-items: center; gap: var(--s2); }
+.badge { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font: 700 11px/1 var(--font); color: #1a1208; }
+main { padding-block: var(--s4) var(--s6); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); min-width: 0; }
+.view { display: grid; gap: var(--s4); min-width: 0; }
+.notice {
+  display: flex; gap: var(--s3); align-items: flex-start; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r2);
+  background: var(--surface); font-size: var(--t-sm); color: var(--muted);
+}
+.notice b { color: var(--text); font-weight: 600; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); min-width: 0; }
+.card > header { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.card > header .chip { margin-left: auto; }
+.card .body { padding: var(--s4); display: grid; gap: var(--s3); min-width: 0; }
+
+/* ---------- viewer ---------- */
+.targetbar { display: flex; gap: var(--s2); overflow-x: auto; padding-bottom: 2px; }
+.targetbar button {
+  display: grid; gap: 2px; text-align: left; min-width: 150px; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--r2);
+  background: var(--surface); cursor: pointer;
+}
+.targetbar button:hover { border-color: var(--line-strong); }
+.targetbar button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.targetbar b { font-size: var(--t-sm); font-weight: 600; }
+.targetbar span { font-size: var(--t-xs); color: var(--muted); }
+.viewer-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--s4); align-items: start; }
+.stage-col { display: grid; gap: var(--s3); min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+.toolbar .spacer { flex: 1; }
+.detrow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }
+.detrow button {
+  display: grid; gap: 2px; padding: 6px var(--s2); border: 1px solid var(--line); border-radius: var(--r1); background: var(--surface); cursor: pointer; text-align: left; min-width: 0;
+}
+.detrow button:hover { border-color: var(--line-strong); }
+.detrow button[aria-pressed="true"] { border-color: var(--det); background: var(--raised); box-shadow: inset 0 2px 0 var(--det); }
+.detrow b { font-size: var(--t-sm); display: flex; align-items: center; gap: 6px; }
+.detrow b i { width: 8px; height: 8px; border-radius: 50%; background: var(--det); display: inline-block; }
+.detrow span { font: 400 11px/1.3 var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage {
+  position: relative; background: #121417; border: 1px solid var(--line); border-radius: var(--r2); min-height: 420px;
+  display: grid; place-items: center; overflow: hidden;
+}
+.frame { position: relative; width: min(100%, 600px); aspect-ratio: 1; max-width: 100%; }
+.frame canvas, .frame svg.marks { position: absolute; inset: 0; width: 100%; height: 100%; }
+.frame canvas { image-rendering: auto; background: #0d0e10; }
+.frame canvas.pixels { image-rendering: pixelated; }
+.frame svg.marks { pointer-events: none; overflow: visible; }
+.stage .tag {
+  position: absolute; z-index: 2; padding: 4px 8px; border-radius: var(--r1); background: rgba(8, 9, 11, 0.82);
+  font: 500 var(--t-xs)/1.35 var(--mono); color: var(--text); pointer-events: none;
+}
+.stage .tl { top: var(--s3); left: var(--s3); }
+.stage .tr { top: var(--s3); right: var(--s3); text-align: right; }
+.stage .bl { bottom: var(--s3); left: var(--s3); }
+.stage .br { bottom: var(--s3); right: var(--s3); }
+.stage .state { display: grid; gap: var(--s2); max-width: 420px; padding: var(--s5); text-align: left; font-size: var(--t-sm); color: var(--muted); }
+.stage .state b { color: var(--text); font-size: var(--t-md); }
+.grid6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); width: 100%; padding: var(--s3); }
+@media (max-width: 1280px) { .grid6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.grid6 figure { margin: 0; display: grid; gap: 6px; }
+.grid6 .frame { width: 100%; border: 1px solid var(--line); border-radius: var(--r1); overflow: hidden; }
+.grid6 figcaption { display: flex; gap: var(--s2); align-items: baseline; font-size: var(--t-xs); min-width: 0; }
+.grid6 figcaption span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+.grid6 figcaption b { display: flex; align-items: center; gap: 6px; }
+.grid6 figcaption b i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.transport { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; padding: var(--s2) var(--s3); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); }
+.visits { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.visits button {
+  display: grid; gap: 1px; padding: 4px var(--s3); min-height: 40px; border: 1px solid var(--line); border-radius: var(--r1); background: var(--raised); cursor: pointer; text-align: left;
+}
+.visits button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.visits button b { font-size: var(--t-xs); font-weight: 600; }
+.visits button span { font: 400 11px/1.3 var(--mono); color: var(--muted); }
+.visits button[data-col] { box-shadow: inset 3px 0 0 var(--col); }
+.panel { display: grid; gap: var(--s3); position: sticky; top: 76px; }
+dl.readings { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0; font-size: var(--t-sm); }
+dl.readings dt { color: var(--muted); padding: 7px var(--s3) 7px 0; border-top: 1px solid var(--line); }
+dl.readings dd { margin: 0; padding: 7px 0; border-top: 1px solid var(--line); text-align: right; min-width: 0; }
+dl.readings dt:first-of-type, dl.readings dd:first-of-type { border-top: 0; }
+.reading { display: grid; gap: 1px; justify-items: end; }
+.reading .v { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.reading .o { font-size: 11px; color: var(--muted); }
+.reading .o button, .linklike { background: none; border: 0; padding: 0; color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; cursor: pointer; font-size: inherit; }
+.ident { display: grid; gap: var(--s2); }
+.ident .row { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; }
+.ident .desig { font: 400 var(--t-xs)/1.4 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.actions { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.find { padding: var(--s3); border-radius: var(--r1); background: var(--raised); font-size: var(--t-sm); display: grid; gap: 6px; }
+.find b { font-weight: 600; }
+.matrix-card .body { overflow-x: auto; padding: var(--s3) var(--s4) var(--s4); }
+.matrix-card svg { display: block; min-width: 720px; }
+.legend { display: flex; gap: var(--s3); flex-wrap: wrap; font-size: var(--t-xs); color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.under { display: flex; gap: var(--s4); flex-wrap: wrap; justify-content: space-between; font-size: var(--t-xs); color: var(--muted); }
+.cursor { font: 400 var(--t-xs)/1.4 var(--mono); color: var(--muted); min-height: 1.4em; }
+.marklegend { display: flex; gap: var(--s3); flex-wrap: wrap; }
+.tour {
+  position: fixed; z-index: 40; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  width: min(400px, calc(100vw - 32px)); background: var(--raised); border: 1px solid var(--line-strong); border-radius: var(--r2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); padding: var(--s4); display: grid; gap: var(--s3);
+}
+.tour .steps { display: flex; gap: 6px; }
+.tour .steps i { height: 3px; flex: 1; background: var(--line-strong); border-radius: 2px; }
+.tour .steps i.on { background: var(--accent); }
+.tour p { font-size: var(--t-sm); color: var(--text); }
+.tour .row { display: flex; gap: var(--s2); justify-content: flex-end; }
+
+/* ---------- source details ---------- */
+.src-grid { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: var(--s4); align-items: start; }
+.stack { display: grid; gap: var(--s4); min-width: 0; }
+.back { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm); color: var(--muted); text-decoration: none; }
+.back:hover { color: var(--text); }
+.src-head { display: flex; gap: var(--s4); align-items: flex-end; flex-wrap: wrap; justify-content: space-between; }
+.src-head .ident { gap: 6px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r2); overflow: hidden; }
+.facts > div { background: var(--surface); padding: var(--s3) var(--s4); display: grid; gap: 2px; }
+.facts .v { font: 500 var(--t-lg)/1.3 var(--mono); }
+.facts .o { font-size: 11px; color: var(--muted); }
+table.t { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+table.t th { text-align: left; font-size: var(--t-xs); font-weight: 600; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; padding: 0 var(--s3) var(--s2) 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.t td { padding: 9px var(--s3) 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t tr:last-child td { border-bottom: 0; }
+table.t td.r, table.t th.r { text-align: right; }
+.tablebox { overflow-x: auto; }
+.bar { position: relative; height: 8px; background: var(--raised-2); border-radius: 2px; overflow: hidden; min-width: 80px; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 2px; }
+.bar.warm i { background: var(--warm); }
+.estimate { display: grid; gap: var(--s3); }
+.estimate .big { font-size: var(--t-xl); font-weight: 600; line-height: 1.2; text-wrap: balance; }
+.estimate .line { display: flex; gap: var(--s2); align-items: baseline; flex-wrap: wrap; font-size: var(--t-sm); }
+.ladder { display: grid; gap: var(--s2); }
+.ladder .rung { display: grid; grid-template-columns: 150px minmax(0, 1fr) 48px; gap: var(--s3); align-items: center; font-size: var(--t-sm); }
+.ladder .rung .num { text-align: right; }
+.ladder .rung.shown b { color: var(--accent); }
+.feat { display: flex; flex-wrap: wrap; gap: 6px; }
+.feat span { font-size: var(--t-xs); padding: 3px 8px; border-radius: var(--r1); background: var(--raised-2); }
+.feat span.up { box-shadow: inset 2px 0 0 var(--accent); }
+.feat span.down { box-shadow: inset 2px 0 0 var(--fail); }
+.note { font-size: var(--t-xs); color: var(--muted); }
+.coverage { display: grid; gap: 6px; }
+
+/* ---------- search, cases, proof, member ---------- */
+.two { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: var(--s4); align-items: start; }
+.filters { display: grid; gap: var(--s4); }
+.filters fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
+.filters legend { padding: 0 0 6px; }
+.prio { display: grid; grid-template-columns: 70px auto; gap: var(--s2); align-items: center; }
+.cases-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: var(--s4); align-items: start; }
+table.t tr.sel td { background: var(--accent-soft); }
+table.t tr.click { cursor: pointer; }
+table.t tr.click:hover td { background: var(--raised); }
+.states { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.states div { display: grid; gap: 4px; font-size: 11px; color: var(--muted); }
+.states div i { height: 4px; border-radius: 2px; background: var(--line-strong); }
+.states div.done i { background: var(--accent); }
+.states div.now { color: var(--text); font-weight: 600; }
+.states div.now i { background: var(--warm); }
+.checks { display: grid; gap: 0; }
+.checks div { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: var(--s2); padding: 8px 0; border-top: 1px solid var(--line); font-size: var(--t-sm); align-items: start; }
+.checks div:first-child { border-top: 0; }
+.q { display: grid; gap: var(--s2); padding: var(--s3) 0; border-top: 1px solid var(--line); }
+.q:first-child { border-top: 0; padding-top: 0; }
+.q .opts { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.q .opts label { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 var(--s3); border: 1px solid var(--line-strong); border-radius: var(--r1); font-size: var(--t-sm); cursor: pointer; }
+.q .opts input { accent-color: var(--accent); }
+.q .opts label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.summary { display: flex; gap: var(--s5); flex-wrap: wrap; align-items: baseline; }
+.summary .n { font: 600 var(--t-xl)/1 var(--mono); }
+.classes { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.classes div { display: grid; gap: 4px; justify-items: center; font-size: 11px; color: var(--muted); padding: 6px 0; border-radius: var(--r1); }
+.classes div.now { background: var(--raised-2); color: var(--text); font-weight: 600; }
+.ach { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--s2); }
+.ach div { padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r1); display: grid; gap: 2px; font-size: var(--t-sm); }
+.ach div.locked { color: var(--muted); border-style: dashed; }
+.ach small { font-size: var(--t-xs); color: var(--muted); }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--s3); }
+.kv div { display: grid; gap: 2px; }
+.kv .v { font: 600 var(--t-lg)/1.2 var(--mono); }
+ol.next { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: var(--t-sm); }
+
+/* ---------- home ---------- */
+.hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s6); align-items: center; padding-block: var(--s5) var(--s4); }
+.hero-text { display: grid; gap: var(--s4); align-content: center; }
+.display { font-size: clamp(30px, 3.6vw, 46px); font-weight: 700; line-height: 1.06; letter-spacing: -0.022em; text-wrap: balance; max-width: 16ch; }
+.lede { font-size: 17px; line-height: 1.55; color: var(--muted); max-width: 54ch; }
+.factline { font: 400 var(--t-xs)/1.5 var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.factline b { color: var(--text); font-weight: 500; }
+.blink { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: var(--s3); padding: var(--s3); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r2); }
+.blink-main { position: relative; aspect-ratio: 1; border-radius: var(--r1); overflow: hidden; background: #0d0e10; }
+.blink-main canvas, .blink-main svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.blink-main .tag { position: absolute; top: 10px; left: 10px; padding: 4px 8px; border-radius: var(--r1); background: rgba(8, 9, 11, 0.82); font: 500 var(--t-xs)/1.35 var(--mono); }
+.blink-strip { display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.blink-strip div { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: center; font: 500 11px/1.2 var(--mono); color: var(--muted); white-space: nowrap; }
+.blink-strip canvas { width: 44px; height: 44px; border-radius: 3px; border: 1px solid var(--line); }
+.blink-strip b { color: var(--text); display: block; font-weight: 600; }
+.blink figcaption { grid-column: 1 / -1; font-size: var(--t-xs); color: var(--muted); }
+.thumbs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s3); }
+.thumbs button { display: grid; gap: 6px; padding: var(--s2); border: 1px solid var(--line); border-radius: var(--r2); background: var(--surface); cursor: pointer; text-align: left; min-width: 0; }
+.thumbs button:hover { border-color: var(--line-strong); background: var(--raised); }
+.thumbs .im { position: relative; aspect-ratio: 1; border-radius: var(--r1); overflow: hidden; }
+.thumbs canvas, .thumbs svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.thumbs b { font-size: var(--t-sm); font-weight: 600; }
+.thumbs span { font-size: var(--t-xs); color: var(--muted); }
+.ways { display: grid; }
+.ways a { display: grid; grid-template-columns: 200px minmax(0, 1fr) 20px; gap: var(--s4); align-items: center; padding: var(--s3) var(--s4); border-top: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.ways a:first-child { border-top: 0; }
+.ways a:hover { background: var(--raised); }
+.ways a span { color: var(--muted); font-size: var(--t-sm); }
+.ways a svg { color: var(--muted); }
+.sechead { display: flex; gap: var(--s3); align-items: baseline; flex-wrap: wrap; margin-bottom: var(--s3); }
+@media (max-width: 1100px) { .hero { grid-template-columns: minmax(0, 1fr); } .thumbs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); } .blink { grid-template-columns: minmax(0, 1fr); } .blink-strip { grid-template-rows: none; grid-template-columns: repeat(3, minmax(0, 1fr)); } .ways a { grid-template-columns: minmax(0, 1fr) 20px; } .ways a span { grid-column: 1; } }
+
+@media (max-width: 1100px) {
+  .viewer-grid, .src-grid, .cases-grid { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: static; }
+}
+@media (max-width: 820px) {
+  .two { grid-template-columns: minmax(0, 1fr); }
+  .detrow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nav { margin-left: 0; width: 100%; }
+  .goto { flex-basis: 100%; max-width: none; }
+  .classes { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .ladder .rung { grid-template-columns: 120px minmax(0, 1fr) 44px; }
+  .stage { min-height: 300px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <a class="brand" href="#home" aria-label="Phantom Worlds, home">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1.5" y="1.5" width="23" height="23" rx="3" fill="none" stroke="#363c45"/><circle cx="9" cy="15" r="2.6" fill="#e8eaed"/><circle cx="17.5" cy="10" r="2.6" fill="none" stroke="#ff9a52" stroke-width="1.6"/><path d="M11.4 13.6 15 11.4" stroke="#ff9a52" stroke-width="1.4" stroke-dasharray="1.6 1.6"/></svg>
+      Phantom Worlds <small>Prototype</small>
+    </a>
+    <form class="goto" id="goto" role="search" autocomplete="off">
+      <label><span class="sr">Position or name</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <input id="pos" name="pos" type="text" placeholder="Name or position, for example 08h55m10.831s -7d14m42.53s" spellcheck="false">
+      </label>
+      <button class="btn" type="submit">Go to</button>
+    </form>
+    <nav class="nav" aria-label="Main">
+      <a href="#viewer" data-nav="viewer">Viewer</a>
+      <a href="#search" data-nav="search">Search by light</a>
+      <a href="#cases" data-nav="cases">Signals and cases</a>
+      <a href="#proof" data-nav="proof">Proof</a>
+      <a href="#member" data-nav="member" class="member"><span class="badge" style="background:#ffd2a1">K</span>Member</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= HOME ================= -->
+    <section class="view" data-view="home" aria-labelledby="h-home" hidden>
+      <div class="hero">
+        <div class="hero-text">
+          <p class="label">NASA Space Apps Challenge 2026 · Planet X and SPHEREx</p>
+          <h1 id="h-home" class="display">Watch any patch of the infrared sky change over time</h1>
+          <p class="lede">Phantom Worlds plays NASA SPHEREx images of a position as a time series, in six detectors and 102 bands, so anyone can see what moves or changes. Then it reads what a source is probably made of, and says how sure it is.</p>
+          <div class="actions"><button class="btn primary" type="button" id="homeTour" style="min-height:44px">Find the coldest known brown dwarf</button><a class="btn" href="#viewer" style="min-height:44px">Open the viewer</a></div>
+          <p class="factline" id="homeFacts"></p>
+        </div>
+        <figure class="blink" id="blink" aria-label="WISE 0855 in SPHEREx detector 6, visits 2 and 3"></figure>
+      </div>
+      <section aria-labelledby="h-named">
+        <div class="sechead"><h2 id="h-named">The five test targets</h2><span class="muted" style="font-size:var(--t-sm)">Named by the challenge. Real stacks from the latest visit. Each opens in the viewer.</span></div>
+        <div class="thumbs" id="thumbs"></div>
+      </section>
+      <section class="card" aria-labelledby="h-ways">
+        <header><h2 id="h-ways">What you can do</h2></header>
+        <nav class="ways" aria-label="Parts of Phantom Worlds">
+          <a href="#viewer"><b>Viewer</b><span>Play any position as a time series. Subtract one visit from another, stack them, or colour them by date.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+          <a href="#source"><b>Source details</b><span>The spectrum, the molecule readings and the most likely type, with the reasons behind the estimate.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+          <a href="#search"><b>Search by light</b><span>Find sources by their molecule features and by how they change between visits.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+          <a href="#cases"><b>Signals and cases</b><span>Machine checks, a dated prediction that new data settles, and review by people who answer before seeing each other.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+          <a href="#proof"><b>Proof</b><span>Every claim measured against a pass mark fixed before the results came in.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+        </nav>
+      </section>
+    </section>
+
+    <!-- ================= VIEWER ================= -->
+    <section class="view" data-view="viewer" aria-labelledby="h-viewer">
+      <h1 id="h-viewer" class="sr">Viewer</h1>
+      <div class="notice" id="gotoMsg" hidden></div>
+      <div class="targetbar" id="targetbar" role="group" aria-label="Named targets"></div>
+      <div class="viewer-grid">
+        <div class="stage-col">
+          <div class="toolbar">
+            <div class="seg" id="modes" role="group" aria-label="Mode">
+              <button type="button" data-mode="play">Play</button>
+              <button type="button" data-mode="diff">Difference</button>
+              <button type="button" data-mode="stack">Stack</button>
+              <button type="button" data-mode="colour">Visits as colour</button>
+              <button type="button" data-mode="detectors">Compare detectors</button>
+            </div>
+            <span class="spacer"></span>
+            <label class="field" style="width:150px"><span class="label">Contrast</span><input id="contrast" type="range" min="0" max="100" value="55"></label>
+            <label class="toggle"><input id="invert" type="checkbox"> Invert</label>
+            <label class="toggle"><input id="pixels" type="checkbox"> Pixel grid</label>
+          </div>
+          <div class="detrow" id="detrow" role="group" aria-label="Detector"></div>
+          <div class="stage" id="stage"></div>
+          <div class="transport" id="transport"></div>
+          <div class="under"><div class="cursor" id="cursor" aria-live="off"></div><div class="marklegend" aria-label="Marks"><span><span style="color:#e8eaed">+</span> entered position</span><span><span style="color:#ff9a52">○</span> position at the visit date</span><span><span style="color:#63a9ff">□</span> Gaia DR3, when on</span><span><span style="display:inline-block;width:10px;height:10px;background:#182134;border:1px solid #363c45;vertical-align:-1px"></span> no data: flagged pixels or outside the frame</span></div></div>
+        </div>
+        <aside class="panel" id="panel" aria-label="Selected target"></aside>
+      </div>
+      <section class="card matrix-card" aria-labelledby="h-matrix">
+        <header>
+          <h2 id="h-matrix">Observation matrix</h2>
+          <span class="muted" style="font-size:var(--t-sm)">Each dot is one frame. Date runs across, wavelength at this position runs up. Select a visit to view it.</span>
+        </header>
+        <div class="body">
+          <div class="legend" id="matrixLegend" style="margin-bottom:8px"></div>
+          <div id="matrix"></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ================= SOURCE ================= -->
+    <section class="view" data-view="source" aria-labelledby="h-source" hidden>
+      <a class="back" href="#viewer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>Back to the viewer</a>
+      <div id="source"></div>
+    </section>
+
+    <!-- ================= SEARCH BY LIGHT ================= -->
+    <section class="view" data-view="search" aria-labelledby="h-search" hidden>
+      <div class="src-head"><div class="ident"><h1 id="h-search">Search by light</h1><p class="muted" style="font-size:var(--t-sm)">Find sources in a processed field by the molecule features and changes in their light.</p></div></div>
+      <div class="two">
+        <form class="card" id="filters" aria-label="Search by light filters">
+          <div class="body filters"></div>
+        </form>
+        <div class="stack" id="results"></div>
+      </div>
+    </section>
+
+    <!-- ================= CASES ================= -->
+    <section class="view" data-view="cases" aria-labelledby="h-cases" hidden>
+      <div class="src-head"><div class="ident"><h1 id="h-cases">Signals and cases</h1><p class="muted" style="font-size:var(--t-sm)">A signal becomes a case only after every machine check passes. Agreement between reviewers ranks a case. It never makes a case true.</p></div></div>
+      <div class="cases-grid">
+        <section class="card" aria-labelledby="h-caselist"><header><h2 id="h-caselist">Cases and exits</h2><span class="chip example">Example values</span></header><div class="body tablebox" id="caselist"></div></section>
+        <div class="stack" id="casedetail"></div>
+      </div>
+    </section>
+
+    <!-- ================= PROOF ================= -->
+    <section class="view" data-view="proof" aria-labelledby="h-proof" hidden>
+      <div id="proof"></div>
+    </section>
+
+    <!-- ================= MEMBER ================= -->
+    <section class="view" data-view="member" aria-labelledby="h-member" hidden>
+      <div id="member"></div>
+    </section>
+  </main>
+</div>
+
+<div class="tour" id="tour" hidden role="dialog" aria-labelledby="tourTitle"></div>
+
+<!-- unslop-ignore: "spectral" in the data is the astronomy term --><script type="application/json" id="pw-data">/*__DATA__*/</script>
+<script>
+(function () {
+"use strict";
+const DATA = JSON.parse(document.getElementById("pw-data").textContent);
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const h = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DET_COL = ["", "#a98bff", "#63a9ff", "#4fd4c4", "#bedf5a", "#ffb04d", "#ff6a5c"];
+const DET_RANGE = ["", [0.75, 1.09], [1.10, 1.62], [1.63, 2.41], [2.42, 3.82], [3.83, 4.41], [4.42, 5.00]];
+const VISIT_RGB = ["#ff5a5a", "#5aff8a", "#5a8aff"];
+const VISIT_RGB_NAME = ["red", "green", "blue"];
+
+/* ---------- formatting, section 5.4 ---------- */
+const mjdToDate = (mjd) => new Date((mjd - 40587) * 86400000);
+const fmtDate = (mjd) => { const d = mjdToDate(mjd); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const fmtSpan = (a, b) => {
+  const da = mjdToDate(a), db = mjdToDate(b);
+  if (da.getUTCFullYear() === db.getUTCFullYear()) {
+    if (da.getUTCMonth() === db.getUTCMonth()) return `${da.getUTCDate()} to ${db.getUTCDate()} ${MONTHS[db.getUTCMonth()]} ${db.getUTCFullYear()}`;
+    return `${da.getUTCDate()} ${MONTHS[da.getUTCMonth()]} to ${db.getUTCDate()} ${MONTHS[db.getUTCMonth()]} ${db.getUTCFullYear()}`;
+  }
+  return `${fmtDate(a)} to ${fmtDate(b)}`;
+};
+const fmtShort = (mjd) => { const d = mjdToDate(mjd); return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
+const deg5 = (v) => v.toFixed(5);
+function sexa(ra, dec) {
+  const r = ((ra / 15) % 24 + 24) % 24; const rh = Math.floor(r), rm = Math.floor((r - rh) * 60), rs = ((r - rh) * 60 - rm) * 60;
+  const s = dec < 0 ? "−" : "+"; const a = Math.abs(dec); const dd = Math.floor(a), dm = Math.floor((a - dd) * 60), ds = ((a - dd) * 60 - dm) * 60;
+  return `${String(rh).padStart(2, "0")}h${String(rm).padStart(2, "0")}m${rs.toFixed(2).padStart(5, "0")}s ${s}${String(dd).padStart(2, "0")}°${String(dm).padStart(2, "0")}′${ds.toFixed(1).padStart(4, "0")}″`;
+}
+const minus = (s) => String(s).replace(/-/g, "−");
+const fmtNum = (v, d) => minus(v.toFixed(d));
+
+/* ---------- float16 pixels ---------- */
+const F16 = new Float32Array(65536);
+for (let i = 0; i < 65536; i++) {
+  const s = i & 0x8000 ? -1 : 1, e = (i >> 10) & 0x1f, f = i & 0x3ff;
+  F16[i] = e === 0 ? s * Math.pow(2, -14) * (f / 1024) : e === 31 ? (f ? NaN : s * Infinity) : s * Math.pow(2, e - 15) * (1 + f / 1024);
+}
+function decode(b64) {
+  const bin = atob(b64); const n = bin.length / 2; const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) out[i] = F16[bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8)];
+  return out;
+}
+
+/* ---------- data model ---------- */
+const TARGETS = DATA.targets;
+const ORDER = DATA.order;
+for (const id of ORDER) {
+  const t = TARGETS[id];
+  if (t.stacks) {
+    for (const s of t.stacks.stacks) s.px = null;
+  }
+  // visits from the frame list, gap over 30 days starts a new visit (section 8, stage 1)
+  const fr = t.frames.slice().sort((a, b) => a[0] - b[0]);
+  const visits = []; let cur = null;
+  for (const f of fr) {
+    if (!cur || f[0] - cur.last > 30) { cur = { n: 0, first: f[0], last: f[0], det: [0, 0, 0, 0, 0, 0, 0] }; visits.push(cur); }
+    cur.n++; cur.last = f[0]; cur.det[f[1]]++;
+  }
+  t.visits = visits;
+}
+function stackOf(t, det, visit) {
+  if (!t.stacks) return null;
+  const s = t.stacks.stacks.find((x) => x.det === det && x.visit === visit);
+  if (s && !s.px) s.px = decode(s.b64);
+  return s || null;
+}
+
+/* ---------- state ---------- */
+const state = { target: "wise0855", det: 6, visit: 3, mode: "play", a: 2, b: 3, colour: [1, 2, 3], playing: false, timer: null, speed: 900, marks: { entered: true, present: true, gaia: false, path: true }, sexa: false };
+function setTarget(id) {
+  stopPlay();
+  state.target = id; const t = TARGETS[id];
+  const nv = t.stacks ? t.stacks.visits : t.visits.length;
+  state.visit = nv; state.a = Math.max(1, nv - 1); state.b = nv;
+  state.colour = nv >= 3 ? [nv - 2, nv - 1, nv] : Array.from({ length: nv }, (_, i) => i + 1);
+  state.det = id === "wise0855" ? 6 : bestDet(t);
+  renderViewer();
+}
+function bestDet(t) { let best = 1, n = -1; for (let d = 1; d <= 6; d++) { const c = t.frames.filter((f) => f[1] === d).length; if (c > n) { n = c; best = d; } } return best; }
+
+/* ---------- image rendering ---------- */
+function contrastK() { const v = +$("#contrast").value; return 5 * Math.pow(60, v / 100); } // 5 to 300 sigma
+function asinhMap(v, lo, hi) { const beta = 8; const t = (v - lo) / (hi - lo); return Math.max(0, Math.min(1, Math.asinh(t * beta) / Math.asinh(beta))); }
+function paint(canvas, size, fn, crop) {
+  const c = crop ? crop.c : size, x0 = crop ? crop.x0 : 0, y0 = crop ? crop.y0 : 0;
+  canvas.width = c; canvas.height = c;
+  const ctx = canvas.getContext("2d"); const img = ctx.createImageData(c, c); const d = img.data;
+  const inv = $("#invert").checked;
+  for (let r = 0; r < c; r++) {
+    const y = y0 + c - 1 - r; // north up: FITS row 0 is south
+    for (let xx = 0; xx < c; xx++) {
+      const x = x0 + xx; const o = (r * c + xx) * 4; const rgb = fn(y * size + x);
+      if (!rgb) { d[o] = 24; d[o + 1] = 33; d[o + 2] = 52; d[o + 3] = 255; continue; } // no data: flagged pixels or outside the frame
+      d[o] = inv ? 255 - rgb[0] : rgb[0]; d[o + 1] = inv ? 255 - rgb[1] : rgb[1]; d[o + 2] = inv ? 255 - rgb[2] : rgb[2]; d[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  canvas.classList.toggle("pixels", $("#pixels").checked);
+}
+function greyFn(px, sigma) {
+  const lo = -2 * sigma, hi = contrastK() * sigma;
+  return (i) => { const v = px[i]; if (!Number.isFinite(v)) return null; const g = Math.round(asinhMap(v, lo, hi) * 255); return [g, g, g]; };
+}
+function combined(t, det) {
+  const ss = t.stacks.stacks.filter((s) => s.det === det); if (!ss.length) return null;
+  ss.forEach((s) => { if (!s.px) s.px = decode(s.b64); });
+  const n = ss[0].px.length; const out = new Float32Array(n);
+  let wsum = 0; ss.forEach((s) => (wsum += 1 / (s.noise * s.noise)));
+  for (let i = 0; i < n; i++) {
+    let a = 0, w = 0;
+    for (const s of ss) { const v = s.px[i]; if (Number.isFinite(v)) { const ww = 1 / (s.noise * s.noise); a += v * ww; w += ww; } }
+    out[i] = w ? a / w : NaN;
+  }
+  return { px: out, noise: 1 / Math.sqrt(wsum), n: ss.reduce((a, s) => a + s.n, 0), wmin: Math.min(...ss.map((s) => s.wave_min_um)), wmax: Math.max(...ss.map((s) => s.wave_max_um)), visits: ss.map((s) => s.visit) };
+}
+
+/* ---------- marks overlay ---------- */
+function marksSvg(t, visit, opts = {}) {
+  const st = t.stacks; const N = st.grid.size; const fy = (y) => N - 1 - y + 0.5; const fx = (x) => x + 0.5;
+  const cr = opts.crop;
+  let s = `<svg class="marks" viewBox="${cr ? `${cr.x0} ${N - cr.y0 - cr.c} ${cr.c} ${cr.c}` : `0 0 ${N} ${N}`}" aria-hidden="true">`;
+  const pres = st.present_by_visit;
+  if (state.marks.gaia && st.gaia) {
+    const p = pres[String(visit)] || pres[String(st.visits)];
+    for (const g of st.gaia) {
+      const yrs = p ? (p.mjd - 57388.5) / 365.25 : 0; // Gaia DR3 epoch 2016.0
+      const x = g.x - (g.pmra || 0) / 1000 * yrs / st.grid.scale_arcsec, y = g.y + (g.pmdec || 0) / 1000 * yrs / st.grid.scale_arcsec;
+      s += `<rect x="${fx(x) - 1.4}" y="${fy(y) - 1.4}" width="2.8" height="2.8" fill="none" stroke="#63a9ff" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0.85"/>`;
+    }
+  }
+  if (state.marks.path) {
+    const pts = Object.keys(pres).sort((a, b) => a - b).map((k) => `${fx(pres[k].xy[0])},${fy(pres[k].xy[1])}`).join(" ");
+    s += `<polyline points="${pts}" fill="none" stroke="#ff9a52" stroke-width="1.2" vector-effect="non-scaling-stroke" stroke-dasharray="3 3"/>`;
+  }
+  if (state.marks.entered && st.entered) {
+    const [x, y] = st.entered.xy; const X = fx(x), Y = fy(y);
+    s += `<path d="M${X - 3.2} ${Y}h2.2M${X + 1} ${Y}h2.2M${X} ${Y - 3.2}v2.2M${X} ${Y + 1}v2.2" stroke="#e8eaed" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+  }
+  if (state.marks.present) {
+    const p = pres[String(visit)]; if (p) s += `<circle cx="${fx(p.xy[0])}" cy="${fy(p.xy[1])}" r="3.4" fill="none" stroke="#ff9a52" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+  }
+  if (!opts.small) {
+    const sb = 60 / st.grid.scale_arcsec; // 60 arcsec scale bar
+    s += `<g transform="translate(5 ${N - 6})"><line x1="0" y1="0" x2="${sb}" y2="0" stroke="#e8eaed" stroke-width="0.5"/><line x1="0" y1="-1.2" x2="0" y2="1.2" stroke="#e8eaed" stroke-width="0.4"/><line x1="${sb}" y1="-1.2" x2="${sb}" y2="1.2" stroke="#e8eaed" stroke-width="0.4"/><text x="${sb / 2}" y="-2.2" fill="#e8eaed" font-size="3.4" text-anchor="middle" font-family="Atkinson Hyperlegible Mono, monospace">60″</text></g>`;
+    s += `<g transform="translate(${N - 8} ${N - 6})" fill="none" stroke="#e8eaed" stroke-width="0.4"><path d="M0 0V-8M0 0H-8"/><text x="0" y="-9.4" fill="#e8eaed" stroke="none" font-size="3.2" text-anchor="middle" font-family="Atkinson Hyperlegible Mono, monospace">N</text><text x="-10.4" y="1.1" fill="#e8eaed" stroke="none" font-size="3.2" text-anchor="middle" font-family="Atkinson Hyperlegible Mono, monospace">E</text></g>`;
+  }
+  return s + "</svg>";
+}
+
+/* ---------- viewer ---------- */
+function renderTargetbar() {
+  $("#targetbar").innerHTML = ORDER.map((id) => {
+    const t = TARGETS[id];
+    return `<button type="button" data-target="${id}" aria-pressed="${id === state.target}"><b>${h(t.title)}</b><span class="num">${t.frames.length.toLocaleString("en")} frames · ${t.visits.length} visits</span></button>`;
+  }).join("");
+}
+function renderDetrow() {
+  const t = TARGETS[state.target];
+  $("#detrow").innerHTML = [1, 2, 3, 4, 5, 6].map((d) => {
+    const n = t.frames.filter((f) => f[1] === d).length; if (!n) return "";
+    const [a, b] = DET_RANGE[d];
+    return `<button type="button" data-det="${d}" style="--det:${DET_COL[d]}" aria-pressed="${d === state.det}" ${state.mode === "detectors" ? "disabled" : ""}><b><i></i>D${d}</b><span>${a.toFixed(2)}–${b.toFixed(2)} µm · ${n}</span></button>`;
+  }).join("");
+}
+function visitLabel(t, v) { const st = t.stacks; const ss = st ? st.stacks.filter((s) => s.visit === v) : []; const vv = t.visits[v - 1]; return vv ? fmtSpan(vv.first, vv.last) : ""; }
+function renderTransport() {
+  const t = TARGETS[state.target]; const nv = t.visits.length; const el = $("#transport");
+  const vbtn = (v, pressed, extra = "") => {
+    const vv = t.visits[v - 1]; const s = stackOf(t, state.det, v);
+    const cnt = state.mode === "detectors" ? vv.n : (s ? s.n : 0);
+    return `<button type="button" data-visit="${v}" aria-pressed="${pressed}" ${extra}><b>Visit ${v}</b><span>${h(fmtSpan(vv.first, vv.last))} · ${cnt} frames</span></button>`;
+  };
+  let html = "";
+  if (state.mode === "play") {
+    html += `<button class="btn primary" type="button" id="playBtn" aria-label="${state.playing ? "Pause" : "Play"}">${state.playing ? '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/></svg>Pause' : '<svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" fill="currentColor"/></svg>Play'}</button>`;
+    html += `<div class="visits" role="group" aria-label="Visit">${Array.from({ length: nv }, (_, i) => vbtn(i + 1, i + 1 === state.visit)).join("")}</div>`;
+    html += `<label class="field" style="margin-left:auto;grid-auto-flow:column;align-items:center;gap:8px"><span class="label">Speed</span><select class="select" id="speed"><option value="1400">Slow</option><option value="900" selected>Normal</option><option value="450">Fast</option></select></label>`;
+  } else if (state.mode === "diff") {
+    const opts = (sel) => Array.from({ length: nv }, (_, i) => `<option value="${i + 1}" ${i + 1 === sel ? "selected" : ""}>Visit ${i + 1}, ${h(fmtShort(t.visits[i].first))}</option>`).join("");
+    html += `<span class="label">Difference</span><label class="field" style="grid-auto-flow:column;align-items:center;gap:8px">Visit B<select class="select" id="visB">${opts(state.b)}</select></label><span class="muted">minus</span><label class="field" style="grid-auto-flow:column;align-items:center;gap:8px">Visit A<select class="select" id="visA">${opts(state.a)}</select></label><span class="muted" style="font-size:var(--t-sm)">A source that moved shows as a dark and bright pair.</span>`;
+  } else if (state.mode === "stack") {
+    html += `<span class="label">Stack</span><span style="font-size:var(--t-sm)">Every visit of D${state.det} added together, weighted by its noise.</span>`;
+  } else if (state.mode === "colour") {
+    html += `<span class="label">Visits as colour</span><div class="visits" role="group" aria-label="Visits shown in colour">${Array.from({ length: nv }, (_, i) => { const k = state.colour.indexOf(i + 1); return vbtn(i + 1, k >= 0, k >= 0 ? `data-col style="--col:${VISIT_RGB[k]}"` : ""); }).join("")}</div><span class="muted" style="font-size:var(--t-sm)">${state.colour.map((v, k) => `Visit ${v} ${VISIT_RGB_NAME[k]}`).join(", ")}. Fixed sources come out white.</span>`;
+  } else if (state.mode === "detectors") {
+    html += `<div class="visits" role="group" aria-label="Visit">${Array.from({ length: nv }, (_, i) => vbtn(i + 1, i + 1 === state.visit)).join("")}</div><span class="muted" style="font-size:var(--t-sm)">Each detector stretched to its own noise.</span>`;
+  }
+  el.innerHTML = html;
+  const sp = $("#speed"); if (sp) sp.value = String(state.speed);
+}
+function stageTags(t, label, right) {
+  return `<div class="tag tl">${label}</div>${right ? `<div class="tag tr">${right}</div>` : ""}`;
+}
+function renderStage() {
+  const t = TARGETS[state.target]; const st = t.stacks; const el = $("#stage");
+  if (!st) {
+    el.innerHTML = `<div class="state"><b>No stacks prepared for ${h(t.title)}</b><span>The frame list is real and shown in the matrix below. Image stacks for this target arrive with the pipeline.</span></div>`;
+    return;
+  }
+  const N = st.grid.size;
+  if (state.mode === "detectors") {
+    const v = state.visit; const pv = st.present_by_visit[String(v)] || st.present_by_visit[String(st.visits)];
+    const C = 48; const cl = (z) => Math.max(0, Math.min(N - C, Math.round(z - C / 2)));
+    const crop = { c: C, x0: cl(pv.xy[0]), y0: cl(pv.xy[1]) };
+    el.innerHTML = `<div class="grid6">${[1, 2, 3, 4, 5, 6].map((d) => {
+      const s = stackOf(t, d, v);
+      return `<figure><div class="frame">${s ? `<canvas data-d="${d}"></canvas>${marksSvg(t, v, { small: true, crop })}` : ""}</div><figcaption><b><i style="background:${DET_COL[d]}"></i>D${d}</b><span class="muted num">${s ? `${s.wave_min_um.toFixed(2)}–${s.wave_max_um.toFixed(2)} µm · ${s.n}` : "no frames this visit"}</span></figcaption></figure>`;
+    }).join("")}</div>`;
+    $$("canvas[data-d]", el).forEach((c) => { const s = stackOf(t, +c.dataset.d, v); paint(c, N, greyFn(s.px, s.noise), crop); });
+    el.insertAdjacentHTML("beforeend", `<p class="muted" style="font-size:var(--t-xs);padding:0 12px 12px;justify-self:start">Visit ${v}, ${h(visitLabel(t, v))}. Each panel shows ${(C * st.grid.scale_arcsec / 60).toFixed(1)}′ around the ring.</p>`);
+    return;
+  }
+  let px = null, label = "", right = "", fn = null, value = null;
+  if (state.mode === "play") {
+    const s = stackOf(t, state.det, state.visit);
+    if (!s) { el.innerHTML = `<div class="state"><b>No frames in D${state.det} during visit ${state.visit}</b><span>Pick another visit or detector. The matrix shows where frames exist.</span></div>`; return; }
+    fn = greyFn(s.px, s.noise); value = s.px;
+    label = `D${state.det} · ${s.wave_min_um.toFixed(2)}–${s.wave_max_um.toFixed(2)} µm<br>Visit ${state.visit} · ${h(fmtSpan(s.mjd_first, s.mjd_last))}`;
+    right = `${s.n} frames stacked`;
+  } else if (state.mode === "diff") {
+    const A = stackOf(t, state.det, state.a), B = stackOf(t, state.det, state.b);
+    if (!A || !B) { el.innerHTML = `<div class="state"><b>Both visits need frames in D${state.det}</b><span>Pick two visits that both have D${state.det} frames.</span></div>`; return; }
+    if (state.a === state.b) { el.innerHTML = `<div class="state"><b>Pick two different visits</b><span>Difference subtracts visit A from visit B.</span></div>`; return; }
+    const sig = Math.hypot(A.noise, B.noise); const k = contrastK() / 6;
+    value = new Float32Array(A.px.length); for (let i = 0; i < value.length; i++) value[i] = B.px[i] - A.px[i];
+    fn = (i) => { const v = value[i]; if (!Number.isFinite(v)) return null; const g = Math.round(Math.max(0, Math.min(1, 0.5 + v / (2 * k * sig))) * 255); return [g, g, g]; };
+    label = `D${state.det} · Visit ${state.b} minus visit ${state.a}<br>Same detector, same band range`;
+    right = `bright: brighter in visit ${state.b}`;
+  } else if (state.mode === "stack") {
+    const c = combined(t, state.det); fn = greyFn(c.px, c.noise); value = c.px;
+    label = `D${state.det} · ${c.wmin.toFixed(2)}–${c.wmax.toFixed(2)} µm<br>Visits ${c.visits.join(", ")} stacked`;
+    right = `${c.n} frames`;
+  } else if (state.mode === "colour") {
+    const ss = state.colour.map((v) => stackOf(t, state.det, v));
+    if (ss.some((s) => !s)) { el.innerHTML = `<div class="state"><b>A chosen visit has no D${state.det} frames</b><span>Choose visits that all have frames in this detector.</span></div>`; return; }
+    const maps = ss.map((s) => greyFn(s.px, s.noise));
+    fn = (i) => { const ch = [0, 0, 0]; let any = false; maps.forEach((m, k) => { const g = m(i); if (g) { ch[k] = g[0]; any = true; } }); if (ss.length === 2) ch[2] = ch[1]; return any ? ch : null; };
+    value = ss[ss.length - 1].px;
+    label = `D${state.det} · Visits as colour<br>${state.colour.map((v, k) => `<span style="color:${VISIT_RGB[k]}">Visit ${v}</span>`).join(" · ")}`;
+    right = "False colour";
+  }
+  el.innerHTML = `<div class="frame" id="mainframe"><canvas id="main"></canvas>${marksSvg(t, state.mode === "diff" ? state.b : state.visit)}</div>${stageTags(t, label, right)}`;
+  paint($("#main"), N, fn);
+  bindCursor($("#mainframe"), t, value);
+}
+function bindCursor(frame, t, value) {
+  const st = t.stacks; const N = st.grid.size; const [ra0, de0] = st.grid.crval.map((v) => (v * Math.PI) / 180); const sc = (st.grid.scale_arcsec / 3600) * Math.PI / 180;
+  const c = (N + 1) / 2;
+  frame.addEventListener("mousemove", (e) => {
+    const r = frame.getBoundingClientRect(); const gx = ((e.clientX - r.left) / r.width) * N - 0.5; const gy = N - 1 - (((e.clientY - r.top) / r.height) * N - 0.5);
+    const xi = -(gx + 1 - c) * sc, eta = (gy + 1 - c) * sc;
+    const ra = ra0 + Math.atan2(xi, Math.cos(de0) - eta * Math.sin(de0));
+    const de = Math.atan2(Math.sin(de0) + eta * Math.cos(de0), Math.hypot(xi, Math.cos(de0) - eta * Math.sin(de0)));
+    const RA = ((ra * 180) / Math.PI + 360) % 360, DE = (de * 180) / Math.PI;
+    const ix = Math.round(gx), iy = Math.round(gy); const v = ix >= 0 && iy >= 0 && ix < N && iy < N ? value[iy * N + ix] : NaN;
+    $("#cursor").textContent = `${state.sexa ? sexa(RA, DE) : `RA ${deg5(RA)}°  Dec ${minus(deg5(DE))}°`}  ICRS · ${Number.isFinite(v) ? `${fmtNum(v, 4)} MJy/sr` : "no data at this pixel"}`;
+  });
+  frame.addEventListener("mouseleave", () => { $("#cursor").textContent = "Move over the image to read the position and pixel value."; });
+}
+const OTYPE = { "BY*": "Variable star of BY Draconis type", "BD*": "Brown dwarf", "TT*": "T Tauri star", "Mi*": "Mira variable" };
+function reading(v, origin, ref) {
+  return `<div class="reading"><span class="v">${v}</span><span class="o">${origin}${ref ? ` · <button type="button" class="linklike" data-ref="${h(ref)}" title="Reference ${h(ref)}">${h(ref.replace(/&amp;/g, "&").slice(0, 19))}</button>` : ""}</span></div>`;
+}
+function renderPanel() {
+  const t = TARGETS[state.target]; const c = t.catalogue; const st = t.stacks;
+  const pm = Math.hypot(c.pmra, c.pmdec) / 1000; const pa = ((Math.atan2(c.pmra, c.pmdec) * 180) / Math.PI + 360) % 360;
+  const dist = c.plx ? 1000 / c.plx : null;
+  const pos = (ra, dec) => state.sexa ? sexa(ra, dec) : `${deg5(ra)}° ${minus(deg5(dec))}°`;
+  const p = st && st.present_by_visit[String(state.visit)];
+  let entered = "";
+  if (st && st.entered && t.challenge_position) entered = `<dt>Entered</dt><dd>${reading(pos(...st.entered.radec), "the challenge page's position")}</dd>`;
+  const now = p ? `<dt>At visit ${state.visit}</dt><dd>${reading(pos(...p.radec), `Catalogue, moved to ${h(fmtDate(p.mjd))}`)}</dd>` : "";
+  let find = "";
+  if (state.target === "wise0855" && DATA.findings && DATA.findings.wise0855) {
+    const f = DATA.findings.wise0855;
+    find = `<div class="find"><b>Seen in the prototype stacks</b><span>D5 and D6 show a source at the ring that moves between visits 2 and 3 as WISE 0855's catalogue motion predicts. D1 to D4 show a fixed Gaia DR3 star ${f.sep_arcsec.toFixed(1)}″ away instead. WISE 0855 is moving toward it.</span><span class="muted" style="font-size:var(--t-xs)">D6 peak over noise: ${f.d6.map((x) => x.toFixed(1)).join(" and ")} in visits 2 and 3. Not yet a PSF fit.</span></div>`;
+  }
+  $("#panel").innerHTML = `
+  <section class="card"><div class="body">
+    <div class="ident">
+      <div class="row"><h2>${h(t.title)}</h2><span class="chip known"><span class="dot"></span>Known</span></div>
+      <span class="desig">${h(c.oname)}</span>
+      <span style="font-size:var(--t-sm)">${h(OTYPE[c.otype] || c.otype)}${c.sptype ? `, spectral type ${h(c.sptype)}` : ""}${/* unslop-ignore: astronomy term */ ""} <span class="muted">· Catalogue, SIMBAD</span></span>
+    </div>
+    <dl class="readings">
+      ${entered}${now}
+      <dt>Motion</dt><dd>${reading(`${pm >= 1 ? pm.toFixed(2) : pm.toFixed(3)}″/yr at ${pa.toFixed(0)}°`, "Catalogue", c.pm_ref)}</dd>
+      <dt>Parallax</dt><dd>${reading(`${c.plx.toFixed(c.plx > 10 ? 1 : 2)}${c.plx_err ? ` ± ${c.plx_err.toFixed(c.plx_err > 1 ? 1 : 2)}` : ""} mas`, "Catalogue", c.plx_ref)}</dd>
+      <dt>Distance</dt><dd>${reading(dist ? `${dist >= 100 ? Math.round(dist) : dist.toFixed(2)} pc` : "not measured", "from the parallax")}</dd>
+      <dt>Frames</dt><dd>${reading(`${t.frames.length.toLocaleString("en")} in ${t.visits.length} visits`, `IRSA TAP, ${h(DATA.fetched_at.slice(0, 10))}`)}</dd>
+    </dl>
+    <div class="actions">
+      <a class="btn primary" href="#source">Open source details</a>
+      <button class="btn" type="button" id="copyPos">Copy position</button>
+      <button class="btn quiet" type="button" id="fmtToggle">${state.sexa ? "Show degrees" : "Show h m s"}</button>
+    </div>
+    ${find}
+  </div></section>
+  <section class="card"><header><h3>Marks and overlays</h3></header><div class="body" style="gap:2px">
+    <label class="toggle"><input type="checkbox" data-mark="entered" ${state.marks.entered ? "checked" : ""}> Entered position <span class="muted">(cross)</span></label>
+    <label class="toggle"><input type="checkbox" data-mark="present" ${state.marks.present ? "checked" : ""}> Position at the visit date <span class="muted">(ring)</span></label>
+    <label class="toggle"><input type="checkbox" data-mark="path" ${state.marks.path ? "checked" : ""}> Path across visits</label>
+    <label class="toggle"><input type="checkbox" data-mark="gaia" ${state.marks.gaia ? "checked" : ""}> Gaia DR3 at the visit date <span class="muted">(squares)</span></label>
+  </div></section>`;
+}
+function renderMatrix() {
+  const t = TARGETS[state.target]; const wrap = $("#matrix"); const W = Math.max(720, wrap.clientWidth || 900), H = 230;
+  const L = 40, R = 58, T = 22, B = 30;
+  const fr = t.frames; const m0 = Math.min(...fr.map((f) => f[0])) - 12, m1 = Math.max(...fr.map((f) => f[0])) + 12;
+  const X = (m) => L + ((m - m0) / (m1 - m0)) * (W - L - R);
+  const lw0 = Math.log(0.72), lw1 = Math.log(5.1); const Y = (w) => T + (1 - (Math.log(w) - lw0) / (lw1 - lw0)) * (H - T - B);
+  let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Observation matrix for ${h(t.title)}: ${fr.length} frames in ${t.visits.length} visits">`;
+  for (let d = 1; d <= 6; d++) { const [a, b] = DET_RANGE[d]; s += `<rect x="${L}" y="${Y(b)}" width="${W - L - R}" height="${Y(a) - Y(b)}" fill="${d % 2 ? "#14161a" : "#111317"}"/><text x="${L - 8}" y="${(Y(a) + Y(b)) / 2 + 4}" fill="${DET_COL[d]}" font-size="11" text-anchor="end" font-family="Atkinson Hyperlegible Mono, monospace">D${d}</text>`; }
+  [0.75, 1, 1.5, 2, 3, 4, 5].forEach((w) => { s += `<line x1="${W - R}" x2="${W - R + 4}" y1="${Y(w)}" y2="${Y(w)}" stroke="#4a515b"/><text x="${W - R + 7}" y="${Y(w) + 3.5}" fill="#8a919b" font-size="10" font-family="Atkinson Hyperlegible Mono, monospace">${w} µm</text>`; });
+  t.visits.forEach((v, i) => {
+    const x0 = X(v.first) - 4, x1 = X(v.last) + 4; const sel = i + 1 === state.visit;
+    s += `<g class="vcol" data-visit="${i + 1}" style="cursor:pointer"><rect x="${x0}" y="${T}" width="${Math.max(10, x1 - x0)}" height="${H - T - B}" fill="${sel ? "rgba(157,184,255,0.12)" : "rgba(255,255,255,0.03)"}" stroke="${sel ? "#9db8ff" : "#262a31"}" stroke-width="1"/><text x="${x0}" y="${T - 7}" fill="${sel ? "#e8eaed" : "#a3aab4"}" font-size="11" font-family="Atkinson Hyperlegible Next, sans-serif">Visit ${i + 1} · ${v.n} frames</text><title>Visit ${i + 1}: ${fmtSpan(v.first, v.last)}, ${v.n} frames</title></g>`;
+  });
+  let y0 = m0; const d0 = mjdToDate(m0); let yy = d0.getUTCFullYear(), mm = d0.getUTCMonth() + 1;
+  for (;;) { if (mm > 11) { mm = 0; yy++; } const mjd = Date.UTC(yy, mm, 1) / 86400000 + 40587; if (mjd > m1) break; if (mm % 3 === 0) { s += `<line x1="${X(mjd)}" y1="${H - B}" x2="${X(mjd)}" y2="${H - B + 5}" stroke="#4a515b"/><text x="${X(mjd)}" y="${H - 8}" fill="#a3aab4" font-size="11" text-anchor="middle" font-family="Atkinson Hyperlegible Mono, monospace">${MONTHS[mm]} ${yy}</text>`; } mm++; }
+  for (const f of fr) {
+    const w = f[2] != null ? f[2] : (DET_RANGE[f[1]][0] + DET_RANGE[f[1]][1]) / 2;
+    s += `<circle cx="${X(f[0]).toFixed(1)}" cy="${Y(w).toFixed(1)}" r="${fr.length > 1000 ? 1.6 : 2.6}" fill="${DET_COL[f[1]]}" opacity="${f[2] != null ? 0.95 : 0.4}"><title>${fmtDate(f[0])} · D${f[1]}${f[2] != null ? ` · ${f[2].toFixed(2)} µm` : ""}</title></circle>`;
+  }
+  s += "</svg>";
+  wrap.innerHTML = s;
+  $("#matrixLegend").innerHTML = [1, 2, 3, 4, 5, 6].map((d) => `<span><i style="background:${DET_COL[d]}"></i>D${d} ${DET_RANGE[d][0].toFixed(2)}–${DET_RANGE[d][1].toFixed(2)} µm</span>`).join("") + (t.frames.some((f) => f[2] == null) ? `<span>Faint dots: wavelength at this position not read yet</span>` : "");
+}
+function renderModes() { $$("#modes button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode))); }
+function renderViewer() { renderTargetbar(); renderModes(); renderDetrow(); renderTransport(); renderStage(); renderPanel(); renderMatrix(); if (!$("#cursor").textContent) $("#cursor").textContent = "Move over the image to read the position and pixel value."; }
+
+function stopPlay() { state.playing = false; clearInterval(state.timer); state.timer = null; }
+function togglePlay() {
+  if (state.playing) { stopPlay(); renderTransport(); return; }
+  const t = TARGETS[state.target]; const avail = t.visits.map((_, i) => i + 1).filter((v) => stackOf(t, state.det, v));
+  if (avail.length < 2) return;
+  state.playing = true; renderTransport();
+  state.timer = setInterval(() => { const i = avail.indexOf(state.visit); state.visit = avail[(i + 1) % avail.length]; renderStage(); renderTransport(); renderPanel(); renderMatrix(); }, state.speed);
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("button, g.vcol, a[data-nav]"); if (!b) return;
+  if (b.dataset.target) { setTarget(b.dataset.target); return; }
+  if (b.dataset.mode) { stopPlay(); state.mode = b.dataset.mode; renderViewer(); return; }
+  if (b.dataset.det) { stopPlay(); state.det = +b.dataset.det; renderViewer(); return; }
+  if (b.dataset.visit) {
+    const v = +b.dataset.visit;
+    if (state.mode === "colour") { const k = state.colour.indexOf(v); if (k >= 0 && state.colour.length > 2) state.colour.splice(k, 1); else if (k < 0) { state.colour.push(v); if (state.colour.length > 3) state.colour.shift(); state.colour.sort((a, b) => a - b); } }
+    else if (state.mode === "diff") { state.b = v; }
+    else { stopPlay(); state.visit = v; }
+    renderTransport(); renderStage(); renderPanel(); renderMatrix(); return;
+  }
+  if (b.id === "playBtn") { togglePlay(); return; }
+  if (b.id === "fmtToggle") { state.sexa = !state.sexa; renderPanel(); return; }
+  if (b.id === "copyPos") {
+    const t = TARGETS[state.target]; const p = t.stacks && t.stacks.present_by_visit[String(state.visit)]; const txt = p ? `${deg5(p.radec[0])} ${deg5(p.radec[1])}` : `${deg5(t.catalogue.ra)} ${deg5(t.catalogue.dec)}`;
+    const done = () => { b.textContent = "Position copied"; setTimeout(() => (b.textContent = "Copy position"), 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, () => { b.textContent = txt; }); else b.textContent = txt;
+    return;
+  }
+});
+document.addEventListener("change", (e) => {
+  const el = e.target;
+  if (el.dataset.mark) { state.marks[el.dataset.mark] = el.checked; renderStage(); return; }
+  if (el.id === "visA") { state.a = +el.value; renderStage(); return; }
+  if (el.id === "visB") { state.b = +el.value; renderStage(); return; }
+  if (el.id === "speed") { state.speed = +el.value; if (state.playing) { stopPlay(); togglePlay(); } return; }
+  if (el.id === "invert" || el.id === "pixels") { renderStage(); return; }
+});
+$("#contrast").addEventListener("input", () => renderStage());
+window.addEventListener("resize", () => { if (currentView() === "viewer") renderMatrix(); });
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, select, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (currentView() !== "viewer") return;
+  const t = TARGETS[state.target]; const nv = t.visits.length;
+  if (e.key === " ") { e.preventDefault(); if (state.mode !== "play") { state.mode = "play"; renderViewer(); } togglePlay(); }
+  else if (/^[1-6]$/.test(e.key)) { state.det = +e.key; renderViewer(); }
+  else if (e.key === "[") { state.visit = Math.max(1, state.visit - 1); renderViewer(); }
+  else if (e.key === "]") { state.visit = Math.min(nv, state.visit + 1); renderViewer(); }
+  else if (e.key === "d") { state.mode = "diff"; renderViewer(); }
+  else if (e.key === "s") { state.mode = "stack"; renderViewer(); }
+  else if (e.key === "c") { state.mode = "colour"; renderViewer(); }
+  else if (e.key === "/") { e.preventDefault(); $("#pos").focus(); }
+});
+
+/* ---------- position box (section 6.4, weakness 5) ---------- */
+function parsePos(s) {
+  s = s.trim().replace(/[−–]/g, "-");
+  let m = s.match(/^(\d{1,2})h\s*(\d{1,2})m\s*([\d.]+)s?\s+([+-]?\d{1,2})d\s*(\d{1,2})m\s*([\d.]+)s?$/i)
+       || s.match(/^(\d{1,2})[: ](\d{1,2})[: ]([\d.]+)\s+([+-]?\d{1,2})[: ](\d{1,2})[: ]([\d.]+)$/);
+  if (m) { const ra = 15 * (+m[1] + m[2] / 60 + m[3] / 3600); const sg = m[4].startsWith("-") ? -1 : 1; const dec = sg * (Math.abs(+m[4]) + m[5] / 60 + m[6] / 3600); return { ra, dec }; }
+  m = s.match(/^([\d.]+)\s*[, ]\s*([+-]?[\d.]+)$/); if (m) return { ra: +m[1], dec: +m[2] };
+  return null;
+}
+$("#goto").addEventListener("submit", (e) => {
+  e.preventDefault(); const q = $("#pos").value.trim(); const msg = $("#gotoMsg"); if (!q) return;
+  const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let hit = ORDER.find((id) => [TARGETS[id].title, TARGETS[id].catalogue.oname, TARGETS[id].sesame_query, id].some((n) => norm(n).includes(norm(q)) || norm(q).includes(norm(n))));
+  const p = parsePos(q);
+  if (!hit && p) {
+    hit = ORDER.find((id) => { const c = TARGETS[id].catalogue; const d = Math.hypot((p.ra - c.ra) * Math.cos((c.dec * Math.PI) / 180), p.dec - c.dec); return d < 0.25; });
+  }
+  location.hash = "#viewer";
+  if (hit) { msg.hidden = true; setTarget(hit); return; }
+  msg.hidden = false;
+  msg.innerHTML = p
+    ? `<span><b>Any position plays in live mode, which needs the archive service.</b> This prototype holds the five named targets. Read as RA ${deg5(p.ra)}°, Dec ${minus(deg5(p.dec))}°.</span>`
+    : `<span><b>No match for “${h(q)}”.</b> Try a name such as WISE 0855 or Barnard's Star, or a position such as 08h55m10.831s -7d14m42.53s.</span>`;
+});
+
+/* ---------- example content for the parts the pipeline and models will fill ---------- */
+const EX = {
+  wise0855: { type: "an ultracool dwarf, Y type", p: 74, lo: 66, hi: 81, ladder: [55, 68, 74], also: [["Reddened background star", 9]], up: ["Methane dip", "Seen only beyond 4 µm", "Long slope", "Motion of 8.1″ a year"], down: [], decide: [["Methane dip, 3.3 µm", true], ["Carbon monoxide, 4.7 µm", true], ["1.6 µm", false]], settle: "A PSF fit that separates it from the Gaia star it is passing, then motion measured at the next visit.", template: "Y1 template, agrees", shape: "y" },
+  epsindib: { type: "an ultracool dwarf, T type", p: 88, lo: 82, hi: 92, ladder: [79, 84, 88], also: [["Star", 6]], up: ["Methane dip", "Water bands", "Motion of 4.7″ a year"], down: ["Glare from Epsilon Indi A"], decide: [["Methane dip, 3.3 µm", true], ["Carbon dioxide, 4.3 µm", true]], settle: "A cleaner spectrum with the glare of Epsilon Indi A modelled out.", template: "T6 template, agrees", shape: "t" },
+  barnard: { type: "a star, cool dwarf", p: 95, lo: 92, hi: 97, ladder: [71, 93, 95], also: [["Ultracool dwarf", 3]], up: ["No methane dip", "Short slope", "Parallax places it inside the galaxy"], down: [], decide: [["Methane dip, 3.3 µm", true], ["Short slope", true]], settle: "Nothing further. The bands that overflow are listed and left out.", template: "M4 template, agrees", shape: "m" },
+  rwaur: { type: "a young star with dust", p: 71, lo: 58, hi: 80, ladder: [52, 64, 71], also: [["Evolved giant", 14], ["Reddened background star", 9]], up: ["Long slope rising", "Hydrogen lines", "Changed brightness between visits"], down: ["Blended pair"], decide: [["Hydrogen line, 4.05 µm", true], ["Water ice, 3.05 µm", false]], settle: "Visits at matching brightness, since the spectrum changes between visits.", template: "no template fits within its errors", shape: "yso" },
+  rdra: { type: "an evolved giant", p: 91, lo: 86, hi: 95, ladder: [74, 87, 91], also: [["Star", 6]], up: ["Water bands", "Carbon monoxide", "Changed brightness between visits"], down: [], decide: [["Carbon monoxide, 2.3 µm", true], ["Water, 2.7 µm", true]], settle: "A light curve that covers a full pulsation cycle.", template: "M-giant template, agrees", shape: "g" },
+};
+function word(p) { return p >= 90 ? "Very likely" : p >= 70 ? "Probably" : p >= 50 ? "Possibly" : "Unclassified"; }
+function exampleSpectrum(shape) {
+  const g = (x, m, s, a) => a * Math.exp(-0.5 * ((x - m) / s) ** 2);
+  const pts = [];
+  for (let d = 1; d <= 6; d++) { const [a, b] = DET_RANGE[d]; for (let k = 0; k < 17; k++) { const w = a * Math.pow(b / a, (k + 0.5) / 17); pts.push(w); } }
+  return pts.map((w) => {
+    let f;
+    if (shape === "y") f = w < 3.9 ? 0.02 + g(w, 1.27, 0.05, 0.03) : 0.05 + g(w, 4.55, 0.32, 1) - g(w, 4.67, 0.05, 0.25) - g(w, 4.27, 0.04, 0.12);
+    else if (shape === "t") f = g(w, 1.27, 0.08, 1) + g(w, 1.58, 0.07, 0.6) + g(w, 2.1, 0.1, 0.35) + g(w, 4.2, 0.4, 0.55) - g(w, 3.35, 0.2, 0.05) + 0.03;
+    else if (shape === "m") f = 1.1 * Math.exp(-0.5 * ((Math.log(w) - Math.log(1.05)) / 0.55) ** 2) - g(w, 2.3, 0.06, 0.06) + 0.02;
+    else if (shape === "yso") f = 0.25 + 0.18 * w - g(w, 3.05, 0.14, 0.18) + g(w, 4.05, 0.02, 0.12) + g(w, 1.875, 0.02, 0.06);
+    else f = 1.2 * Math.exp(-0.5 * ((Math.log(w) - Math.log(1.4)) / 0.6) ** 2) - g(w, 2.7, 0.15, 0.2) - g(w, 2.3, 0.05, 0.12) + 0.04;
+    return [w, Math.max(0.005, f), 0.03 + 0.04 * Math.max(0.005, f)];
+  });
+}
+function spectrumSvg(pts, coverage) {
+  const W = 720, H = 260, L = 46, R = 12, T = 14, B = 40; const lw0 = Math.log(0.72), lw1 = Math.log(5.1);
+  const X = (w) => L + ((Math.log(w) - lw0) / (lw1 - lw0)) * (W - L - R); const fmax = Math.max(...pts.map((p) => p[1] + p[2])) * 1.08; const Y = (f) => T + (1 - f / fmax) * (H - T - B);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Spectrum, example values">`;
+  for (let d = 1; d <= 6; d++) { const [a, b] = DET_RANGE[d]; s += `<rect x="${X(a)}" y="${H - B + 6}" width="${X(b) - X(a) - 1}" height="4" fill="${DET_COL[d]}" opacity="0.8"/>`; }
+  [[1.875, "H"], [3.05, "H₂O ice"], [3.3, "CH₄"], [4.05, "H"], [4.27, "CO₂"], [4.67, "CO"]].forEach(([w, n]) => { s += `<line x1="${X(w)}" x2="${X(w)}" y1="${T}" y2="${H - B}" stroke="#363c45" stroke-dasharray="3 3"/><text x="${X(w) + 3}" y="${T + 10}" fill="#a3aab4" font-size="10" font-family="Atkinson Hyperlegible Next, sans-serif">${n}</text>`; });
+  [0.75, 1, 1.5, 2, 3, 4, 5].forEach((w) => { s += `<text x="${X(w)}" y="${H - 8}" fill="#a3aab4" font-size="11" text-anchor="middle" font-family="Atkinson Hyperlegible Mono, monospace">${w} µm</text>`; });
+  s += `<text x="8" y="${T + 4}" fill="#a3aab4" font-size="11" font-family="Atkinson Hyperlegible Next, sans-serif">flux</text><line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#363c45"/>`;
+  if (coverage) for (const w of coverage) s += `<line x1="${X(w)}" x2="${X(w)}" y1="${H - B + 12}" y2="${H - B + 17}" stroke="#e8eaed" stroke-width="0.6" opacity="0.6"/>`;
+  for (const [w, f, e] of pts) { s += `<line x1="${X(w)}" x2="${X(w)}" y1="${Y(f + e)}" y2="${Y(Math.max(0, f - e))}" stroke="#6f7782"/><circle cx="${X(w)}" cy="${Y(f)}" r="2.4" fill="#e8eaed"/>`; }
+  return s + "</svg>";
+}
+const FEATURES = [
+  ["Methane dip", "3.3 µm", "ch4"], ["Water ice", "3.05 µm", "h2o"], ["Carbon dioxide", "4.27 µm", "co2"], ["Carbon monoxide", "4.67 µm", "co"],
+  ["3.3 µm glow", "3.28 µm", "pah"], ["Hydrogen lines", "1.875 and 4.05 µm", "h"],
+];
+const FEX = {
+  y: { ch4: [0.42, 0.05, 8], co2: [0.18, 0.06, 3], co: [0.21, 0.07, 3], h2o: null, pah: null, h: null, why: "Not measured: fewer than three bands cover the feature" },
+  t: { ch4: [0.61, 0.04, 15], co2: [0.09, 0.05, 1.8], co: [0.11, 0.06, 1.8], h2o: null, pah: null, h: null, why: "Not measured: no continuum on both sides" },
+  m: { ch4: [0.01, 0.01, 1], co2: [0.0, 0.01, 0], co: [0.04, 0.01, 4], h2o: null, pah: null, h: null, why: "Not measured: bands overflow at this brightness" },
+  yso: { ch4: [0.0, 0.02, 0], co2: [0.12, 0.04, 3], co: [0.05, 0.04, 1.2], h2o: [0.31, 0.06, 5], pah: [0.08, 0.03, 2.7], h: [0.22, 0.05, 4.4], why: "" },
+  g: { ch4: [0.0, 0.01, 0], co2: [0.02, 0.01, 2], co: [0.35, 0.02, 17], h2o: [0.27, 0.03, 9], pah: null, h: null, why: "Not measured: the source varies between visits" },
+};
+function renderSource() {
+  const t = TARGETS[state.target]; const c = t.catalogue; const ex = EX[state.target]; const fx = FEX[ex.shape];
+  const pm = Math.hypot(c.pmra, c.pmdec) / 1000; const cov = t.frames.filter((f) => f[2] != null).map((f) => f[2]);
+  const rows = FEATURES.map(([name, w, k]) => {
+    const r = fx[k];
+    if (!r) return `<tr><td>${name}</td><td class="num">${w}</td><td colspan="3" class="muted">${h(fx.why || "Not measured: too few bands cover the feature")}</td></tr>`;
+    const [v, e, sig] = r; const det = sig >= 3;
+    return `<tr><td>${name}</td><td class="num">${w}</td><td class="num r">${det ? `${v.toFixed(2)} ± ${e.toFixed(2)} mag` : "not detected"}</td><td class="num r">${det ? `${sig.toFixed(0)}σ` : "under 3σ"}</td><td><div class="bar" style="width:120px"><i style="width:${Math.min(100, (v / 0.7) * 100)}%"></i></div></td></tr>`;
+  }).join("");
+  const ice = ex.shape === "yso";
+  $("#source").innerHTML = `
+  <div class="src-head">
+    <div class="ident">
+      <div class="row"><h1 id="h-source">${h(t.title)}</h1><span class="chip known"><span class="dot"></span>Known</span></div>
+      <span class="desig">${h(c.oname)}</span>
+    </div>
+    <div class="actions"><button class="btn" type="button" data-go="viewer">Show in the viewer</button></div>
+  </div>
+  <div class="facts" aria-label="Catalogue readings">
+    <div><span class="label">Type in SIMBAD</span><span class="v" style="font-family:var(--font)">${h(OTYPE[c.otype] || c.otype)}</span><span class="o">${c.sptype ? `Spectral type ${h(c.sptype)} · ` : ""}Catalogue</span></div>${/* unslop-ignore: astronomy term */ ""}
+    <div><span class="label">Motion</span><span class="v">${pm.toFixed(pm >= 1 ? 2 : 3)}″/yr</span><span class="o">Catalogue · ${h((c.pm_ref || "").replace(/&amp;/g, "&"))}</span></div>
+    <div><span class="label">Distance</span><span class="v">${c.plx ? (1000 / c.plx >= 100 ? Math.round(1000 / c.plx) : (1000 / c.plx).toFixed(2)) + " pc" : "not measured"}</span><span class="o">from parallax ${c.plx.toFixed(2)} mas · Catalogue</span></div>
+    <div><span class="label">SPHEREx frames</span><span class="v">${t.frames.length.toLocaleString("en")}</span><span class="o">${t.visits.length} visits · IRSA TAP</span></div>
+  </div>
+  <div class="src-grid">
+    <div class="stack">
+      <section class="card" aria-labelledby="h-spec"><header><h2 id="h-spec">Spectrum</h2><span class="chip example">Example values</span></header><div class="body">
+        ${spectrumSvg(exampleSpectrum(ex.shape), cov)}
+        <p class="note">Dots: brightness in each of the 102 bands, with errors. Colour bars: the six detectors. White ticks under the axis: the real wavelengths of the ${cov.length} frames read at this position so far.</p>
+      </div></section>
+      <section class="card" aria-labelledby="h-mol"><header><h2 id="h-mol">Molecule readings</h2><span class="chip example">Example values</span></header><div class="body tablebox">
+        <table class="t"><thead><tr><th>Feature</th><th>Wavelength</th><th class="r">Strength</th><th class="r">Significance</th><th>Depth</th></tr></thead><tbody>${rows}</tbody></table>
+        ${ice ? `<p style="font-size:var(--t-sm)">Carbon dioxide ice: 23% of water ice, ± 6%, <span class="muted">Estimated</span></p>` : ""}
+        <p class="note">Each reading is the strength of a dip or rise at a molecule's wavelength, with its error and significance. A reading is refused, with the reason, when the source varies, is blended or has too few bands. The only percentage shown is an ice molecule as a share of water ice.</p>
+      </div></section>
+    </div>
+    <div class="stack">
+      <section class="card" aria-labelledby="h-type"><header><h2 id="h-type">Most likely type</h2><span class="chip example">Example values</span></header><div class="body estimate">
+        <p class="big">${word(ex.p)} ${h(ex.type)}</p>
+        <div class="line"><span class="num" style="font-size:var(--t-lg)">${ex.p}%</span><span class="muted">range ${ex.lo} to ${ex.hi} · Estimated, classifier v0.1</span></div>
+        <div class="ladder" aria-label="How each result was reached">
+          ${[["Molecule readings alone", ex.ladder[0]], ["Spectrum alone", ex.ladder[1]], ["All data", ex.ladder[2]]].map(([n, v], i) => `<div class="rung ${i === 2 ? "shown" : ""}"><b style="font-weight:${i === 2 ? 600 : 400}">${n}</b><div class="bar"><i style="width:${v}%;${i < 2 ? "background:#5c6f99" : ""}"></i></div><span class="num">${v}%</span></div>`).join("")}
+        </div>
+        <div><span class="label">Toward this type</span><div class="feat" style="margin-top:6px">${ex.up.map((f) => `<span class="up">${h(f)}</span>`).join("")}</div></div>
+        <div><span class="label">Away from it</span><div class="feat" style="margin-top:6px">${ex.down.length ? ex.down.map((f) => `<span class="down">${h(f)}</span>`).join("") : '<span class="muted" style="background:none;padding:0">none</span>'}</div></div>
+        <div><span class="label">Also possible</span><p style="font-size:var(--t-sm);margin-top:4px">${ex.also.map(([n, v]) => `${h(n)} <span class="num">${v}%</span>`).join(" · ")}</p></div>
+        <div><span class="label">Deciding bands</span><p style="font-size:var(--t-sm);margin-top:4px">${ex.decide.map(([n, m]) => `${h(n)} <span class="muted">${m ? "measured" : "not measured"}</span>`).join(" · ")}</p></div>
+        <div><span class="label">Template match</span><p style="font-size:var(--t-sm);margin-top:4px">${h(ex.template)}</p></div>
+        <p class="note">Three results are stored. Molecule readings alone shows how much the molecules reveal. Spectrum alone adds the rest of the light. All data adds Gaia, WISE and the other surveys. When the template match disagrees with the classifier, the shown value is capped at 50%.</p>
+      </div></section>
+      <section class="card" aria-labelledby="h-settle"><header><h2 id="h-settle">What would settle it</h2></header><div class="body">
+        <p style="font-size:var(--t-sm)">${h(ex.settle)}</p>
+        <p class="note">A type is a suggestion for follow-up. It confirms nothing.</p>
+      </div></section>
+    </div>
+  </div>`;
+}
+
+/* ---------- search by light (example results) ---------- */
+const PRESETS = [
+  ["Molecule features", ["Methane dip", "Water ice", "Carbon dioxide", "Carbon monoxide", "3.3 µm glow", "Hydrogen lines"]],
+  ["Shape of the light", ["Very red", "Seen only beyond 4 µm"]],
+  ["Change", ["Moved between visits", "Changed brightness"]],
+  ["Catalogues", ["Not in any catalogue"]],
+];
+const RESULTS = {
+  w1925: [
+    ["W1925-00412", "uncatalogued", ["Methane dip", "Very red", "Not in any catalogue"], 11.8, 0.12, 0.81],
+    ["W1925-01877", "unclassified", ["Methane dip", "Moved between visits"], 9.4, 0.08, 0.74],
+    ["W1925-00093", "known", ["Methane dip"], 23.1, 0.05, 0.42],
+    ["W1925-03310", "uncatalogued", ["Seen only beyond 4 µm", "Very red", "Not in any catalogue"], 6.2, 0.27, 0.38],
+    ["W1925-02164", "unclassified", ["Methane dip", "Changed brightness"], 7.7, 0.31, 0.29],
+  ],
+  rwaur: [
+    ["RWAUR-00218", "unclassified", ["Changed brightness", "Hydrogen lines"], 14.2, 0.22, 0.52],
+    ["RWAUR-00931", "uncatalogued", ["Water ice", "Carbon dioxide", "Very red", "Not in any catalogue"], 8.1, 0.18, 0.47],
+    ["RWAUR-00057", "known", ["Water ice", "Carbon monoxide"], 31.4, 0.04, 0.24],
+  ],
+};
+const searchState = { field: "w1925", on: new Set(["Methane dip"]), minsn: 5, maxbl: 0.3 };
+function renderResults() {
+  const rows = RESULTS[searchState.field].filter(([, , m, sn, bl]) => [...searchState.on].every((p) => m.includes(p)) && sn >= searchState.minsn && bl <= searchState.maxbl);
+  const fieldName = searchState.field === "w1925" ? "W1925" : "the RW Aurigae field";
+  const n = rows.length;
+  const table = n ? `<table class="t"><thead><tr><th>Source</th><th>Status</th><th>Matched</th><th class="r">S/N</th><th class="r">Blend</th><th>Priority</th></tr></thead><tbody>
+    ${rows.map(([id, st, m, sn, bl, pr]) => `<tr><td class="num">${id}</td><td><span class="chip ${st}"><span class="dot"></span>${st[0].toUpperCase() + st.slice(1)}</span></td><td>${m.join(", ")}</td><td class="num r">${sn.toFixed(1)}</td><td class="num r">${bl.toFixed(2)}</td><td><div class="prio"><div class="bar ${st === "uncatalogued" ? "warm" : ""}"><i style="width:${pr * 100}%"></i></div><span class="num">${pr.toFixed(2)}</span></div></td></tr>`).join("")}
+    </tbody></table>` : `<div class="notice"><span><b>No source in ${fieldName} matches every chosen feature.</b> Turn a feature off, lower the minimum S/N or allow more blending.</span></div>`;
+  $("#results").innerHTML = `
+    <div class="notice"><span><b>Searches cover processed fields only.</b> Two fields are planned: W1925 in the Galactic plane and the RW Aurigae field off the plane. Outside them the time series still works.</span></div>
+    <section class="card" aria-labelledby="h-res"><header><h2 id="h-res">${n} ${n === 1 ? "source matches" : "sources match"}</h2><span class="muted" style="font-size:var(--t-sm)">${searchState.on.size ? `Has ${[...searchState.on].join(" and ").toLowerCase()}` : "No feature chosen"} · sorted by priority</span><span class="chip example">Example values</span></header>
+    <div class="body tablebox">${table}
+    <p class="note">Priority multiplies signal strength, the chance the source is real, and how poorly known sources and artefacts explain it. Each part is stored.</p></div></section>`;
+}
+function renderSearch() {
+  $("#filters .body").innerHTML = `
+    <label class="field"><span class="label">Field</span><select class="select" id="field"><option value="w1925">W1925, Galactic plane</option><option value="rwaur">RW Aurigae, off the plane</option></select></label>
+    ${PRESETS.map(([g, ps]) => `<fieldset><legend class="label">${g}</legend>${ps.map((p) => `<label class="toggle"><input type="checkbox" data-preset="${h(p)}" ${searchState.on.has(p) ? "checked" : ""}> ${p}</label>`).join("")}</fieldset>`).join("")}
+    <label class="field"><span class="label">Minimum S/N</span><input type="range" min="3" max="30" value="${searchState.minsn}" id="minsn"><span class="num muted" id="minsnv">${searchState.minsn}</span></label>
+    <label class="field"><span class="label">Maximum blend share</span><input type="range" min="0" max="100" value="${Math.round(searchState.maxbl * 100)}" id="maxbl"><span class="num muted" id="maxblv">${searchState.maxbl.toFixed(2)}</span></label>`;
+  $("#field").value = searchState.field;
+  $("#field").addEventListener("change", (e) => { searchState.field = e.target.value; renderResults(); });
+  $$("[data-preset]").forEach((c) => c.addEventListener("change", () => { c.checked ? searchState.on.add(c.dataset.preset) : searchState.on.delete(c.dataset.preset); renderResults(); }));
+  $("#minsn").addEventListener("input", (e) => { searchState.minsn = +e.target.value; $("#minsnv").textContent = String(searchState.minsn); renderResults(); });
+  $("#maxbl").addEventListener("input", (e) => { searchState.maxbl = +e.target.value / 100; $("#maxblv").textContent = searchState.maxbl.toFixed(2); renderResults(); });
+  $("#filters").addEventListener("submit", (e) => e.preventDefault());
+  renderResults();
+}
+
+/* ---------- cases (example) ---------- */
+const STATES = ["Detected", "Machine-checked", "In review", "Reviewed", "Prediction held", "Follow-up ready", "Confirmed elsewhere"];
+const CASES = [
+  { id: "PW-0007", kind: "mover", field: "W1925", prio: 0.81, state: 2, src: "W1925-00412" },
+  { id: "PW-0004", kind: "mismatch", field: "W1925", prio: 0.64, state: 3, src: "W1925-01877" },
+  { id: "PW-0003", kind: "variable", field: "RW Aurigae", prio: 0.52, state: 3, src: "RWAUR-00218" },
+  { id: "PW-0002", kind: "mover", field: "RW Aurigae", prio: 0.33, state: -1, exit: "Artefact: crosstalk image of a bright star, 64 pixels away", src: "RWAUR-01102" },
+  { id: "PW-0001", kind: "variable", field: "W1925", prio: 0.21, state: -2, exit: "Explained: listed in the variable-star index", src: "W1925-00777" },
+];
+let selCase = "PW-0007";
+function renderCases() {
+  $("#caselist").innerHTML = `<table class="t"><thead><tr><th>Case</th><th>Kind</th><th>Field</th><th>Priority</th><th>State</th></tr></thead><tbody>${CASES.map((c) => `<tr class="click ${c.id === selCase ? "sel" : ""}" data-case="${c.id}" tabindex="0"><td class="num">${c.id}</td><td>${c.kind}</td><td>${c.field}</td><td><div class="prio" style="grid-template-columns:60px auto"><div class="bar warm"><i style="width:${c.prio * 100}%"></i></div><span class="num">${c.prio.toFixed(2)}</span></div></td><td>${c.state >= 0 ? STATES[c.state] : `<span class="muted">${c.exit.split(":")[0]}</span>`}</td></tr>`).join("")}</tbody></table>`;
+  const c = CASES.find((x) => x.id === selCase);
+  const checks = [
+    ["Seen in two or more independent frames, and in two or more visits", "pass", "4 visits, 61 frames"],
+    ["No flagged or ghost pixels under the source", "pass", "0 of 61 frames"],
+    ["No match in Gaia DR3, 2MASS, CatWISE2020 or SIMBAD at the frame date", "pass", "nearest 9.4″"],
+    ["No known solar-system object at the frame time", "pass", "SkyBoT and the Moving Object Search Tool"],
+    ["Real-or-artefact model M1 gives 0.9 or more", "pass", "0.96, Estimated"],
+    ["History at the positions its motion predicts", "pending", "2MASS not seen, WISE era not checked"],
+  ];
+  const exitNote = c.state < 0 ? `<div class="notice"><span><b>${h(c.exit.split(":")[0])}.</b> ${h(c.exit.split(":").slice(1).join(":").trim())}. An exit is a result and is credited to whoever raised the signal.</span></div>` : "";
+  $("#casedetail").innerHTML = `
+  <section class="card" aria-labelledby="h-case"><header><h2 id="h-case">${c.id}</h2><span class="muted" style="font-size:var(--t-sm)">${c.kind} in ${c.field} · source ${c.src}</span><span class="chip example">Example values</span></header><div class="body">
+    ${exitNote}
+    <div class="states" aria-label="Case state">${STATES.map((s, i) => `<div class="${c.state > i ? "done" : c.state === i ? "now" : ""}"><i></i>${s}</div>`).join("")}</div>
+    <div class="checks" aria-label="Machine checks">${checks.map(([n, r, d]) => `<div><span aria-hidden="true">${r === "pass" ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fcfa9" stroke-width="2.2" stroke-linecap="round"><path d="M5 12l4.5 4.5L19 7"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a3aab4" stroke-width="2"><circle cx="12" cy="12" r="7"/></svg>'}</span><span>${n}<br><span class="muted" style="font-size:var(--t-xs)">${d}</span></span><span class="chip ${r}">${r === "pass" ? "Passed" : "Pending"}</span></div>`).join("")}</div>
+  </div></section>
+  ${c.kind === "mover" && c.state >= 0 ? `<section class="card" aria-labelledby="h-pred"><header><h3 id="h-pred">Prediction check</h3><span class="chip pending">Pending</span></header><div class="body">
+    <p style="font-size:var(--t-sm)">Locked on 14 Nov 2026 for the next visit, 2 Mar to 9 Apr 2027. It holds if the source is found within 2σ of the predicted position and more than 3σ from where it would be had it not moved.</p>
+    <dl class="readings"><dt>Predicted position</dt><dd><span class="num">291.36412° 18.47033°</span></dd><dt>Error radius</dt><dd><span class="num">1.9″</span></dd><dt>Distance from the stay position</dt><dd><span class="num">7.8″, 4.1σ</span></dd></dl>
+    <p class="note">This record is never edited. New SPHEREx data settles it.</p></div></section>` : ""}
+  ${c.state >= 0 ? `<section class="card" aria-labelledby="h-review"><header><h3 id="h-review">Review this case</h3><span class="muted" style="font-size:var(--t-sm)">Other answers stay hidden until you submit yours</span></header><form class="body" id="reviewForm">
+    <div class="q"><span>Is there a point source at the marked position in at least two visits?</span><div class="opts">${["Yes", "No", "Cannot tell"].map((o) => `<label><input type="radio" name="q1"> ${o}</label>`).join("")}</div></div>
+    <div class="q"><span>Does it move between visits in the same direction?</span><div class="opts">${["Yes", "No", "Cannot tell"].map((o) => `<label><input type="radio" name="q2"> ${o}</label>`).join("")}</div></div>
+    <div class="q"><span>Could a nearby bright star, a ghost or a streak explain it?</span><div class="opts">${["Yes", "No", "Cannot tell"].map((o) => `<label><input type="radio" name="q3"> ${o}</label>`).join("")}</div></div>
+    <div class="q"><span>Your probability that the prediction will hold</span><div style="display:flex;gap:12px;align-items:center"><input type="range" min="0" max="100" value="50" id="fc" style="flex:1;accent-color:var(--accent)" aria-label="Forecast"><span class="num" id="fcv">50%</span></div><span class="note">Scored with the Brier score when the prediction settles. It feeds your reputation.</span></div>
+    <div class="actions"><button class="btn primary" type="submit">Submit review</button></div>
+    <p class="note" id="reviewMsg" aria-live="polite"></p>
+  </form></section>` : ""}`;
+  const fc = $("#fc"); if (fc) fc.addEventListener("input", () => ($("#fcv").textContent = `${fc.value}%`));
+  const rf = $("#reviewForm"); if (rf) rf.addEventListener("submit", (e) => { e.preventDefault(); $("#reviewMsg").textContent = "Review recorded in this prototype only. Accounts and reviews arrive with the community layer."; });
+}
+document.addEventListener("click", (e) => { const r = e.target.closest("tr[data-case]"); if (r) { selCase = r.dataset.case; renderCases(); } const g = e.target.closest("[data-go]"); if (g) location.hash = "#" + g.dataset.go; });
+document.addEventListener("keydown", (e) => { const r = e.target.closest && e.target.closest("tr[data-case]"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); selCase = r.dataset.case; renderCases(); } });
+
+/* ---------- proof (real pass marks, nothing measured yet) ---------- */
+function renderProof() {
+  const A = DATA.proof.tierA, B = DATA.proof.tierB;
+  const tbl = (rows) => `<div class="tablebox"><table class="t"><thead><tr><th>Test</th><th>Target</th><th>What is measured</th><th>Pass mark</th><th>Measured</th><th>Result</th></tr></thead><tbody>${rows.map((r) => `<tr><td class="num">${r[0]}</td><td>${h(r[1])}</td><td>${h(r[2])}</td><td>${h(r[3])}</td><td class="muted">not measured</td><td><span class="chip pending">Pending</span></td></tr>`).join("")}</tbody></table></div>`;
+  $("#proof").innerHTML = `
+  <div class="src-head"><div class="ident"><h1 id="h-proof">Proof</h1><p class="muted" style="font-size:var(--t-sm)">Every number here comes from one script, run from a clean copy of the code. Pass marks were set on 13 Nov 2026, before any result, and are never tuned afterwards. A failed test is published with its measured value.</p></div></div>
+  <div class="summary card" style="padding:var(--s4)"><div><div class="n">${A.length + B.length}</div><span class="muted" style="font-size:var(--t-sm)">tests with fixed pass marks</span></div><div><div class="n">0</div><span class="muted" style="font-size:var(--t-sm)">measured so far</span></div><div><div class="n">0</div><span class="muted" style="font-size:var(--t-sm)">passed</span></div><div><div class="n">0</div><span class="muted" style="font-size:var(--t-sm)">failed</span></div></div>
+  <section class="card" aria-labelledby="h-ta"><header><h2 id="h-ta">The test: five targets</h2><span class="muted" style="font-size:var(--t-sm)">Tier A</span></header><div class="body">${tbl(A)}</div></section>
+  <section class="card" aria-labelledby="h-tb"><header><h2 id="h-tb">Search, photometry and models</h2><span class="muted" style="font-size:var(--t-sm)">Tier B</span></header><div class="body">${tbl(B)}</div></section>
+  <div class="src-grid">
+    <section class="card" aria-labelledby="h-lim"><header><h2 id="h-lim">Stated limits</h2></header><div class="body"><ul style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:var(--t-sm)">${DATA.proof.limits.map((l) => `<li>${h(l)}</li>`).join("")}</ul></div></section>
+    <section class="card" aria-labelledby="h-next"><header><h2 id="h-next">Next</h2></header><div class="body"><ol class="next">${DATA.proof.next.map((n) => `<li>${h(n)}</li>`).join("")}</ol></div></section>
+  </div>
+  <section class="card" aria-labelledby="h-cred"><header><h2 id="h-cred">Data and credits</h2></header><div class="body"><p style="font-size:var(--t-sm)">${h(DATA.proof.credits)}</p></div></section>`;
+}
+
+/* ---------- member (example) ---------- */
+const CLASSES = [["O", "#9bb0ff", 0], ["B", "#aabfff", 100], ["A", "#cad7ff", 400], ["F", "#f8f7ff", 1000], ["G", "#fff4ea", 2000], ["K", "#ffd2a1", 3500], ["M", "#ffcc6f", 5500], ["L", "#c4543c", 8000], ["T", "#8a3324", 12000], ["Y", "#1a1a1a", 18000]];
+function renderMember() {
+  const xp = 3812, rep = 0.84, k = 5;
+  $("#member").innerHTML = `
+  <div class="src-head"><div class="ident"><div class="row"><span class="badge" style="background:#ffd2a1;width:36px;height:36px;font-size:16px">K</span><h1 id="h-member">Your profile</h1><span class="chip example">Example values</span></div><p class="muted" style="font-size:var(--t-sm)">Class K. Accounts arrive with the community layer.</p></div></div>
+  <section class="card"><div class="body">
+    <div class="kv">
+      <div><span class="label">XP, effort</span><span class="v">${xp.toLocaleString("en")}</span><span class="note">1,688 to class M</span></div>
+      <div><span class="label">Reputation, accuracy</span><span class="v">${rep.toFixed(2)}</span><span class="note">class M needs 0.86</span></div>
+      <div><span class="label">Reviews</span><span class="v">212</span><span class="note">31 known-answer cases mixed in</span></div>
+      <div><span class="label">Forecasts settled</span><span class="v">14</span><span class="note">Brier score 0.17</span></div>
+    </div>
+    <div class="classes" aria-label="Classes O to Y">${CLASSES.map(([c, col, x], i) => `<div class="${i === k ? "now" : ""}"><span class="badge" style="background:${col};${c === "Y" ? "border:1px solid #ff6a5c;color:#e8eaed" : c === "L" || c === "T" ? "color:#e8eaed" : ""}">${c}</span>${x.toLocaleString("en")}</div>`).join("")}</div>
+    ${/* unslop-ignore: astronomy term */ ""}<p class="note">Classes follow the spectral sequence, from hot O stars to the coldest Y brown dwarfs. A class needs both XP and reputation. XP counts effort. Reputation counts accuracy on known-answer cases and settled forecasts, and weights every review.</p>
+  </div></section>
+  <section class="card" aria-labelledby="h-ach"><header><h2 id="h-ach">Achievements</h2></header><div class="body"><div class="ach">
+    ${[["First Light", "Finished the guided tour", 1], ["Blink Comparator", "10 known movers found in Blink", 1], ["Dipole", "10 slow movers from the dark and bright pair", 1], ["Methane Line", "10 correct T or Y dwarf matches", 0], ["Cosmic Ray", "25 artefacts correctly rejected", 1], ["Crowded Field", "25 correct Galactic-plane reviews", 0], ["Second Opinion", "Disagreed with the model 5 times and the consensus agreed with you", 0], ["Follow-up Ready", "A case you reported reached Follow-up ready", 0]].map(([n, d, ok]) => `<div class="${ok ? "" : "locked"}"><b>${n}</b><small>${d}</small></div>`).join("")}
+  </div></div></section>`;
+}
+
+/* ---------- guided start ---------- */
+function tourSteps() {
+  const f = DATA.findings && DATA.findings.wise0855; const t = TARGETS.wise0855; const st = t.stacks;
+  const e = st.entered.xy, p = st.present_by_visit[String(st.visits)].xy; const off = Math.hypot(p[0] - e[0], p[1] - e[1]) * st.grid.scale_arcsec;
+  return [
+    { title: "Find the coldest known brown dwarf", text: `WISE 0855 is about 285 K, colder than the North Pole in winter. The cross marks the position the challenge gives. The ring marks where it is now, ${Math.round(off)}″ west, because it moves 8.1″ a year.`, go: () => { location.hash = "#viewer"; state.mode = "play"; setTarget("wise0855"); } },
+    { title: "Six detectors, one visit", text: `D1 to D4 catch shorter wavelengths. The light beside the ring there comes from a background star. WISE 0855 itself appears only in D5 and D6, the longest wavelengths.`, go: () => { state.mode = "detectors"; state.visit = st.visits; renderViewer(); } },
+    { title: "Watch it move", text: `D6 plays visit by visit. The ring follows WISE 0855 toward the background star. In the latest visit they are ${f ? f.sep_arcsec.toFixed(1) : "4.6"}″ apart, less than one SPHEREx pixel.`, go: () => { state.mode = "play"; state.det = 6; state.visit = 2; renderViewer(); togglePlay(); } },
+    { title: "What is it made of", text: "Source details show its spectrum, the molecule readings and the most likely type, with the reasons behind it.", go: () => { stopPlay(); location.hash = "#source"; } },
+  ];
+}
+let tourI = -1;
+function showTour(i) {
+  const steps = tourSteps(); tourI = i; const el = $("#tour");
+  if (i < 0 || i >= steps.length) { el.hidden = true; try { localStorage.setItem("pw-tour", "done"); } catch (_) {} return; }
+  const s = steps[i]; s.go();
+  el.hidden = false;
+  el.innerHTML = `<div class="steps">${steps.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("")}</div><h2 id="tourTitle" style="font-size:var(--t-md)">${h(s.title)}</h2><p>${h(s.text)}</p><div class="row"><button class="btn quiet" type="button" id="tourSkip">${i === steps.length - 1 ? "Close" : "Skip"}</button>${i < steps.length - 1 ? `<button class="btn primary" type="button" id="tourNext">Next</button>` : ""}</div>`;
+  $("#tourNext") && $("#tourNext").addEventListener("click", () => showTour(i + 1));
+  $("#tourSkip").addEventListener("click", () => { stopPlay(); showTour(-1); });
+}
+
+/* ---------- home: real pixels, drawn once, light motion ---------- */
+let blinkTimer = null;
+function cropAround(st, x, y, c) { const N = st.grid.size; const cl = (z) => Math.max(0, Math.min(N - c, Math.round(z - c / 2))); return { c, x0: cl(x), y0: cl(y) }; }
+function renderHome() {
+  const all = ORDER.map((id) => TARGETS[id]);
+  const nFrames = all.reduce((a, t) => a + t.frames.length, 0);
+  $("#homeFacts").innerHTML = `<span><b>${ORDER.length}</b> named targets</span><span><b>${nFrames.toLocaleString("en")}</b> SPHEREx frames</span><span>read from the public archive on <b>${h(fmtDate((Date.parse(DATA.fetched_at) / 86400000) + 40587))}</b></span>`;
+  const t = TARGETS.wise0855; const st = t.stacks; const N = st.grid.size;
+  const p2 = st.present_by_visit["2"].xy, p3 = st.present_by_visit["3"].xy;
+  const crop = cropAround(st, (p2[0] + p3[0]) / 2, (p2[1] + p3[1]) / 2, 64);
+  const s2 = stackOf(t, 6, 2), s3 = stackOf(t, 6, 3);
+  const savedC = $("#contrast").value; $("#contrast").value = 40;
+  $("#blink").innerHTML = `
+    <div class="blink-main"><canvas id="bk2" hidden></canvas><canvas id="bk3"></canvas>${marksSvg(t, 3, { small: true, crop })}<span class="tag" id="bkTag">D6 · Visit 3 · ${h(fmtShort(s3.mjd_first))}</span></div>
+    <div class="blink-strip">${[1, 2, 3, 4, 5, 6].map((d) => `<div><canvas data-strip="${d}" aria-hidden="true"></canvas><span><b style="color:${DET_COL[d]}">D${d}</b>${DET_RANGE[d][0].toFixed(2)}–${DET_RANGE[d][1].toFixed(2)} µm</span></div>`).join("")}</div>
+    <figcaption>WISE 0855, the coldest known brown dwarf, in real SPHEREx stacks. Large: detector 6, visits 2 and 3, ${(crop.c * st.grid.scale_arcsec / 60).toFixed(0)}′ across. Strip: the same spot in all six detectors. The ring marks where it is at each date.</figcaption>`;
+  paint($("#bk2"), N, greyFn(s2.px, s2.noise), crop); paint($("#bk3"), N, greyFn(s3.px, s3.noise), crop);
+  $$("[data-strip]").forEach((c) => { const s = stackOf(t, +c.dataset.strip, 3); if (s) paint(c, N, greyFn(s.px, s.noise), cropAround(st, p3[0], p3[1], 40)); });
+  // thumbnail detector: the one with the fewest flagged pixels at the target in the latest visit
+  const cleanDet = (tt) => {
+    const sx = tt.stacks; if (!sx) return bestDet(tt); const N2 = sx.grid.size; let best = null;
+    for (let d = 1; d <= 6; d++) {
+      const vs = sx.stacks.filter((s) => s.det === d).map((s) => s.visit); if (!vs.length) continue;
+      const v = Math.max(...vs); const s = stackOf(tt, d, v); const pv = sx.present_by_visit[String(v)]; if (!pv) continue;
+      const cx = Math.round(pv.xy[0]), cy = Math.round(pv.xy[1]); let nan = 0;
+      for (let y = cy - 4; y <= cy + 4; y++) for (let x = cx - 4; x <= cx + 4; x++) if (!(x >= 0 && y >= 0 && x < N2 && y < N2) || !Number.isFinite(s.px[y * N2 + x])) nan++;
+      const score = nan * 1000 - s.n; if (!best || score < best.score) best = { d, score };
+    }
+    return best ? best.d : bestDet(tt);
+  };
+  $("#thumbs").innerHTML = ORDER.map((id) => {
+    const tt = TARGETS[id]; const det = id === "wise0855" ? 6 : cleanDet(tt);
+    return `<button type="button" data-open="${id}"><div class="im"><canvas data-thumb="${id}" data-det="${det}" aria-hidden="true"></canvas></div><b>${h(tt.title)}</b><span>${h(OTYPE[tt.catalogue.otype] || tt.catalogue.otype)} · D${det}</span><span class="num">${tt.frames.length.toLocaleString("en")} frames · ${tt.visits.length} visits</span></button>`;
+  }).join("");
+  $$("[data-thumb]").forEach((c) => {
+    const tt = TARGETS[c.dataset.thumb]; const s2t = tt.stacks; if (!s2t) return; const det = +c.dataset.det;
+    const vs = s2t.stacks.filter((s) => s.det === det).map((s) => s.visit); const v = Math.max(...vs); const s = stackOf(tt, det, v);
+    const pv = s2t.present_by_visit[String(v)]; paint(c, s2t.grid.size, greyFn(s.px, s.noise), cropAround(s2t, pv.xy[0], pv.xy[1], 56));
+    c.insertAdjacentHTML("afterend", marksSvg(tt, v, { small: true, crop: cropAround(s2t, pv.xy[0], pv.xy[1], 56) }));
+  });
+  $("#contrast").value = savedC;
+  clearInterval(blinkTimer); blinkTimer = null;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) {
+    let on3 = true;
+    blinkTimer = setInterval(() => { on3 = !on3; $("#bk2").hidden = on3; $("#bk3").hidden = !on3; $("#bkTag").textContent = `D6 · Visit ${on3 ? 3 : 2} · ${fmtShort((on3 ? s3 : s2).mjd_first)}`; }, 900);
+  }
+}
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-open]"); if (b) { location.hash = "#viewer"; state.mode = "play"; setTarget(b.dataset.open); } if (e.target.closest("#homeTour")) showTour(0); });
+
+/* ---------- routing ---------- */
+const VIEWS = ["home", "viewer", "source", "search", "cases", "proof", "member"];
+function currentView() { const v = location.hash.slice(1); return VIEWS.includes(v) ? v : "home"; }
+function route() {
+  const v = currentView();
+  $$("[data-view]").forEach((s) => (s.hidden = s.dataset.view !== v));
+  $$("[data-nav]").forEach((a) => (a.dataset.nav === (v === "source" ? "viewer" : v) ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+  if (v !== "viewer") stopPlay();
+  if (v !== "viewer" && v !== "source" && !$("#tour").hidden) $("#tour").hidden = true;
+  if (v !== "home") { clearInterval(blinkTimer); blinkTimer = null; }
+  if (v === "home") renderHome();
+  if (v === "viewer") renderViewer();
+  if (v === "source") renderSource();
+  if (v === "search") renderSearch();
+  if (v === "cases") renderCases();
+  if (v === "proof") renderProof();
+  if (v === "member") renderMember();
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", route);
+route();
+})();
+</script>
