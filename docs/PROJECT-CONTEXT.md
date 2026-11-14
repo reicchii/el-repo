@@ -1496,7 +1496,7 @@ Detector label colours, used only for small labels and matrix dots: D1 `#A98BFF`
 
 Member class badges use approximate blackbody colours (Charity 2001 table): O `#9BB0FF`, B `#AABFFF`, A `#CAD7FF`, F `#F8F7FF`, G `#FFF4EA`, K `#FFD2A1`, M `#FFCC6F`. L and T are deep red. Y is near black with an infrared outline, because Y dwarfs give off almost no visible light.
 
-**Type.** Atkinson Hyperlegible Next for headings and text, Atkinson Hyperlegible Mono for every reading, coordinate and identifier, with tabular figures. Designed by the Braille Institute so I, l, 1 and O, 0 never mix. Sizes 12, 13, 15, 18, 24, and a display size from 30 to 46 used only on Home. (Changed 14 Nov from Space Grotesk and Inter, which read as a default choice.)
+**Type.** Atkinson Hyperlegible Next for headings and text, Atkinson Hyperlegible Mono for every reading, coordinate and identifier, with tabular figures. Designed by the Braille Institute so I, l, 1 and O, 0 never mix. Sizes 12, 13, 15, 18, 24. Unbounded, a wide geometric face, for the product name and section titles in uppercase. Bricolage Grotesque for headings and the tagline. (Changed 14 Nov from Space Grotesk and Inter, which read as a default choice. Wide titles follow the space and NASA web references the owner pointed to.)
 
 **Shape.** Spacing steps 4, 8, 12, 16, 24, 32. Radius 4 for controls, 6 for panels. One level of shadow, used only for floating panels. No gradients, no glow, no glass blur. Pixels with no data (flagged or outside the frame) show in one muted blue, never as black, so they cannot be mistaken for a fainter source.
 
@@ -1526,7 +1526,7 @@ Motion is used only when it explains a change.
 | Uncatalogued marks | slow pulse, 2 s period, off under reduced motion |
 | Prediction settled | the measured mark moves into place once |
 
-No decorative motion. No parallax backgrounds. Stars never twinkle. Respect the reduced-motion setting everywhere.
+Inside the Viewer, motion only explains a change. On Home and in marketing surfaces, the owner asked on 14 Nov for a cinematic feel: the real sky drifts slowly, a survey scan line crosses it, the sky shifts slightly with the pointer, sections and numbers animate in, and tiles respond to hover. Motion uses transform and opacity only, pauses off-screen, and stops under the reduced-motion setting. Stars never twinkle.
 
 ### 10.12 States
 

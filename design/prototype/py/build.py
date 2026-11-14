@@ -22,7 +22,16 @@ ORDER = ["wise0855", "barnard", "epsindib", "rwaur", "rdra"]
 meta = json.load(open("data/targets.json"))
 
 
-def gaia_in_grid(st):
+def gaia_in_grid(st, tid):
+    cache = f"data/gaia_{tid}.json"
+    if os.path.exists(cache):
+        return json.load(open(cache))
+    out = gaia_query(st)
+    json.dump(out, open(cache, "w"))
+    return out
+
+
+def gaia_query(st):
     g = st["grid"]
     w = WCS(naxis=2)
     w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
@@ -32,7 +41,7 @@ def gaia_in_grid(st):
     r = g["size"] * g["scale_arcsec"] / 3600 * 0.72
     q = (f"SELECT ra, dec, pmra, pmdec, phot_g_mean_mag FROM gaia_dr3_source WHERE "
          f"1=CONTAINS(POINT('ICRS',ra,dec), CIRCLE('ICRS',{g['crval'][0]},{g['crval'][1]},{r})) AND phot_g_mean_mag < 18.5")
-    resp = requests.post("https://irsa.ipac.caltech.edu/TAP/sync", data={"QUERY": q, "LANG": "ADQL", "FORMAT": "csv"}, timeout=300)
+    resp = requests.post("https://irsa.ipac.caltech.edu/TAP/sync", data={"QUERY": q, "LANG": "ADQL", "FORMAT": "csv"}, timeout=120)
     resp.raise_for_status()
     out = []
     for s in csv.DictReader(io.StringIO(resp.text)):
@@ -58,7 +67,7 @@ for tid in ORDER:
     if st:
         st_out = {k: st[k] for k in ("grid", "entered", "present_by_visit", "visits")}
         st_out["stacks"] = [{**{k: s[k] for k in ("id", "det", "visit", "n", "mjd_first", "mjd_last", "wave_min_um", "wave_max_um", "noise")}, "b64": s["pixels_f16_b64"]} for s in st["stacks"]]
-        st_out["gaia"] = gaia_in_grid(st)
+        st_out["gaia"] = gaia_in_grid(st, tid)
         entry["stacks"] = st_out
         print(f"{tid}: {len(frames)} frames, {len(st_out['stacks'])} stacks, {len(st_out['gaia'])} Gaia stars")
     else:
@@ -124,8 +133,15 @@ data = {
     },
 }
 
+hero_src = ""
+if os.path.exists("data/hero_barnard.jpg"):
+    import base64
+
+    hero_src = "data:image/jpeg;base64," + base64.b64encode(open("data/hero_barnard.jpg", "rb").read()).decode()
+    data["hero"] = json.load(open("data/hero_barnard.json"))
+
 tpl = open("template.html", encoding="utf-8").read()
 blob = json.dumps(data, separators=(",", ":")).replace("</", "<\\/")
-html = tpl.replace("/*__DATA__*/", blob)
+html = tpl.replace("/*__DATA__*/", blob).replace("__HERO_SRC__", hero_src)
 open(out_path, "w", encoding="utf-8").write(html)
 print(f"tier A {len(tierA)} tests, tier B {len(tierB)} tests; wrote {out_path} ({len(html) / 1e6:.2f} MB)")
