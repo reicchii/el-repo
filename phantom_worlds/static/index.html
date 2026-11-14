@@ -43,6 +43,11 @@
         <button id="submit-query" class="btn btn-primary" type="submit">Load Sky Patch</button>
       </form>
 
+      <div class="presets-row" aria-label="Sky fields">
+        <span class="presets-label">Sky fields</span>
+        <button class="btn preset-btn field-btn" type="button" data-field="w1925">W1925 Galactic Plane</button>
+        <button class="btn preset-btn field-btn" type="button" data-field="rwaur">RW Aurigae Field</button>
+      </div>
       <div class="presets-row">
         <span class="presets-label">Test targets</span>
         <button class="btn preset-btn" type="button" data-coord="Barnard's Star">Barnard's Star</button>
@@ -72,6 +77,13 @@
           <button class="btn mode-btn" type="button" data-mode="difference" aria-pressed="false">Subtract</button>
           <button class="btn mode-btn" type="button" data-mode="coldiff" aria-pressed="false">Colour difference</button>
           <button class="btn mode-btn" type="button" data-mode="rgb" aria-pressed="false">Visits RGB</button>
+        </div>
+
+        <div class="controls-row" id="remove-known-row" role="group" aria-label="Remove known" hidden>
+          <span class="presets-label">Remove known</span>
+          <button class="btn rmknown-btn active" type="button" data-layer="image" aria-pressed="true">Image</button>
+          <button class="btn rmknown-btn" type="button" data-layer="model" aria-pressed="false">Model</button>
+          <button class="btn rmknown-btn" type="button" data-layer="residual" aria-pressed="false">Residual</button>
         </div>
 
         <div class="controls-row" role="group" aria-label="SPHEREx detector band">

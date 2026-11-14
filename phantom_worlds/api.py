@@ -45,6 +45,12 @@ from phantom_worlds.sso import (
     query_sso_spherex,
 )
 from phantom_worlds.tier_a_metrics import build_proof_summary, compute_target_tier_a_metrics
+from phantom_worlds.tier_b_engine import (
+    FIELD_SPECS,
+    compute_field_remove_known,
+    evaluate_b1_b2_2mass_check,
+    list_processed_fields,
+)
 from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings, train_from_real_dataset
 from phantom_worlds.real_ml_data import (
     DEFAULT_ML_DIR,
@@ -543,6 +549,7 @@ def create_app(
     default_manifest = load_manifest(contracts_dir)
     default_target_id = default_manifest.get("target_id", "TGT-02")
     cache_lock = threading.Lock()
+    ml_lock = threading.Lock()
     live_lock = threading.Lock()
     manifest_cache = {default_target_id: default_manifest}
     patch_cache = {}
@@ -561,6 +568,20 @@ def create_app(
                 val = loader()
                 store[key] = val
             return val
+
+    def _get_ml_pipeline():
+        with cache_lock:
+            cached = json_cache.get("ml_pipeline")
+        if cached is not None:
+            return cached
+        with ml_lock:
+            with cache_lock:
+                cached = json_cache.get("ml_pipeline")
+            if cached is None:
+                cached = _build_default_discovery_pipeline(spectra_ref, dataset_npz_path=resolved_dataset_npz)
+                with cache_lock:
+                    json_cache["ml_pipeline"] = cached
+            return cached
 
     def _query_live_cached(live_ra, live_dec, radius_deg):
         cache_key = (round(live_ra, 4), round(live_dec, 4), round(radius_deg, 4))
@@ -935,6 +956,42 @@ def create_app(
             raise HTTPException(status_code=404, detail="Case not found")
         return build_export_packet(case, data_origin=cases_doc.get("data_origin", "synthetic_mock_fixture"))
 
+    @app.get("/api/fields")
+    def get_fields():
+        return _cached(
+            json_cache,
+            "tierb_fields",
+            lambda: {
+                "fields": list_processed_fields(contracts_dir),
+                "b1_b2_checks": {
+                    fid: evaluate_b1_b2_2mass_check(fid, contracts_dir=contracts_dir)
+                    for fid in ("rwaur", "w1925")
+                    if os.path.exists(os.path.join(contracts_dir, "fields", fid, "scene.json"))
+                },
+            },
+        )
+
+    @app.get("/api/field/{field_id}/remove_known")
+    def get_field_remove_known(
+        field_id: str,
+        detector: Literal["D1", "D2", "D3", "D4", "D5", "D6"] = "D3",
+        visit_idx: Optional[int] = Query(None, ge=0, le=15),
+    ):
+        fid = field_id.strip().lower()
+        if fid not in FIELD_SPECS:
+            raise HTTPException(status_code=404, detail=f"Unknown field_id: {field_id!r}")
+        scene_file = os.path.join(contracts_dir, "fields", fid, "scene.json")
+        if not os.path.exists(scene_file):
+            raise HTTPException(status_code=404, detail=f"Processed scene for field {fid!r} not built yet")
+        try:
+            return _cached(
+                json_cache,
+                ("field_rk", fid, detector, visit_idx),
+                lambda: compute_field_remove_known(fid, detector_id=detector, visit_idx=visit_idx, contracts_dir=contracts_dir),
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     @app.post("/api/analyze/spectrum")
     def analyze_spectrum(payload: SpectrumAnalyzeRequest):
         try:
@@ -946,11 +1003,7 @@ def create_app(
                 blend_share=payload.blend_share,
                 is_variable=payload.is_variable,
             )
-            ml_pipe, model_origin = _cached(
-                json_cache,
-                "ml_pipeline",
-                lambda: _build_default_discovery_pipeline(spectra_ref, dataset_npz_path=resolved_dataset_npz),
-            )
+            ml_pipe, model_origin = _get_ml_pipeline()
             src_wl = np.asarray(spectra_ref["wavelength_um"], dtype=np.float64)
             fl_arr = np.asarray(payload.flux_uJy, dtype=np.float64)
             err_arr = np.asarray(payload.flux_err_uJy, dtype=np.float64) if payload.flux_err_uJy is not None else None

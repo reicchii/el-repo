@@ -60,6 +60,9 @@ TARGET_SPECS = {
 _SAFE_TARGET_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 ALLOWED_REMOTE_HOSTS = frozenset({"irsa.ipac.caltech.edu", "nasa-irsa-spherex.s3.us-east-1.amazonaws.com"})
 ALLOWED_DOWNLOADER_HOSTS = ALLOWED_REMOTE_HOSTS | frozenset({"gea.esac.esa.int", "gaia.ari.uni-heidelberg.de"})
+ALLOWED_CATALOG_HOSTS = ALLOWED_REMOTE_HOSTS | frozenset(
+    {"cds.unistra.fr", "vizier.idia.ac.za", "simbad.cds.unistra.fr", "tapvizier.cds.unistra.fr", "ssp.imcce.fr"}
+)
 S3_BUCKET_NAME = "nasa-irsa-spherex"
 S3_REGION = "us-east-1"
 _S3_KEY_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_./-]{0,511}$")
@@ -818,11 +821,38 @@ def build_static_fallback_js(
             "frames": _compact_fallback_frames(data_real_dir, spec["slug"]),
         }
 
+    from phantom_worlds.tier_b_engine import (
+        compute_field_remove_known,
+        evaluate_b1_b2_2mass_check,
+        list_processed_fields,
+    )
+
+    fields_payload = {}
+    for fmeta in list_processed_fields(contracts_dir=contracts_dir):
+        fid = fmeta["field_id"]
+        b_check = evaluate_b1_b2_2mass_check(fid, contracts_dir=contracts_dir)
+        by_det = {}
+        for det_id in VALID_DETECTORS:
+            rk = compute_field_remove_known(fid, detector_id=det_id, contracts_dir=contracts_dir)
+            rk["image_stack"] = [
+                [round(float(v), 3) if v is not None else None for v in row] for row in rk["image_stack"]
+            ]
+            rk["model_stack"] = [
+                [round(float(v), 3) if v is not None else None for v in row] for row in rk["model_stack"]
+            ]
+            rk["residual_stack"] = [
+                [round(float(v), 3) if v is not None else None for v in row] for row in rk["residual_stack"]
+            ]
+            rk["fitted_sources"] = rk["fitted_sources"][:120]
+            by_det[det_id] = rk
+        fields_payload[fid] = {**fmeta, "b_check": b_check, "remove_known": by_det}
+
     bundle = {
         "schema_version": "1.0.0-hour0",
         "mode": "hour0_static_fallback",
         "detector_wavelength_ranges_um": det_wl_ranges,
         "targets": target_payloads,
+        "fields": fields_payload,
         "proof_summary": build_proof_summary(contracts_dir=contracts_dir, csv_dir=csv_dir),
     }
     os.makedirs(os.path.dirname(out_path), exist_ok=True)

@@ -50,6 +50,12 @@
     proofSummary: null,
     auxDetCache: {},
     matrixMeta: null,
+    activeFieldId: null,
+    fieldLayer: "image",
+    fieldData: null,
+    fieldFadeProgress: 1.0,
+    fieldFadeFrom: "image",
+    fieldFadeRaf: null,
     timerId: null,
     querySeq: 0,
     abortController: null,
@@ -92,6 +98,7 @@
     framesHeading: document.getElementById("frames-heading"),
     spectrumHeading: document.getElementById("spectrum-heading"),
     copyUrlBtn: document.getElementById("copy-url-btn"),
+    removeKnownRow: document.getElementById("remove-known-row"),
   };
 
   function setStatus(text, isError) {
@@ -530,6 +537,19 @@
       btn.classList.toggle("active", on);
       btn.setAttribute("aria-pressed", String(on));
     });
+    document.querySelectorAll(".field-btn").forEach((btn) => {
+      const on = Boolean(state.activeFieldId) && btn.dataset.field === state.activeFieldId;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-pressed", String(on));
+    });
+    if (els.removeKnownRow) {
+      els.removeKnownRow.hidden = !state.activeFieldId;
+    }
+    document.querySelectorAll(".rmknown-btn").forEach((btn) => {
+      const on = btn.dataset.layer === state.fieldLayer;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-pressed", String(on));
+    });
     els.playToggle.textContent = (state.playing && state.mode === "play") ? "Pause" : "Play";
   }
 
@@ -764,6 +784,124 @@
     return `"${safe.replace(/"/g, '""')}"`;
   }
 
+  function prefersReducedMotion() {
+    return (
+      typeof window !== "undefined"
+      && typeof window.matchMedia === "function"
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  }
+
+  function resolveFieldLayerGrid(fd, layerName) {
+    if (!fd) return null;
+    if (layerName === "model") return fd.model_stack;
+    if (layerName === "residual") return fd.residual_stack;
+    return fd.image_stack;
+  }
+
+  function setFieldLayer(nextLayer) {
+    if (!["image", "model", "residual"].includes(nextLayer)) return;
+    if (state.fieldFadeRaf && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(state.fieldFadeRaf);
+      state.fieldFadeRaf = null;
+    }
+    const prevLayer = state.fieldLayer;
+    state.fieldLayer = nextLayer;
+    setActiveButtons();
+    const shouldAnimate = (
+      state.activeFieldId
+      && state.fieldData
+      && prevLayer !== nextLayer
+      && !prefersReducedMotion()
+      && typeof requestAnimationFrame === "function"
+      && typeof performance !== "undefined"
+    );
+    if (!shouldAnimate) {
+      state.fieldFadeFrom = nextLayer;
+      state.fieldFadeProgress = 1.0;
+      drawSkyCanvas();
+      return;
+    }
+    state.fieldFadeFrom = prevLayer;
+    state.fieldFadeProgress = 0.0;
+    const t0 = performance.now();
+    const durationMs = 1000.0;
+    const step = (now) => {
+      const elapsed = Math.max(0.0, now - t0);
+      state.fieldFadeProgress = Math.min(1.0, elapsed / durationMs);
+      drawSkyCanvas();
+      if (state.fieldFadeProgress < 1.0) {
+        state.fieldFadeRaf = requestAnimationFrame(step);
+      } else {
+        state.fieldFadeRaf = null;
+        state.fieldFadeFrom = nextLayer;
+      }
+    };
+    state.fieldFadeRaf = requestAnimationFrame(step);
+  }
+
+  function drawFieldSkyCanvas(ctx, w, h) {
+    const fd = state.fieldData;
+    if (!fd || !Array.isArray(fd.image_stack) || !fd.image_stack.length) return;
+    const ny = fd.image_stack.length;
+    const nx = fd.image_stack[0].length;
+    // Share ONE fixed stretch anchored on the raw sky Image stack across Image, Model, and Residual.
+    const [lo, hi] = percentileRange(fd.image_stack);
+    const modGrid = fd.model_stack;
+    const fromGrid = resolveFieldLayerGrid(fd, state.fieldFadeFrom) || fd.image_stack;
+    const toGrid = resolveFieldLayerGrid(fd, state.fieldLayer) || fd.image_stack;
+    const t = Math.max(0.0, Math.min(1.0, state.fieldFadeProgress));
+    const modMax = Math.max(hi - lo, 1e-4);
+
+    const imgData = ctx.createImageData(nx, ny);
+    const out = imgData.data;
+    for (let y = 0; y < ny; y++) {
+      for (let x = 0; x < nx; x++) {
+        const p = (y * nx + x) * 4;
+        const vFrom = readGridCell(fromGrid, y, x);
+        const vTo = readGridCell(toGrid, y, x);
+        const vShow = t >= 0.999 ? vTo : (!isFiniteNumber(vTo) ? vTo : (isFiniteNumber(vFrom) ? vFrom : vTo));
+        if (!isFiniteNumber(vShow)) {
+          out[p] = 55; out[p + 1] = 18; out[p + 2] = 28; out[p + 3] = 255;
+          continue;
+        }
+        let val = vTo;
+        if (t < 0.999 && isFiniteNumber(vFrom)) {
+          // Brightness-ordered 1s fade: brightest modeled sources fade first
+          const mv = readGridCell(modGrid, y, x);
+          const mNorm = isFiniteNumber(mv) ? Math.max(0.0, Math.min(1.0, (mv - lo) / modMax)) : 0.0;
+          const localFade = Math.max(0.0, Math.min(1.0, t * 1.45 - (1.0 - mNorm) * 0.45));
+          val = vFrom + (vTo - vFrom) * localFade;
+        }
+        const [r, g, b] = heatColor(scaleFlux(val, lo, hi, state.stretch), state.invert);
+        out[p] = r; out[p + 1] = g; out[p + 2] = b; out[p + 3] = 255;
+      }
+    }
+    const off = document.createElement("canvas");
+    off.width = nx;
+    off.height = ny;
+    off.getContext("2d").putImageData(imgData, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, 0, 0, w, h);
+
+    if (state.showGaia && Array.isArray(fd.fitted_sources)) {
+      const sx = w / nx;
+      const sy = h / ny;
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.72)";
+      ctx.lineWidth = 1;
+      fd.fitted_sources.slice(0, 80).forEach((s) => {
+        if (!isFiniteNumber(s.x_px) || !isFiniteNumber(s.y_px)) return;
+        ctx.beginPath();
+        ctx.arc((s.x_px + 0.5) * sx, (s.y_px + 0.5) * sy, Math.max(4, sx * 0.7), 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+    const layerLabel = state.fieldLayer === "model" ? "Model" : state.fieldLayer === "residual" ? "Residual" : "Image";
+    if (els.visitLabel) {
+      els.visitLabel.textContent = `${fd.field_name} · ${fd.detector} · ${layerLabel} (stretch [${lo.toFixed(2)}, ${hi.toFixed(2)}])`;
+    }
+  }
+
   function drawSkyCanvas() {
     const canvas = els.skyCanvas;
     const ctx = canvas.getContext("2d");
@@ -771,6 +909,11 @@
     const h = canvas.height;
     ctx.fillStyle = "#04070e";
     ctx.fillRect(0, 0, w, h);
+
+    if (state.activeFieldId && state.fieldData) {
+      drawFieldSkyCanvas(ctx, w, h);
+      return;
+    }
 
     const payload = state.payload;
     if (!payload) return;
@@ -1729,7 +1872,75 @@
     setStatus("Exported CSV data.", false);
   }
 
+  async function loadFieldScene(fieldId) {
+    const seq = ++state.querySeq;
+    if (state.abortController) state.abortController.abort();
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    state.abortController = controller;
+    const signal = controller ? controller.signal : undefined;
+
+    state.activeFieldId = fieldId;
+    state.fieldFadeProgress = 1.0;
+    state.fieldFadeFrom = state.fieldLayer;
+    state.playing = false;
+    setActiveButtons();
+    setStatus(`Loading field "${fieldId}" (${state.detector})...`, false);
+
+    let data = null;
+    let sourceLabel = "tier_b_live_api";
+    try {
+      const params = new URLSearchParams({ detector: state.detector });
+      const resp = await fetch(`/api/field/${encodeURIComponent(fieldId)}/remove_known?${params.toString()}`, signal ? { signal } : undefined);
+      if (seq !== state.querySeq) return;
+      if (resp && resp.ok) {
+        data = await resp.json();
+      }
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+
+    if (!data) {
+      const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
+      const fbField = bundle && bundle.fields && bundle.fields[fieldId];
+      const fbDet = fbField && fbField.remove_known && fbField.remove_known[state.detector];
+      if (fbDet) {
+        data = fbDet;
+        sourceLabel = "hour0_static_fallback";
+      }
+    }
+    if (seq !== state.querySeq) return;
+    if (!data) {
+      setStatus(`Field "${fieldId}" is unavailable (API offline and missing from static bundle).`, true);
+      return;
+    }
+
+    state.fieldData = data;
+    state.payload = {
+      query: {
+        coord_input: data.field_name,
+        ra_deg: data.center_ra_deg,
+        dec_deg: data.center_dec_deg,
+        fov_arcmin: data.fov_arcmin || 6.56,
+        detector: data.detector,
+      },
+      source_mode: sourceLabel,
+    };
+    if (els.coordInput) els.coordInput.value = `${data.center_ra_deg.toFixed(4)} ${data.center_dec_deg.toFixed(4)}`;
+    if (els.modeBadge) els.modeBadge.textContent = sourceLabel;
+    const wl = Array.isArray(data.wavelength_range_um) ? data.wavelength_range_um.join("–") : state.detector;
+    const nCat = (data.catalogue_counts && data.catalogue_counts.merged_catalogue_stars) || (data.fitted_sources && data.fitted_sources.length) || 0;
+    setStatus(
+      `${data.field_name} (${data.plane_type}) | ${data.detector} [${wl} µm] | ${nCat} catalogued sources fitted | ${data.cutout_origin || "real_spherex_s3_wcs_cutout"}`,
+      false
+    );
+    drawSkyCanvas();
+    renderExternalLinks();
+  }
+
   async function loadSkyQuery() {
+    state.activeFieldId = null;
+    state.fieldData = null;
+    setActiveButtons();
     const seq = ++state.querySeq;
     if (state.abortController) state.abortController.abort();
     const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -1822,10 +2033,22 @@
 
   document.querySelectorAll(".preset-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (btn.dataset.field) {
+        loadFieldScene(btn.dataset.field);
+        return;
+      }
+      state.activeFieldId = null;
+      state.fieldData = null;
       state.coord = btn.dataset.coord;
       els.coordInput.value = state.coord;
       syncInputsToState();
       loadSkyQuery();
+    });
+  });
+
+  document.querySelectorAll(".rmknown-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setFieldLayer(btn.dataset.layer);
     });
   });
 
@@ -1839,6 +2062,9 @@
   });
 
   async function switchDetectorOnly() {
+    if (state.activeFieldId) {
+      return loadFieldScene(state.activeFieldId);
+    }
     const ts = state.payload && state.payload.patch_timeseries;
     if (!ts || !ts.target_id) {
       return loadSkyQuery();
@@ -1927,6 +2153,27 @@
   });
 
   els.skyCanvas.addEventListener("mousemove", (ev) => {
+    if (state.activeFieldId && state.fieldData && Array.isArray(state.fieldData.image_stack)) {
+      const fd = state.fieldData;
+      const rect = els.skyCanvas.getBoundingClientRect();
+      if (!rect || rect.width <= 0 || rect.height <= 0 || !isFiniteNumber(ev.clientX) || !isFiniteNumber(ev.clientY)) {
+        return;
+      }
+      const ny = fd.image_stack.length;
+      const nx = fd.image_stack[0].length;
+      const px = Math.floor(((ev.clientX - rect.left) / rect.width) * nx);
+      const py = Math.floor(((ev.clientY - rect.top) / rect.height) * ny);
+      if (px >= 0 && px < nx && py >= 0 && py < ny) {
+        const fmt = (v) => (isFiniteNumber(v) ? v.toFixed(3) : "NaN");
+        const vImg = readGridCell(fd.image_stack, py, px);
+        const vMod = readGridCell(fd.model_stack, py, px);
+        const vRes = readGridCell(fd.residual_stack, py, px);
+        if (els.pixelReadout) {
+          els.pixelReadout.textContent = `Pixel (${px}, ${py}) | Image: ${fmt(vImg)} | Model: ${fmt(vMod)} | Residual: ${fmt(vRes)} MJy/sr`;
+        }
+      }
+      return;
+    }
     const ts = state.payload && state.payload.patch_timeseries;
     if (!hasValidFrames(ts)) {
       return;

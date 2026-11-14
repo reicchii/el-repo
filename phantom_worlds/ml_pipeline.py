@@ -321,14 +321,13 @@ def _fit_temperature_inv(raw_probs, y_true, classes):
 
     best_t = 1.0
     best_loss = _nll(1.0)
-    for grid in (np.geomspace(0.35, 3.0, 55), np.linspace(max(0.25, best_t * 0.8), min(4.0, best_t * 1.25), 31)):
-        for cand in grid:
-            loss = _nll(float(cand))
-            if loss < best_loss:
-                best_loss = loss
-                best_t = float(cand)
-        grid_hi = min(4.0, best_t * 1.25)
-        grid_lo = max(0.25, best_t * 0.8)
+    for cand in np.geomspace(0.35, 3.0, 55):
+        loss = _nll(float(cand))
+        if loss < best_loss:
+            best_loss = loss
+            best_t = float(cand)
+    grid_lo = max(0.25, best_t * 0.8)
+    grid_hi = min(4.0, best_t * 1.25)
     for cand in np.linspace(grid_lo, grid_hi, 31):
         loss = _nll(float(cand))
         if loss < best_loss:
@@ -747,7 +746,10 @@ class SpectralDiscoveryPipeline:
     def predict_ucd_subtype(self, flux):
         if not self.fitted_ or not self.subtype_fitted_:
             return None
-        feat = self._extract_features(np.asarray(flux, dtype=np.float64).reshape(1, -1))
+        fl_arr = np.asarray(flux, dtype=np.float64)
+        if int(np.sum(np.isfinite(fl_arr) & (fl_arr > 0.0))) < 3:
+            return None
+        feat = self._extract_features(fl_arr.reshape(1, -1))
         idx_val = float(self.subtype_regressor.predict(feat)[0])
         return {"spectral_index": round(idx_val, 2), "subtype_label": format_ucd_spectral_index(idx_val)}
 
