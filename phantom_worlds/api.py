@@ -38,6 +38,12 @@ from phantom_worlds.contracts import (
     safe_remote_url,
     safe_s3_cloud_access_url,
 )
+from phantom_worlds.sso import (
+    SSONotFoundError,
+    SSOUpstreamError,
+    SSOValidationError,
+    query_sso_spherex,
+)
 from phantom_worlds.tier_a_metrics import build_proof_summary, compute_target_tier_a_metrics
 from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings, train_from_real_dataset
 from phantom_worlds.real_ml_data import (
@@ -546,6 +552,7 @@ def create_app(
     json_cache = {}
     live_cache = OrderedDict()
     live_inflight = {}
+    sso_cache = OrderedDict()
 
     def _cached(store, key, loader):
         with cache_lock:
@@ -735,6 +742,40 @@ def create_app(
                 root_manifest=default_manifest,
             ),
         )
+
+    @app.get("/api/sso")
+    def get_sso_ephemeris(
+        name: str = Query(min_length=1, max_length=64),
+        frame_limit: int = Query(default=120, ge=1, le=500),
+    ):
+        cache_key = (re.sub(r"\s+", " ", name.strip()).lower(), frame_limit)
+        now = time.monotonic()
+        with live_lock:
+            cached = sso_cache.get(cache_key)
+            if cached is not None and (now - cached[0]) < _LIVE_IRSA_CACHE_TTL_SEC:
+                sso_cache.move_to_end(cache_key)
+                return cached[1]
+            sso_cache.pop(cache_key, None)
+
+        try:
+            payload = query_sso_spherex(name, frame_limit=frame_limit)
+        except SSOValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except SSONotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except SSOUpstreamError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+        with live_lock:
+            now_store = time.monotonic()
+            expired = [k for k, (ts, _) in sso_cache.items() if (now_store - ts) >= _LIVE_IRSA_CACHE_TTL_SEC]
+            for k in expired:
+                sso_cache.pop(k, None)
+            while len(sso_cache) >= _LIVE_IRSA_CACHE_MAX_ENTRIES and cache_key not in sso_cache:
+                sso_cache.popitem(last=False)
+            sso_cache[cache_key] = (now_store, payload)
+            sso_cache.move_to_end(cache_key)
+        return payload
 
     @app.get("/api/sky/timeseries")
     def query_sky_timeseries(

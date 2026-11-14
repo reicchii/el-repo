@@ -3244,6 +3244,128 @@ class TestFastAPIBackend(unittest.TestCase):
         self.assertEqual(missing_proof["ml_evaluation"]["status"], "NOT_MEASURED")
         self.assertEqual(missing_proof["ml_evaluation"]["release_status"], "UNPUBLISHED")
 
+    def test_sso_most_disambiguation_3i_atlas_and_security_guards(self):
+        from unittest.mock import patch
+        from phantom_worlds.sso import (
+            SSONotFoundError,
+            SSOUpstreamError,
+            SSOValidationError,
+            parse_votable_rows,
+            query_sso_spherex,
+        )
+
+        # 1. Input validation & XML XXE rejection
+        for bad_name in ("", " ", "../etc", "Ceres;DROP", "A" * 65, "Ceres\\foo"):
+            with self.assertRaises(SSOValidationError):
+                query_sso_spherex(bad_name)
+        with self.assertRaises(SSOUpstreamError):
+            parse_votable_rows(b'<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><VOTABLE/>')
+
+        # 2. Mocked HTTP session tests: Ceres 400->NAIF ID retry, Comet 3I/ATLAS VOTable, and API endpoint
+        ceres_400 = (
+            "Multiple matches to the input string in the list from Horizons.\n"
+            "  Ceres, Object Type=Asteroid, NAIF ID=2000001, Designation=NO_VALUE\n"
+            "  1 Ceres, Object Type=Asteroid, NAIF ID=20000001, Designation=A801 AA\n"
+        ).encode("utf-8")
+        ceres_vot = (
+            b'<?xml version="1.0" encoding="utf-8"?>'
+            b'<VOTABLE version="1.3"><RESOURCE><TABLE>'
+            b'<FIELD name="ra_obj" datatype="double"/>'
+            b'<FIELD name="dec_obj" datatype="double"/>'
+            b'<FIELD name="mjd_start" datatype="double"/>'
+            b'<FIELD name="mjd_end" datatype="double"/>'
+            b'<FIELD name="sun_dist" datatype="double"/>'
+            b'<FIELD name="geo_dist" datatype="double"/>'
+            b'<FIELD name="phase" datatype="double"/>'
+            b'<FIELD name="vmag" datatype="double"/>'
+            b'<FIELD name="observationid" datatype="char"/>'
+            b'<FIELD name="planeid" datatype="char"/>'
+            b'<FIELD name="uri" datatype="char"/>'
+            b'<DATA><TABLEDATA>'
+            b'<TR><TD>150.1</TD><TD>12.3</TD><TD>60900.0</TD><TD>60900.1</TD><TD>2.7</TD><TD>2.1</TD><TD>15.0</TD><TD>8.2</TD><TD>obs1</TD><TD>D1</TD><TD>https://irsa.ipac.caltech.edu/ibe/data/spherex/obs1.fits</TD></TR>'
+            b'<TR><TD>150.2</TD><TD>12.35</TD><TD>60901.0</TD><TD>60901.1</TD><TD>2.7</TD><TD>2.1</TD><TD>15.1</TD><TD>8.2</TD><TD>obs2</TD><TD>D2</TD><TD>https://evil.example.com/bad.fits</TD></TR>'
+            b'</TABLEDATA></DATA></TABLE></RESOURCE></VOTABLE>'
+        )
+        atlas_vot = (
+            b'<?xml version="1.0" encoding="utf-8"?>'
+            b'<VOTABLE version="1.3"><RESOURCE><TABLE>'
+            b'<FIELD name="obs_id" datatype="char"/>'
+            b'<FIELD name="spherex_detector" datatype="char"/>'
+            b'<FIELD name="s_ra" datatype="double"/>'
+            b'<FIELD name="s_dec" datatype="double"/>'
+            b'<FIELD name="comet_ra" datatype="double"/>'
+            b'<FIELD name="comet_dec" datatype="double"/>'
+            b'<FIELD name="t_min" datatype="double"/>'
+            b'<FIELD name="t_max" datatype="double"/>'
+            b'<FIELD name="t_exptime" datatype="double"/>'
+            b'<FIELD name="em_min" datatype="double"/>'
+            b'<FIELD name="em_max" datatype="double"/>'
+            b'<FIELD name="access_url" datatype="char"/>'
+            b'<DATA><TABLEDATA>'
+            b'<TR><TD>atlas1</TD><TD>D6</TD><TD>240.0</TD><TD>-18.0</TD><TD>240.01</TD><TD>-18.01</TD><TD>60890.0</TD><TD>60890.02</TD><TD>112.5</TD><TD>3.8e-6</TD><TD>5.0e-6</TD><TD>https://irsa.ipac.caltech.edu/data/SPHEREx/atlas1.fits</TD></TR>'
+            b'</TABLEDATA></DATA></TABLE></RESOURCE></VOTABLE>'
+        )
+
+        class _FakeResp:
+            def __init__(self, status_code, body):
+                self.status_code = status_code
+                self._body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def iter_content(self, chunk_size=65536):
+                yield self._body
+
+        class _FakeSession:
+            def __init__(self):
+                self.calls = []
+
+            def close(self):
+                pass
+
+            def get(self, url, params=None, **kwargs):
+                self.calls.append((url, dict(params or {})))
+                if "obscore_3I_Atlas.vot" in url:
+                    return _FakeResp(200, atlas_vot)
+                obj = (params or {}).get("obj_name")
+                if obj == "Ceres":
+                    return _FakeResp(400, ceres_400)
+                if obj == "20000001:NID":
+                    return _FakeResp(200, ceres_vot)
+                if obj == "NoSuchRock":
+                    return _FakeResp(400, b"No match found for target")
+                return _FakeResp(500, b"Server Error")
+
+        fake = _FakeSession()
+        res_ceres = query_sso_spherex("Ceres", session=fake)
+        self.assertEqual(res_ceres["resolved_naif_id"], "20000001")
+        self.assertEqual(res_ceres["total_frames"], 2)
+        self.assertIsNotNone(res_ceres["frames"][0]["uri"])
+        self.assertIsNone(res_ceres["frames"][1]["uri"])
+        self.assertIsNotNone(res_ceres["estimated_rate_arcsec_hr"])
+
+        res_3i = query_sso_spherex("3I/ATLAS", session=fake)
+        self.assertEqual(res_3i["query_mode"], "comet_3i_atlas_votable")
+        self.assertEqual(res_3i["total_frames"], 1)
+        self.assertEqual(res_3i["frames"][0]["em_min_um"], 3.8)
+
+        with self.assertRaises(SSONotFoundError):
+            query_sso_spherex("NoSuchRock", session=fake)
+
+        # 3. API validation and mocked query path
+        self.assertEqual(self.client.get("/api/sso", params={"name": "../bad"}).status_code, 422)
+        with patch("phantom_worlds.api.query_sso_spherex", return_value=res_3i):
+            r_api_3i = self.client.get("/api/sso", params={"name": "3I/ATLAS"})
+            self.assertEqual(r_api_3i.status_code, 200)
+            self.assertEqual(r_api_3i.json()["query_mode"], "comet_3i_atlas_votable")
+        with patch("phantom_worlds.api.query_sso_spherex", side_effect=SSOUpstreamError("IRSA unreachable")):
+            r_err = self.client.get("/api/sso", params={"name": "Vesta"})
+            self.assertEqual(r_err.status_code, 503)
+
 
 if __name__ == "__main__":
     unittest.main()
