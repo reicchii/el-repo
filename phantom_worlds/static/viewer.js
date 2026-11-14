@@ -2328,7 +2328,14 @@
     }
     if (catId === "methane_dip") {
       const ch4 = ((mols && mols.features) || {}).CH4_3_3 || {};
-      return ch4.status === "MEASURED" && isFiniteNumber(ch4.feature_pct) && ch4.feature_pct >= 30.0 && isFiniteNumber(ch4.snr_sigma) && ch4.snr_sigma >= 3.0;
+      if (ch4.status !== "MEASURED" || !isFiniteNumber(ch4.integrated_tau) || ch4.integrated_tau < 30.0) {
+        return false;
+      }
+      if (isFiniteNumber(ch4.p16) && isFiniteNumber(ch4.p84)) {
+        const err = Math.max(Math.abs(ch4.p84 - ch4.p16) * 0.5, 1e-6);
+        return ch4.integrated_tau / err >= 3.0;
+      }
+      return true;
     }
     return true;
   }

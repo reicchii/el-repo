@@ -233,6 +233,7 @@ const byId = {
 };
 
 const varBtn = makeEl('', { dataset: { cat: 'variable_source' }, classList: makeClassList(['search-cat-btn']) });
+const ch4Btn = makeEl('', { dataset: { cat: 'methane_dip' }, classList: makeClassList(['search-cat-btn']) });
 
 const sandbox = {
   console, setTimeout, clearTimeout, setInterval: () => 1, clearInterval() {}, URLSearchParams,
@@ -248,7 +249,7 @@ const sandbox = {
   document: {
     getElementById(id) { return byId[id] || null; },
     querySelectorAll(sel) {
-      if (sel === '.search-cat-btn') return [varBtn];
+      if (sel === '.search-cat-btn') return [varBtn, ch4Btn];
       return [];
     },
     addEventListener() {},
@@ -258,6 +259,36 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 vm.runInNewContext(fallbackSrc, sandbox);
+sandbox.__PHANTOM_STATIC_FALLBACK__.field_search.results.push(
+  {
+    source_id: 'TEST-CH4-PASS',
+    field_id: 'w1925',
+    field_name: 'W1925 Galactic Plane',
+    kind: 'Catalogued source',
+    snr: 25.0,
+    blend_share: 0.05,
+    p_real: 0.99,
+    priority: 999.0,
+    unexplained_score: 0.2,
+    estimate_all_data: { top_class: 'Ultracool dwarf', confidence: 0.9, conformal_set: ['Ultracool dwarf'] },
+    estimate_spectrum_alone: { top_class: 'Ultracool dwarf', confidence: 0.9, conformal_set: ['Ultracool dwarf'] },
+    molecules: { status: 'MEASURED', features: { CH4_3_3: { status: 'MEASURED', integrated_tau: 45.0, p16: 40.0, p84: 50.0 } } },
+  },
+  {
+    source_id: 'TEST-CH4-LOW-SNR',
+    field_id: 'w1925',
+    field_name: 'W1925 Galactic Plane',
+    kind: 'Catalogued source',
+    snr: 25.0,
+    blend_share: 0.05,
+    p_real: 0.99,
+    priority: 998.0,
+    unexplained_score: 0.2,
+    estimate_all_data: { top_class: 'Star', confidence: 0.9, conformal_set: ['Star'] },
+    estimate_spectrum_alone: { top_class: 'Star', confidence: 0.9, conformal_set: ['Star'] },
+    molecules: { status: 'MEASURED', features: { CH4_3_3: { status: 'MEASURED', integrated_tau: 35.0, p16: 10.0, p84: 60.0 } } },
+  }
+);
 vm.runInNewContext(viewerSrc, sandbox);
 
 (async () => {
@@ -286,6 +317,18 @@ vm.runInNewContext(viewerSrc, sandbox);
   }
   byId['model-card-close-btn'].dispatch('click');
   if (byId['model-card-modal'].hidden !== true) throw new Error('Expected Model Card modal closed');
+
+  // Toggle variable off and methane_dip on to verify offline CH4_3_3 schema parity with backend
+  varBtn.dispatch('click');
+  ch4Btn.dispatch('click');
+  await new Promise((r) => setTimeout(r, 30));
+  const ch4Ids = byId['search-results-list'].children.map((b) => (b.children[0] && b.children[0].textContent) || '');
+  if (!ch4Ids.some((t) => t.startsWith('TEST-CH4-PASS'))) {
+    throw new Error('Expected methane_dip offline filter to match valid CH4_3_3 integrated_tau record, got ' + JSON.stringify(ch4Ids));
+  }
+  if (ch4Ids.some((t) => t.startsWith('TEST-CH4-LOW-SNR'))) {
+    throw new Error('Expected methane_dip offline filter to reject low-S/N CH4_3_3 record');
+  }
   console.log('T51_T52_OFFLINE_OK');
 })();
 """
