@@ -3245,6 +3245,9 @@ class TestFastAPIBackend(unittest.TestCase):
         proof = r_proof.json()
         self.assertEqual([t["target_id"] for t in proof["tier_a_targets"]], ["TGT-01", "TGT-02", "TGT-03", "TGT-04", "TGT-05"])
         self.assertEqual(proof["ml_evaluation"]["release_status"], "UNPUBLISHED")
+        self.assertTrue(proof["ml_evaluation"]["strict_tile_disjointness"])
+        self.assertGreaterEqual(proof["ml_evaluation"]["ucd_subtype_evaluation"]["within_2_subtypes_frac"], 0.80)
+        self.assertIn("rung5_all_data_with_gaia_parallax", proof["ml_evaluation"]["input_ladder"])
 
         # Verify offline fallback_data.js carries matching Tier-A metrics & proof summary
         fb_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "phantom_worlds", "static", "fallback_data.js")
@@ -3256,6 +3259,8 @@ class TestFastAPIBackend(unittest.TestCase):
         self.assertEqual(bundle["targets"]["TGT-03"]["tier_a_metrics"]["motion"]["measured_total_arcsec_yr"], m3["motion"]["measured_total_arcsec_yr"])
         self.assertEqual(bundle["targets"]["TGT-02"]["tier_a_metrics"]["motion"]["status"], "NOT_MEASURED")
         self.assertEqual([t["target_id"] for t in bundle["proof_summary"]["tier_a_targets"]], ["TGT-01", "TGT-02", "TGT-03", "TGT-04", "TGT-05"])
+        self.assertEqual(bundle["proof_summary"]["ml_evaluation"]["total_spectra"], proof["ml_evaluation"]["total_spectra"])
+        self.assertEqual(bundle["proof_summary"]["ml_evaluation"]["ucd_subtype_evaluation"]["count"], proof["ml_evaluation"]["ucd_subtype_evaluation"]["count"])
 
         # Missing evaluation report yields honest NOT_MEASURED without fabricated ML scores
         from phantom_worlds.tier_a_metrics import build_proof_summary

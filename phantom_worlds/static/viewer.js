@@ -1523,6 +1523,32 @@
       ? `ML release ${ml.release_status} (${ml.model_version}), total spectra ${ml.total_spectra}, gold recall ${ml.gold_min_recall}, ECE ${ml.gold_ece}, E2 accuracy ${ml.e2_only_accuracy}`
       : `ML evaluation: ${ml.reason || "not measured"} (${ml.release_status || "UNPUBLISHED"})`;
     els.proofBody.appendChild(mlLine);
+    if (ml.status === "AVAILABLE" && (ml.ucd_subtype_evaluation || ml.input_ladder || ml.cross_extraction_ratio)) {
+      const tierBParts = [];
+      if (ml.conformal_coverage !== undefined && ml.conformal_coverage !== null) {
+        tierBParts.push(`conformal coverage ${ml.conformal_coverage}`);
+      }
+      const ucdSub = ml.ucd_subtype_evaluation;
+      if (ucdSub && ucdSub.count) {
+        tierBParts.push(`UCD <=2 subtypes ${ucdSub.within_2_subtypes_frac} (MAD ${ucdSub.mad_subtypes}, n=${ucdSub.count})`);
+      }
+      const lad = ml.input_ladder;
+      if (lad && lad.rung1_e0_molecules_only && lad.rung3_all_102_bands && lad.rung4_bands_plus_stage10_spectrum_alone) {
+        tierBParts.push(
+          `input ladder gold acc R1 ${lad.rung1_e0_molecules_only.test_gold_accuracy} -> R3 ${lad.rung3_all_102_bands.test_gold_accuracy} -> R4 ${lad.rung4_bands_plus_stage10_spectrum_alone.test_gold_accuracy}`
+        );
+      }
+      const xext = ml.cross_extraction_ratio;
+      if (xext && xext.matched_count) {
+        tierBParts.push(`S3/SPIFF ratio dev ${xext.max_abs_deviation} (n=${xext.matched_count})`);
+      }
+      if (tierBParts.length) {
+        const tierBLine = document.createElement("p");
+        tierBLine.className = "proof-meta";
+        tierBLine.textContent = `Tier-B checks: ${tierBParts.join(" | ")}`;
+        els.proofBody.appendChild(tierBLine);
+      }
+    }
 
     const wrap = document.createElement("div");
     wrap.className = "table-scroll";

@@ -414,11 +414,20 @@ def build_proof_summary(
         rg = raw.get("release_gates", {})
         hi = rg.get("high_snr_gold", {})
         diag = raw.get("heldout_all_classes_diagnostic", {})
+        cross_raw = raw.get("cross_extraction_ratio")
+        cross_summary = (
+            {k: v for k, v in cross_raw.items() if k != "band_median_ratios"}
+            if isinstance(cross_raw, dict)
+            else None
+        )
         ml_report = {
             "status": "AVAILABLE",
             "model_version": raw.get("model_version"),
             "data_as_of": raw.get("data_as_of"),
             "total_spectra": raw.get("total_spectra"),
+            "strict_tile_disjointness": raw.get("strict_tile_disjointness"),
+            "conformal_q": raw.get("conformal_q"),
+            "temperature_inv": raw.get("temperature_inv"),
             "release_status": rg.get("release_status", "UNPUBLISHED"),
             "gold_w2_le_14_count": hi.get("count"),
             "gold_min_recall": hi.get("min_recall"),
@@ -427,6 +436,9 @@ def build_proof_summary(
             "e2_only_accuracy": diag.get("e2_only_accuracy"),
             "e1_only_accuracy": diag.get("e1_only_accuracy"),
             "combined_accuracy": diag.get("overall_accuracy"),
+            "ucd_subtype_evaluation": raw.get("ucd_subtype_evaluation"),
+            "input_ladder": raw.get("input_ladder"),
+            "cross_extraction_ratio": cross_summary,
         }
 
     return {
@@ -439,8 +451,8 @@ def build_proof_summary(
             "release_status": "UNPUBLISHED",
         },
         "next_items": [
-            "Remove known catalogued stars on W1925 and RW Aurigae fields",
-            "Expand real SPHEREx S3 spectral dataset toward published ML release gates",
-            "Add M1 real-or-artefact injection suite and searched depth map",
+            "Move cross-extraction and bright-AGN E1 templates from 14\"/px S3 cubes to 6.2\"/px Level-2 PSF fitting",
+            "Reach Gold W2<=14 per-class min recall >= 0.80 and ECE <= 0.05 to pass ML release gate",
+            "Remove known catalogued stars on W1925 and RW Aurigae fields and add M1 injection suite",
         ],
     }
