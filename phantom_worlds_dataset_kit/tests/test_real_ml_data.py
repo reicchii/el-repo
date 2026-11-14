@@ -369,7 +369,9 @@ class RealMLDataTests(unittest.TestCase):
             self.assertTrue(rep["strict_tile_disjointness"])
             with open(os.path.join(out_dir, "evaluation_report.json"), encoding="utf-8") as rf:
                 loaded_rep = _json.load(rf)
-            self.assertEqual(loaded_rep["model_version"], "spherex-dr1-e1e2-v1")
+            self.assertEqual(loaded_rep["model_version"], "spherex-dr1-e1e2-v2")
+            self.assertIn("input_ladder", loaded_rep)
+            self.assertIn("ucd_subtype_evaluation", loaded_rep)
             self.assertTrue(os.path.exists(os.path.join(out_dir, "model_card.md")))
 
     def test_narrow_instrument_gaps_do_not_leak_s3_vs_spiff_classes(self):
@@ -431,6 +433,26 @@ class RealMLDataTests(unittest.TestCase):
         giant_idx = pipe.classes_.index("Evolved giant star")
         self.assertGreater(probs[star_idx], 0.99)
         self.assertLess(probs[giant_idx], 0.01)
+
+    def test_ucd_subtype_parser_calibration_ranking_and_cross_extraction_json_safety(self):
+        from phantom_worlds.ml_pipeline import (
+            SpectralDiscoveryPipeline,
+            evaluate_cross_extraction_ratio,
+            parse_ucd_spectral_index,
+        )
+
+        self.assertEqual(parse_ucd_spectral_index("Y1e"), 91.0)
+        self.assertEqual(parse_ucd_spectral_index("esdT0"), 80.0)
+        self.assertEqual(parse_ucd_spectral_index("sdL3.5"), 73.5)
+        self.assertTrue(math.isnan(parse_ucd_spectral_index("unknown")))
+
+        # Cross-extraction ratio must emit None (not NaN) for empty/blank columns.
+        ours = np.array([[10.0, np.nan, 20.0], [11.0, np.nan, 22.0]], dtype=np.float64)
+        refs = np.array([[10.0, 5.0, 20.0], [10.0, 6.0, 20.0]], dtype=np.float64)
+        res = evaluate_cross_extraction_ratio(ours, refs, max_band_tol=0.10)
+        self.assertIsNone(res["band_median_ratios"][1])
+        self.assertEqual(res["valid_band_count"], 2)
+        self.assertTrue(res["passed"])
 
 
 if __name__ == "__main__":

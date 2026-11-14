@@ -1,8 +1,8 @@
 import math
+import re
 
 import numpy as np
-from sklearn.ensemble import HistGradientBoostingClassifier, IsolationForest
-from sklearn.isotonic import IsotonicRegression
+from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor, IsolationForest
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
@@ -263,8 +263,82 @@ def compute_molecule_readings(
 _EXTRAGALACTIC_CLASSES = frozenset({"Galaxy", "Active galaxy or quasar"})
 
 
+_UCD_LETTER_BASES = {"M": 60.0, "L": 70.0, "T": 80.0, "Y": 90.0}
+_UCD_SPT_RE = re.compile(r"([MLTY])\s*(\d(?:\.\d+)?)", re.IGNORECASE)
+
+
+def parse_ucd_spectral_index(subclass_str):
+    """Convert optical/IR spectral type string (e.g., L3.5, esdT0, Y1e) to numeric index (M0=60..Y9=99)."""
+    txt = str(subclass_str or "").strip()
+    m = _UCD_SPT_RE.search(txt)
+    if not m:
+        return float("nan")
+    letter = m.group(1).upper()
+    num = float(m.group(2))
+    if not (0.0 <= num < 10.0):
+        return float("nan")
+    return _UCD_LETTER_BASES[letter] + num
+
+
+def format_ucd_spectral_index(idx_val):
+    val = max(60.0, min(99.9, float(idx_val)))
+    for letter, base in (("Y", 90.0), ("T", 80.0), ("L", 70.0), ("M", 60.0)):
+        if val >= base:
+            sub = min(9.9, val - base)
+            return f"{letter}{sub:.1f}"
+    return "M0.0"
+
+
+class _PowerCalibrator:
+    """Rank-preserving multiclass temperature calibrator compatible with calibrators_.predict."""
+
+    def __init__(self, inv_temp: float):
+        self.inv_temp = float(inv_temp)
+
+    def predict(self, probs_1d):
+        arr = np.clip(np.asarray(probs_1d, dtype=np.float64), 1e-6, 1.0)
+        return np.power(arr, self.inv_temp)
+
+
+def _fit_temperature_inv(raw_probs, y_true, classes):
+    probs = np.clip(np.asarray(raw_probs, dtype=np.float64), 1e-6, 1.0)
+    class_to_col = {c: idx for idx, c in enumerate(classes)}
+    cols = [class_to_col.get(val, -1) for val in y_true]
+    valid_rows = [i for i, col in enumerate(cols) if col >= 0]
+    if not valid_rows:
+        return 1.0
+    sub_p = probs[valid_rows]
+    sub_cols = np.array([cols[i] for i in valid_rows], dtype=int)
+    log_p = np.log(sub_p)
+
+    def _nll(inv_t):
+        scaled = log_p * inv_t
+        scaled = scaled - np.max(scaled, axis=1, keepdims=True)
+        exp_s = np.exp(scaled)
+        norm_p = exp_s / np.sum(exp_s, axis=1, keepdims=True)
+        picked = np.clip(norm_p[np.arange(len(sub_cols)), sub_cols], 1e-12, 1.0)
+        return float(-np.mean(np.log(picked)))
+
+    best_t = 1.0
+    best_loss = _nll(1.0)
+    for grid in (np.geomspace(0.35, 3.0, 55), np.linspace(max(0.25, best_t * 0.8), min(4.0, best_t * 1.25), 31)):
+        for cand in grid:
+            loss = _nll(float(cand))
+            if loss < best_loss:
+                best_loss = loss
+                best_t = float(cand)
+        grid_hi = min(4.0, best_t * 1.25)
+        grid_lo = max(0.25, best_t * 0.8)
+    for cand in np.linspace(grid_lo, grid_hi, 31):
+        loss = _nll(float(cand))
+        if loss < best_loss:
+            best_loss = loss
+            best_t = float(cand)
+    return float(best_t)
+
+
 class SpectralDiscoveryPipeline:
-    """Layer 1-3 ensemble combining template chi2 matching, independent trees, isotonic calibration, and conformal sets."""
+    """Layer 1-3 ensemble combining template chi2 matching, independent trees, temperature calibration, and conformal sets."""
 
     def __init__(self, wavelengths, bandwidths, template_library, random_state=42):
         self.wavelengths = np.asarray(wavelengths, dtype=np.float64)
@@ -287,9 +361,18 @@ class SpectralDiscoveryPipeline:
         self.random_state = random_state
         self.classes_ = sorted(self.template_library.keys())
         self.tree_model = self._build_tree()
-        self.meta_combiner = LogisticRegression(max_iter=500, class_weight="balanced", random_state=random_state)
+        self.meta_combiner = LogisticRegression(max_iter=500, C=0.5, class_weight="balanced", random_state=random_state)
         self.novelty_forest = IsolationForest(contamination=0.05, random_state=random_state)
+        self.subtype_regressor = HistGradientBoostingRegressor(
+            max_iter=60,
+            max_depth=4,
+            min_samples_leaf=3,
+            l2_regularization=0.3,
+            random_state=random_state,
+        )
+        self.subtype_fitted_ = False
         self.calibrators_ = {}
+        self.temperature_inv_ = 1.0
         self.calibration_size_ = 0
         self.isotonic_size_ = 0
         self.conformal_q_ = 0.85
@@ -401,8 +484,13 @@ class SpectralDiscoveryPipeline:
         n_valid = int(np.count_nonzero(valid))
         if n_valid < 3:
             return float("inf")
-        if nf_finite >= 20 and n_valid < int(0.55 * nf_finite):
+        if nf_finite >= 20 and n_valid < int(0.65 * nf_finite):
             return float("inf")
+        coverage_penalty = (
+            float(nf_finite) / float(n_valid)
+            if (nf_finite >= 20 and n_valid < nf_finite)
+            else 1.0
+        )
         nf = norm_flux[valid]
         tp = tmpl[valid]
         fallback_err = np.maximum(0.05 * np.abs(nf), 0.02)
@@ -428,9 +516,10 @@ class SpectralDiscoveryPipeline:
             denom = float(np.dot(tp, tp))
             scale = float(np.dot(nf, tp) / max(denom, 1e-9))
         chi2_terms = ((nf - scale * tp) / err) ** 2
-        if len(chi2_terms) > 10:
-            chi2_terms = np.sort(chi2_terms)[:-5]
-        return float(np.mean(chi2_terms))
+        outlier_drop = min(3, len(chi2_terms) // 15)
+        if outlier_drop > 0:
+            chi2_terms = np.sort(chi2_terms)[:-outlier_drop]
+        return float(np.mean(chi2_terms)) * coverage_penalty
 
     def _predict_template_class(self, norm_flux, norm_err=None):
         scores = {
@@ -498,7 +587,7 @@ class SpectralDiscoveryPipeline:
             uniq_tiles = sorted(set(tiles.tolist()), key=str)
             if len(uniq_tiles) >= 3:
                 tile_buckets = _allocate_stratified_tiles(
-                    tiles, y, fracs=(0.75, 0.125, 0.125), random_state=self.random_state
+                    tiles, y, fracs=(0.70, 0.15, 0.15), random_state=self.random_state
                 )
                 tr_idx = np.where(np.isin(tiles, list(tile_buckets[0])))[0]
                 iso_idx = np.where(np.isin(tiles, list(tile_buckets[1])))[0]
@@ -525,11 +614,12 @@ class SpectralDiscoveryPipeline:
 
     def _build_tree(self):
         return HistGradientBoostingClassifier(
-            max_iter=60,
+            max_iter=80,
             max_depth=4,
-            min_samples_leaf=2,
-            max_features=0.25,
-            learning_rate=0.1,
+            min_samples_leaf=3,
+            l2_regularization=0.4,
+            max_features=0.35,
+            learning_rate=0.08,
             class_weight="balanced",
             random_state=self.random_state,
         )
@@ -565,7 +655,7 @@ class SpectralDiscoveryPipeline:
         aug_w = np.concatenate(w_parts) if w_parts else None
         return np.vstack(feat_parts), np.concatenate(y_parts), aug_w
 
-    def fit(self, X_flux, y_labels, blend_shares=None, sky_tiles=None, label_grades=None, X_err=None):
+    def fit(self, X_flux, y_labels, blend_shares=None, sky_tiles=None, label_grades=None, X_err=None, subtypes=None):
         X = np.asarray(X_flux, dtype=np.float64)
         y = np.asarray(y_labels)
         denoms = np.array(
@@ -610,15 +700,14 @@ class SpectralDiscoveryPipeline:
         meta_train = self._combined_meta_features(normed[train_idx], oof_e2, norm_errs=tr_nerr)
         self.meta_combiner.fit(meta_train, y[train_idx], sample_weight=tr_weights)
 
-        # Stage 2: fit one-vs-rest isotonic calibrators strictly on held-out iso_idx
+        # Stage 2: fit rank-preserving temperature scaling strictly on held-out iso_idx
         iso_nerr = norm_errs[iso_idx] if norm_errs is not None else None
         iso_meta = self._combined_meta_features(normed[iso_idx], self.tree_model.predict_proba(feats[iso_idx]), norm_errs=iso_nerr)
         raw_iso_probs = self.meta_combiner.predict_proba(iso_meta)
-        self.calibrators_ = {}
-        for col, cls in enumerate(self.meta_combiner.classes_):
-            iso = IsotonicRegression(y_min=0.0, y_max=1.0, out_of_bounds="clip")
-            iso.fit(raw_iso_probs[:, col], (y[iso_idx] == cls).astype(np.float64))
-            self.calibrators_[str(cls)] = iso
+        self.temperature_inv_ = _fit_temperature_inv(raw_iso_probs, y[iso_idx], self.meta_combiner.classes_)
+        self.calibrators_ = {
+            str(cls): _PowerCalibrator(self.temperature_inv_) for cls in self.meta_combiner.classes_
+        }
         self.isotonic_size_ = len(iso_idx)
 
         # Stage 3: calibrate conformal quantile strictly on unseen held-out conf_idx
@@ -637,8 +726,55 @@ class SpectralDiscoveryPipeline:
             clean_mask &= np.asarray(blend_shares, dtype=np.float64)[train_idx] <= 0.3
         train_feats = feats[train_idx]
         self.novelty_forest.fit(train_feats[clean_mask] if np.any(clean_mask) else train_feats)
+
+        self.subtype_fitted_ = False
+        if subtypes is not None:
+            sub_arr = np.asarray(subtypes)
+            ucd_tr = [
+                i for i in train_idx
+                if str(y[i]) == "Ultracool dwarf" and math.isfinite(parse_ucd_spectral_index(sub_arr[i]))
+            ]
+            if len(ucd_tr) >= 12:
+                ucd_idx = np.asarray(ucd_tr, dtype=int)
+                ucd_y = np.array([parse_ucd_spectral_index(sub_arr[i]) for i in ucd_idx], dtype=np.float64)
+                aug_sub_x, aug_sub_y, _ = self._augment_masked_training(X[ucd_idx], ucd_y)
+                self.subtype_regressor.fit(aug_sub_x, aug_sub_y)
+                self.subtype_fitted_ = True
+
         self.fitted_ = True
         return self
+
+    def predict_ucd_subtype(self, flux):
+        if not self.fitted_ or not self.subtype_fitted_:
+            return None
+        feat = self._extract_features(np.asarray(flux, dtype=np.float64).reshape(1, -1))
+        idx_val = float(self.subtype_regressor.predict(feat)[0])
+        return {"spectral_index": round(idx_val, 2), "subtype_label": format_ucd_spectral_index(idx_val)}
+
+    def evaluate_ucd_subtype_accuracy(self, X_sub, y_sub, subclasses):
+        if not self.fitted_ or not self.subtype_fitted_:
+            return {"count": 0, "mad_subtypes": None, "mae_subtypes": None, "within_2_subtypes_frac": 0.0, "passed": False}
+        errs = []
+        for row, cls_val, spt_str in zip(X_sub, y_sub, subclasses):
+            if str(cls_val) != "Ultracool dwarf":
+                continue
+            true_idx = parse_ucd_spectral_index(spt_str)
+            if not math.isfinite(true_idx):
+                continue
+            pred = self.predict_ucd_subtype(row)
+            if pred is not None:
+                errs.append(abs(float(pred["spectral_index"]) - true_idx))
+        if not errs:
+            return {"count": 0, "mad_subtypes": None, "mae_subtypes": None, "within_2_subtypes_frac": 0.0, "passed": False}
+        arr = np.asarray(errs, dtype=np.float64)
+        within_2 = float(np.mean(arr <= 2.0))
+        return {
+            "count": int(len(arr)),
+            "mad_subtypes": round(float(np.median(arr)), 4),
+            "mae_subtypes": round(float(np.mean(arr)), 4),
+            "within_2_subtypes_frac": round(within_2, 4),
+            "passed": bool(within_2 >= 0.80),
+        }
 
     def _summarize_branch(self, probs, tmpl_class, tree_top_class, conformal_probs=None, excluded=()):
         raw_top = str(max(probs, key=probs.get))
@@ -648,9 +784,8 @@ class SpectralDiscoveryPipeline:
             confidence = min(confidence, 0.50)
         top_class = "Unclassified" if (confidence < 0.50 or experts_disagree) else raw_top
         cprobs = probs if conformal_probs is None else conformal_probs
-        # Allow a 1e-3 quantization slack so saturated isotonic step plateaus do not drop valid matches.
         conformal_set = [
-            str(c) for c, p in cprobs.items() if c not in excluded and (1.0 - p) <= self.conformal_q_ + 1e-3
+            str(c) for c, p in cprobs.items() if c not in excluded and (1.0 - p) <= self.conformal_q_ + 1e-6
         ]
         return top_class, round(confidence, 4), conformal_set
 
@@ -928,6 +1063,7 @@ def train_from_real_dataset(dataset, build_templates_fn, max_per_class=6, random
     X = np.asarray(dataset["X_flux_uJy"], dtype=np.float64)
     X_err = np.asarray(dataset["X_err_uJy"], dtype=np.float64) if "X_err_uJy" in dataset else None
     y = np.asarray(dataset["y_class"])
+    subtypes = np.asarray(dataset["subclass"]) if "subclass" in dataset else None
     tiles = np.asarray(dataset["sky_tiles"])
     grades = np.asarray(dataset["label_grades"]) if "label_grades" in dataset else np.full(len(y), "gold")
     blends = np.asarray(dataset["blend_shares"], dtype=np.float64) if "blend_shares" in dataset else np.full(len(y), 0.05)
@@ -969,6 +1105,7 @@ def train_from_real_dataset(dataset, build_templates_fn, max_per_class=6, random
         sky_tiles=tiles[fit_mask],
         label_grades=grades[fit_mask],
         X_err=(X_err[fit_mask] if X_err is not None else None),
+        subtypes=(subtypes[fit_mask] if subtypes is not None else None),
     )
     return {
         "pipeline": pipe,
@@ -991,14 +1128,108 @@ def evaluate_cross_extraction_ratio(our_spectra, reference_spectra, max_band_tol
     if ours.shape != refs.shape or ours.ndim != 2:
         raise ValueError("our_spectra and reference_spectra must be 2D arrays with matching shape")
     valid = np.isfinite(ours) & np.isfinite(refs) & (ours > 0) & (refs > 0)
-    ratios = np.where(valid, ours / np.maximum(refs, np.finfo(np.float64).tiny), np.nan)
-    band_medians = np.nanmedian(ratios, axis=0)
-    max_dev = float(np.nanmax(np.abs(band_medians - 1.0))) if np.any(np.isfinite(band_medians)) else float("inf")
+    band_medians = []
+    for col in range(ours.shape[1]):
+        m = valid[:, col]
+        band_medians.append(round(float(np.median(ours[m, col] / refs[m, col])), 4) if np.any(m) else None)
+    finite_meds = [v for v in band_medians if v is not None]
+    max_dev = max((abs(v - 1.0) for v in finite_meds), default=float("inf"))
     return {
-        "band_median_ratios": [round(float(v), 4) for v in band_medians],
+        "band_median_ratios": band_medians,
+        "valid_band_count": int(len(finite_meds)),
         "max_abs_deviation": round(max_dev, 4) if math.isfinite(max_dev) else None,
         "passed": bool(math.isfinite(max_dev) and max_dev <= float(max_band_tol)),
     }
+
+
+def evaluate_input_ladder(dataset, fit_res, random_state=42):
+    """Evaluate Rungs 1-5 (E0 molecules -> band slopes -> 102 bands -> spectrum_alone -> +Gaia) on identical sky-tile test splits."""
+    pipe = fit_res["pipeline"]
+    wl = np.asarray(dataset["wavelength_um"], dtype=np.float64)
+    bw = np.asarray(dataset["bandwidth_um"], dtype=np.float64)
+    X = np.asarray(dataset["X_flux_uJy"], dtype=np.float64)
+    X_err = np.asarray(dataset["X_err_uJy"], dtype=np.float64) if "X_err_uJy" in dataset else None
+    y = np.asarray(dataset["y_class"])
+    grades = np.asarray(dataset["label_grades"]) if "label_grades" in dataset else np.full(len(y), "gold")
+    blends = np.asarray(dataset["blend_shares"], dtype=np.float64) if "blend_shares" in dataset else np.full(len(y), 0.05)
+    plx = np.asarray(dataset["gaia_parallax_mas"], dtype=np.float64) if "gaia_parallax_mas" in dataset else np.full(len(y), np.nan)
+    tr_idx = fit_res["fit_mask"][fit_res["tr_rel"]]
+    te_all = fit_res["test_all_idx"]
+    te_gold = fit_res["test_gold_idx"]
+    tr_w = np.where(np.array([str(g).strip().lower() == "silver" for g in grades[tr_idx]]), 0.5, 1.0)
+
+    def _mol_vec(idx_arr):
+        rows = []
+        for idx in idx_arr:
+            res = compute_molecule_readings(wl, bw, X[idx], blend_share=0.0, is_variable=False, rng_seed=0)
+            feats = res.get("features", {})
+            rows.append([
+                float((feats.get(m) or {}).get("integrated_tau"))
+                if (feats.get(m) or {}).get("integrated_tau") is not None
+                else np.nan
+                for m in ("H2O_ice_3_05", "CH4_3_3", "CO2_4_26", "CO_4_67")
+            ])
+        return np.asarray(rows, dtype=np.float64)
+
+    all_colors = pipe._extract_features(X)
+    rungs = {}
+    clf_kwargs = dict(max_iter=80, max_depth=4, min_samples_leaf=3, l2_regularization=0.4, class_weight="balanced", random_state=random_state)
+    feature_sets = {
+        "rung1_e0_molecules_only": _mol_vec(np.arange(len(y))),
+        "rung2_stage10_band_features": all_colors[:, -min(12, all_colors.shape[1]):],
+        "rung3_all_102_bands": all_colors[:, : max(1, all_colors.shape[1] - 12)],
+    }
+    for name, fmat in feature_sets.items():
+        clf = HistGradientBoostingClassifier(**clf_kwargs)
+        clf.fit(fmat[tr_idx], y[tr_idx], sample_weight=tr_w)
+        all_acc = float(np.mean(clf.predict(fmat[te_all]) == y[te_all])) if len(te_all) else 0.0
+        gold_acc = float(np.mean(clf.predict(fmat[te_gold]) == y[te_gold])) if len(te_gold) else 0.0
+        rungs[name] = {
+            "n_features": int(fmat.shape[1]),
+            "test_all_accuracy": round(all_acc, 4),
+            "test_gold_accuracy": round(gold_acc, 4),
+        }
+
+    # Rung 4 (spectrum_alone) & Rung 5 (+Gaia parallax gate on conservative parallax > 1.0 mas proxy)
+    p4_all = [
+        pipe.predict_one(X[i], blend_share=float(blends[i]), flux_err=(X_err[i] if X_err is not None else None))["spectrum_alone"]["top_class"]
+        for i in te_all
+    ]
+    p4_gold = [
+        pipe.predict_one(X[i], blend_share=float(blends[i]), flux_err=(X_err[i] if X_err is not None else None))["spectrum_alone"]["top_class"]
+        for i in te_gold
+    ]
+    rungs["rung4_bands_plus_stage10_spectrum_alone"] = {
+        "n_features": int(all_colors.shape[1]),
+        "test_all_accuracy": round(float(np.mean([p4_all[j] == str(y[te_all[j]]) for j in range(len(te_all))])) if len(te_all) else 0.0, 4),
+        "test_gold_accuracy": round(float(np.mean([p4_gold[j] == str(y[te_gold[j]]) for j in range(len(te_gold))])) if len(te_gold) else 0.0, 4),
+    }
+
+    p5_all = [
+        pipe.predict_one(
+            X[i],
+            blend_share=float(blends[i]),
+            flux_err=(X_err[i] if X_err is not None else None),
+            parallax_snr=(10.0 if (math.isfinite(float(plx[i])) and float(plx[i]) > 1.0) else 0.0),
+        )["all_data"]["top_class"]
+        for i in te_all
+    ]
+    p5_gold = [
+        pipe.predict_one(
+            X[i],
+            blend_share=float(blends[i]),
+            flux_err=(X_err[i] if X_err is not None else None),
+            parallax_snr=(10.0 if (math.isfinite(float(plx[i])) and float(plx[i]) > 1.0) else 0.0),
+        )["all_data"]["top_class"]
+        for i in te_gold
+    ]
+    rungs["rung5_all_data_with_gaia_parallax"] = {
+        "n_features": int(all_colors.shape[1]),
+        "gaia_parallax_measured_frac_test": round(float(np.mean(np.isfinite(plx[te_all]))) if len(te_all) else 0.0, 4),
+        "test_all_accuracy": round(float(np.mean([p5_all[j] == str(y[te_all[j]]) for j in range(len(te_all))])) if len(te_all) else 0.0, 4),
+        "test_gold_accuracy": round(float(np.mean([p5_gold[j] == str(y[te_gold[j]]) for j in range(len(te_gold))])) if len(te_gold) else 0.0, 4),
+    }
+    return rungs
 
 
 def evaluate_fixed_targets(wavelengths, bandwidths, spectra_by_slug, pipeline, errs_by_slug=None):

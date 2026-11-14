@@ -3,7 +3,7 @@
   "spectral_grid_source": "SPECTRAL_CHANNELS BINTABLE (Norder5 All-Sky Cube)",
   "w2_mag_method": "Empirical -2.5*log10(median F_nu[4.4..4.8 um] / 171.787 Jy); NaN if non-positive",
   "sky_tile_definition": "HEALPix NESTED Norder8 (nside=256, ~0.23 deg); S3 extraction grouped by Norder5 (nside=32)",
-  "total_spectra": 292,
+  "total_spectra": 695,
   "spiff_hybrid_templates_count": 47,
   "benchmark_targets_extracted": [
     "Barnards_Star",
@@ -14,40 +14,40 @@
   ],
   "class_summary": {
     "Active galaxy or quasar": {
-      "total": 30,
-      "gold": 30,
+      "total": 119,
+      "gold": 119,
       "silver": 0,
-      "unique_h8_tiles": 30
+      "unique_h8_tiles": 118
     },
     "Star": {
-      "total": 45,
+      "total": 59,
       "gold": 0,
-      "silver": 45,
-      "unique_h8_tiles": 45
+      "silver": 59,
+      "unique_h8_tiles": 50
+    },
+    "Evolved giant star": {
+      "total": 47,
+      "gold": 0,
+      "silver": 47,
+      "unique_h8_tiles": 40
     },
     "Galaxy": {
-      "total": 42,
+      "total": 87,
       "gold": 0,
-      "silver": 42,
-      "unique_h8_tiles": 31
+      "silver": 87,
+      "unique_h8_tiles": 37
     },
     "Young star with ice or dust": {
-      "total": 66,
-      "gold": 66,
+      "total": 183,
+      "gold": 183,
       "silver": 0,
       "unique_h8_tiles": 12
     },
-    "Evolved giant star": {
-      "total": 29,
-      "gold": 0,
-      "silver": 29,
-      "unique_h8_tiles": 26
-    },
     "Ultracool dwarf": {
-      "total": 80,
-      "gold": 80,
+      "total": 200,
+      "gold": 200,
       "silver": 0,
-      "unique_h8_tiles": 80
+      "unique_h8_tiles": 200
     }
   },
   "output_npz": "ml/real_training_dataset.npz"

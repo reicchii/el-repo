@@ -15,7 +15,12 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 from phantom_worlds.contracts import load_spectra_table
-from phantom_worlds.ml_pipeline import evaluate_fixed_targets, train_from_real_dataset
+from phantom_worlds.ml_pipeline import (
+    evaluate_cross_extraction_ratio,
+    evaluate_fixed_targets,
+    evaluate_input_ladder,
+    train_from_real_dataset,
+)
 from phantom_worlds.real_ml_data import (
     DEFAULT_ML_DIR,
     build_balanced_e1_templates,
@@ -23,8 +28,8 @@ from phantom_worlds.real_ml_data import (
     resample_spectrum_to_grid,
 )
 
-MODEL_VERSION = "spherex-dr1-e1e2-v1"
-PIPELINE_VERSION = "phantom-ml-slice3"
+MODEL_VERSION = "spherex-dr1-e1e2-v2"
+PIPELINE_VERSION = "phantom-ml-tierb"
 
 
 def _sanitize_json(obj):
@@ -155,9 +160,33 @@ def _format_model_card(report):
         lines.append(
             f"| `{slug}` | {cinfo['top_class']} | {cinfo['molecule_status']} | {rinfo.get('top_class', '-')} | {rinfo.get('molecule_status', '-')} |"
         )
+    ucd_sub = report.get("ucd_subtype_evaluation") or {}
+    if ucd_sub:
+        lines.extend([
+            "",
+            "## 4. Ultracool Dwarf Level-2 Subtype & Input Ladder (Tier B)",
+            "",
+            f"- Held-out SPIFF UCD subtype count: `{ucd_sub.get('count', 0)}` | Within 2 subtypes: `{ucd_sub.get('within_2_subtypes_frac', 0.0):.4f}` (gate `>= 0.80`) | MAD: `{ucd_sub.get('mad_subtypes')}` | Pass: `{ucd_sub.get('passed')}`",
+        ])
+    cross = report.get("cross_extraction_ratio")
+    if cross:
+        lines.append(
+            f"- Cross-extraction ratio (`our S3 cube / SPIFF ref`, n=`{cross.get('matched_count', 0)}`): max abs band median deviation `{cross.get('max_abs_deviation')}` (gate `<= 0.10`) | Pass: `{cross.get('passed')}`"
+        )
+    ladder = report.get("input_ladder") or {}
+    if ladder:
+        lines.extend([
+            "",
+            "| Input Ladder Rung | Features | All-Class Acc | Gold Test Acc |",
+            "|---|---:|---:|---:|",
+        ])
+        for rung_name, rstats in ladder.items():
+            lines.append(
+                f"| `{rung_name}` | {rstats.get('n_features', 0)} | {rstats.get('test_all_accuracy', 0.0):.4f} | {rstats.get('test_gold_accuracy', 0.0):.4f} |"
+            )
     lines.extend([
         "",
-        "## 4. Known Limitations & Honest Framing",
+        "## 5. Known Limitations & Honest Framing",
         "",
         "- Model estimates are probabilistic (`estimate`) and output `Unclassified` capped at confidence `<= 0.50` whenever Expert 1 templates and Expert 2 gradient-boosted trees disagree.",
         "- S3 All-Sky Cubes use HiPS Order 5 (`~13.98 arcsec/px`), which is ~2.25x coarser than native SPHEREx Level-2 (`~6.2 arcsec/px`) and increases blending for faint or crowded sources (e.g., WISE 0855 at short wavelengths, saturating bright red giants/dwarfs in D1-D4).",
@@ -268,6 +297,35 @@ def run_training(
         f"ref_all_passed={fixed_ref['all_passed']}"
     )
 
+    ucd_subtype_eval = (
+        pipe.evaluate_ucd_subtype_accuracy(X[te_all_idx], y[te_all_idx], dataset["subclass"][te_all_idx])
+        if "subclass" in dataset
+        else {"count": 0, "mad_subtypes": None, "mae_subtypes": None, "within_2_subtypes_frac": 0.0, "passed": False}
+    )
+    _log(
+        f"UCD Level-2 Subtypes (n={ucd_subtype_eval['count']}): within_2={ucd_subtype_eval['within_2_subtypes_frac']:.4f}, "
+        f"mad={ucd_subtype_eval['mad_subtypes']}, passed={ucd_subtype_eval['passed']}"
+    )
+
+    input_ladder = evaluate_input_ladder(dataset, fit_res, random_state=seed)
+    for rname, rstats in input_ladder.items():
+        _log(
+            f"Input ladder {rname}: n_feat={rstats['n_features']} all_acc={rstats['test_all_accuracy']:.4f} "
+            f"gold_acc={rstats['test_gold_accuracy']:.4f}"
+        )
+
+    cross_extract_eval = None
+    if "cross_extract_ours_uJy" in dataset and "cross_extract_ref_uJy" in dataset and len(dataset["cross_extract_ours_uJy"]) > 0:
+        cross_extract_eval = evaluate_cross_extraction_ratio(
+            dataset["cross_extract_ours_uJy"], dataset["cross_extract_ref_uJy"]
+        )
+        cross_extract_eval["matched_count"] = int(len(dataset["cross_extract_ours_uJy"]))
+        cross_extract_eval["matched_slugs"] = [str(s) for s in dataset.get("cross_extract_slugs", []).tolist()]
+        _log(
+            f"Cross-extraction S3 vs SPIFF (n={cross_extract_eval['matched_count']}): "
+            f"max_dev={cross_extract_eval['max_abs_deviation']}, passed={cross_extract_eval['passed']}"
+        )
+
     disp_dataset = _display_path(dataset_path)
     os.makedirs(output_dir, exist_ok=True)
     report = _sanitize_json(
@@ -286,6 +344,7 @@ def run_training(
             "total_spectra": int(len(y)),
             "strict_tile_disjointness": fit_res["strict_tile_disjointness"],
             "conformal_q": round(float(pipe.conformal_q_), 4),
+            "temperature_inv": round(float(pipe.temperature_inv_), 4),
             "silver_weight_applied": float(pipe.silver_weight_applied_),
             "split_sizes": {
                 "train_core": int(len(fit_res["tr_rel"])),
@@ -297,6 +356,9 @@ def run_training(
             "e1_templates_per_class": tmpl_counts,
             "release_gates": release_gates,
             "heldout_all_classes_diagnostic": all_diag,
+            "ucd_subtype_evaluation": ucd_subtype_eval,
+            "input_ladder": input_ladder,
+            "cross_extraction_ratio": cross_extract_eval,
             "fixed_targets_cube": fixed_cube,
             "fixed_targets_reference": fixed_ref,
         }
