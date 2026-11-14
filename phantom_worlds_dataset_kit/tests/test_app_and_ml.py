@@ -3264,6 +3264,15 @@ class TestFastAPIBackend(unittest.TestCase):
         self.assertEqual(missing_proof["ml_evaluation"]["status"], "NOT_MEASURED")
         self.assertEqual(missing_proof["ml_evaluation"]["release_status"], "UNPUBLISHED")
 
+        # Online /api/sky/timeseries matched_target exposes catalog PM so Follow motion works on NOT_MEASURED targets
+        r_ts = self.client.get("/api/sky/timeseries", params={"coord": "WISE 0855", "fov_arcmin": 6.5})
+        self.assertEqual(r_ts.status_code, 200)
+        mt = r_ts.json()["matched_target"]
+        self.assertIsNotNone(mt)
+        self.assertEqual(mt["target_id"], "TGT-02")
+        self.assertLess(mt["pm_ra_mas_yr"], -5000.0)
+        self.assertIsNotNone(mt["pm_dec_mas_yr"])
+
     def test_sso_most_disambiguation_3i_atlas_and_security_guards(self):
         from unittest.mock import patch
         from phantom_worlds.sso import (

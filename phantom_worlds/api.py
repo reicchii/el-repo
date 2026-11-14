@@ -895,6 +895,16 @@ def create_app(
                     "object_type": matched_row["object_type"],
                     "ra_deg_at_epoch": round(match_ra_ep, 6),
                     "dec_deg_at_epoch": round(match_dec_ep, 6),
+                    "pm_ra_mas_yr": (
+                        float(matched_row["pm_ra_mas_yr"])
+                        if matched_row.get("pm_ra_mas_yr") not in (None, "")
+                        else None
+                    ),
+                    "pm_dec_mas_yr": (
+                        float(matched_row["pm_dec_mas_yr"])
+                        if matched_row.get("pm_dec_mas_yr") not in (None, "")
+                        else None
+                    ),
                 }
                 if matched_row
                 else None
