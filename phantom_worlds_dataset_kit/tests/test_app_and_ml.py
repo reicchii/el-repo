@@ -1577,6 +1577,10 @@ class TestFastAPIBackend(unittest.TestCase):
         import subprocess
         import textwrap
 
+        import shutil
+        import subprocess
+        import textwrap
+
         node_bin = shutil.which("node")
         if not node_bin:
             self.skipTest("Node.js binary not found on PATH")
@@ -1891,6 +1895,10 @@ class TestFastAPIBackend(unittest.TestCase):
         self.assertEqual(r_fb.status_code, 200)
         index_html = open(os.path.join(ROOT_DIR, "phantom_worlds", "static", "index.html"), encoding="utf-8").read()
         self.assertIn("/static/fallback_data.js", index_html)
+
+        import shutil
+        import subprocess
+        import textwrap
 
         node_bin = shutil.which("node")
         if not node_bin:
@@ -2341,6 +2349,10 @@ class TestFastAPIBackend(unittest.TestCase):
         import subprocess
         import textwrap
 
+        import shutil
+        import subprocess
+        import textwrap
+
         node_bin = shutil.which("node")
         if not node_bin:
             self.skipTest("Node.js binary not found on PATH")
@@ -2681,6 +2693,10 @@ class TestFastAPIBackend(unittest.TestCase):
                     sep_arcsec = math.hypot(cx - ex, cy - ey) * pix_scale
                     self.assertLessEqual(sep_arcsec, 2.0, msg=f"{tid} {visit['visit_id']} offset={sep_arcsec:.2f} arcsec")
 
+        import shutil
+        import subprocess
+        import textwrap
+
         node_bin = shutil.which("node")
         if node_bin:
             viewer_js_path = os.path.join(ROOT_DIR, "phantom_worlds", "static", "viewer.js")
@@ -2801,6 +2817,10 @@ class TestFastAPIBackend(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, msg=f"viewer.js astrometry/FOV check failed:\n{proc.stderr}\n{proc.stdout}")
 
     def test_viewer_js_hover_nan_guards_coord_parser_and_ui_interactions(self):
+        import shutil
+        import subprocess
+        import textwrap
+
         import shutil
         import subprocess
         import textwrap
@@ -3365,6 +3385,311 @@ class TestFastAPIBackend(unittest.TestCase):
         with patch("phantom_worlds.api.query_sso_spherex", side_effect=SSOUpstreamError("IRSA unreachable")):
             r_err = self.client.get("/api/sso", params={"name": "Vesta"})
             self.assertEqual(r_err.status_code, 503)
+
+    def test_viewer_js_tier_a_controls_matrix_sso_proof_and_export(self):
+        index_html = open(os.path.join(ROOT_DIR, "phantom_worlds", "static", "index.html"), encoding="utf-8").read()
+        self.assertNotIn("V3−V1", index_html)
+        self.assertNotIn("style=", index_html.lower())
+        for req_id in (
+            'data-mode="coldiff"',
+            'id="speed-select"',
+            'id="invert-toggle"',
+            'id="follow-motion-toggle"',
+            'id="inject-toggle"',
+            'id="export-png-btn"',
+            'id="export-csv-btn"',
+            'id="lightcurve-canvas"',
+            'id="motion-summary"',
+            'id="change-spectrum-list"',
+            'id="proof-summary-body"',
+            'id="sso-input"',
+        ):
+            self.assertIn(req_id, index_html)
+
+        import shutil
+        import subprocess
+        import textwrap
+
+        node_bin = shutil.which("node")
+        if not node_bin:
+            self.skipTest("Node.js binary not found on PATH")
+
+        viewer_js_path = os.path.join(ROOT_DIR, "phantom_worlds", "static", "viewer.js")
+        harness = textwrap.dedent(
+            """
+            const assert = require("assert");
+            const fs = require("fs");
+            const vm = require("vm");
+
+            const createdDownloads = [];
+            function makeEl(id, extra = {}) {
+              const listeners = {};
+              return {
+                id,
+                value: "",
+                checked: false,
+                disabled: false,
+                max: "2",
+                min: "0",
+                textContent: "",
+                href: "",
+                download: "",
+                options: [],
+                children: [],
+                dataset: {},
+                classList: {
+                  _set: new Set(),
+                  toggle(c, on) { if (on === undefined ? !this._set.has(c) : on) this._set.add(c); else this._set.delete(c); },
+                  add(c) { this._set.add(c); },
+                  contains(c) { return this._set.has(c); },
+                },
+                attributes: {},
+                setAttribute(k, v) { this.attributes[k] = String(v); },
+                addEventListener(ev, fn) { (listeners[ev] = listeners[ev] || []).push(fn); },
+                trigger(ev, e = { preventDefault() {} }) { (listeners[ev] || []).forEach((fn) => fn(e)); },
+                append(...nodes) { this.children.push(...nodes); },
+                appendChild(n) { this.children.push(n); if (this.options) this.options.push(n); return n; },
+                replaceChildren(...nodes) { this.children = [...nodes]; },
+                getBoundingClientRect() { return { left: 0, top: 0, width: 640, height: 150 }; },
+                click() { createdDownloads.push({ href: this.href, download: this.download }); },
+                remove() {},
+                ...extra,
+              };
+            }
+
+            const skyTexts = [];
+            function makeCtx(isSky) {
+              return {
+                fillStyle: "", strokeStyle: "", lineWidth: 1, font: "", imageSmoothingEnabled: true,
+                fillRect() {}, strokeRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, arc() {}, stroke() {}, fill() {},
+                fillText(t) { if (isSky) skyTexts.push(t); }, drawImage() {}, setLineDash() {},
+                createImageData(w, h) { return { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }; },
+                putImageData() {},
+              };
+            }
+
+            const byId = {
+              "sky-query-form": makeEl("sky-query-form"),
+              "coord-input": makeEl("coord-input", { value: "Epsilon Indi B" }),
+              "fov-select": makeEl("fov-select", { value: "6.5", options: [{ value: "6.5", textContent: "6.5" }] }),
+              "epoch-input": makeEl("epoch-input", { value: "2026" }),
+              "live-toggle": makeEl("live-toggle", { checked: false }),
+              "mode-badge": makeEl("mode-badge"),
+              "status-banner": makeEl("status-banner"),
+              "sky-canvas": makeEl("sky-canvas", { width: 512, height: 512, getContext: () => makeCtx(true), toDataURL: () => "data:image/png;base64,AA==" }),
+              "spectrum-canvas": makeEl("spectrum-canvas", { width: 640, height: 190, getContext: () => makeCtx(false) }),
+              "matrix-canvas": makeEl("matrix-canvas", { width: 640, height: 150, getContext: () => makeCtx(false) }),
+              "lightcurve-canvas": makeEl("lightcurve-canvas", { width: 640, height: 140, getContext: () => makeCtx(false) }),
+              "play-toggle": makeEl("play-toggle"),
+              "visit-scrubber": makeEl("visit-scrubber", { value: "0", max: "2" }),
+              "visit-label": makeEl("visit-label"),
+              "stretch-select": makeEl("stretch-select", { value: "asinh" }),
+              "speed-select": makeEl("speed-select", { value: "750" }),
+              "gaia-overlay-toggle": makeEl("gaia-overlay-toggle", { checked: true }),
+              "mask-overlay-toggle": makeEl("mask-overlay-toggle", { checked: true }),
+              "invert-toggle": makeEl("invert-toggle", { checked: false }),
+              "follow-motion-toggle": makeEl("follow-motion-toggle", { checked: false }),
+              "inject-toggle": makeEl("inject-toggle", { checked: false }),
+              "export-png-btn": makeEl("export-png-btn"),
+              "export-csv-btn": makeEl("export-csv-btn"),
+              "external-links": makeEl("external-links"),
+              "motion-summary": makeEl("motion-summary"),
+              "change-spectrum-list": makeEl("change-spectrum-list"),
+              "sso-input": makeEl("sso-input", { value: "3I/ATLAS" }),
+              "sso-query-btn": makeEl("sso-query-btn"),
+              "sso-status": makeEl("sso-status"),
+              "proof-summary-body": makeEl("proof-summary-body"),
+              "pixel-readout": makeEl("pixel-readout"),
+              "molecule-list": makeEl("molecule-list"),
+              "frames-tbody": makeEl("frames-tbody"),
+              "frames-heading": makeEl("frames-heading"),
+              "spectrum-heading": makeEl("spectrum-heading"),
+              "copy-url-btn": makeEl("copy-url-btn"),
+            };
+            const modeBtns = ["play", "stack", "difference", "coldiff", "rgb"].map((m) => makeEl("m-" + m, { dataset: { mode: m } }));
+            const detBtns = ["D1", "D2", "D3", "D4", "D5", "D6"].map((d) => makeEl("d-" + d, { dataset: { det: d } }));
+            const ssoPresetBtns = [makeEl("sso-3i", { dataset: { sso: "3I/ATLAS" } })];
+
+            function makeDetTs(detId, val) {
+              return {
+                target_id: "TGT-03",
+                detector: detId,
+                center_ra_deg: 331.07,
+                center_dec_deg: -56.78,
+                fov_arcmin: 6.5,
+                pixel_scale_arcsec: 6.15,
+                visits: [
+                  { visit_id: "V1", mjd: 60800.0, epoch_iso: "2025-05-05T00:00:00Z" },
+                  { visit_id: "V2", mjd: 61000.0, epoch_iso: "2025-11-21T00:00:00Z" },
+                  { visit_id: "V3", mjd: 61200.0, epoch_iso: "2026-06-09T00:00:00Z" },
+                ],
+                frames_by_visit: [
+                  Array.from({ length: 8 }, () => Array(8).fill(val)),
+                  Array.from({ length: 8 }, () => Array(8).fill(val + 1)),
+                  Array.from({ length: 8 }, () => Array(8).fill(val + 2)),
+                ],
+                stack: Array.from({ length: 8 }, () => Array(8).fill(val + 1)),
+                difference: Array.from({ length: 8 }, () => Array(8).fill(2)),
+                mask_overlay: Array.from({ length: 8 }, () => Array(8).fill(0)),
+              };
+            }
+
+            const intervals = [];
+            const window = {
+              location: { search: "?coord=Epsilon+Indi+B", pathname: "/", href: "http://127.0.0.1/?coord=Epsilon+Indi+B" },
+              history: { replaceState(_s, _t, u) { window.location.href = "http://127.0.0.1" + u; } },
+              setInterval(fn, ms) { const it = { fn, ms }; intervals.push(it); return intervals.length; },
+              clearInterval() {},
+            };
+            const document = {
+              body: makeEl("body"),
+              getElementById(id) { return byId[id] || null; },
+              querySelectorAll(sel) {
+                if (sel === ".mode-btn") return modeBtns;
+                if (sel === ".det-btn") return detBtns;
+                if (sel === ".sso-preset-btn") return ssoPresetBtns;
+                return [];
+              },
+              createElement(tag) { return tag === "canvas" ? makeEl("c", { width: 8, height: 8, getContext: () => makeCtx(false) }) : makeEl(tag); },
+            };
+
+            const ctx = {
+              window, document, URL, URLSearchParams, AbortController, Uint8ClampedArray,
+              navigator: { clipboard: { async writeText() {} } },
+              console, Math, Number, String, Boolean, Array, Object, Set, JSON, encodeURIComponent,
+              async fetch(url) {
+                const u = String(url);
+                if (u.includes("/api/proof/summary")) {
+                  return {
+                    ok: true, status: 200,
+                    async json() {
+                      return {
+                        tier_a_targets: [{ target_id: "TGT-03", target_name: "Epsilon Indi B", gaia_alignment_rms_arcsec: 0.578, d6_median_snr: 130.4, motion_status: "MEASURED", measured_total_arcsec_yr: 4.21, residual_arcsec_yr: 0.56, note: "pass" }],
+                        ml_evaluation: { status: "AVAILABLE", release_status: "UNPUBLISHED", model_version: "v1", total_spectra: 292, gold_min_recall: 0.2, gold_ece: 0.25, e2_only_accuracy: 0.84 },
+                        next_items: ["Remove stars"],
+                      };
+                    },
+                  };
+                }
+                if (u.includes("/api/patch/metrics")) {
+                  return {
+                    ok: true, status: 200,
+                    async json() {
+                      return {
+                        gaia_alignment_rms_arcsec: 0.578,
+                        saturated_detectors: [],
+                        motion: { status: "MEASURED", origin: "Measured, SPHEREx cutouts", measured_total_arcsec_yr: 4.208, catalogue_total_arcsec_yr: 4.696, residual_arcsec_yr: 0.563 },
+                        per_detector: {
+                          D6: { detector: "D6", median_snr: 130.4, visits: [{ mjd: 60800, flux_rel: 10, flux_err_rel: 0.2 }, { mjd: 61200, flux_rel: 10.5, flux_err_rel: 0.2 }], change_last_vs_first: { status: "MEASURED", ratio_last_vs_first: 1.05, delta_pct: 5.0 } },
+                        },
+                      };
+                    },
+                  };
+                }
+                if (u.includes("/api/patch/timeseries")) {
+                  const det = u.includes("detector=D4") ? "D4" : "D6";
+                  return { ok: true, status: 200, async json() { return makeDetTs(det, det === "D4" ? 5 : 20); } };
+                }
+                if (u.includes("/api/sso")) {
+                  return {
+                    ok: true, status: 200,
+                    async json() {
+                      return {
+                        object_name: "3I/ATLAS (C/2025 N1)",
+                        query_mode: "comet_3i_atlas_votable",
+                        center_ra_deg: 244.5, center_dec_deg: -16.5,
+                        estimated_rate_arcsec_hr: 98.2, total_frames: 2,
+                        frames: [{ obs_id: "a1", detector: "D6", mjd: 60890.0, em_min_um: 3.8, ra_deg: 244.4, dec_deg: -16.4, uri: null }],
+                        track_points: [{ mjd: 60890.0, ra_deg: 244.4, dec_deg: -16.4 }, { mjd: 60891.0, ra_deg: 244.6, dec_deg: -16.6 }],
+                      };
+                    },
+                  };
+                }
+                if (u.includes("/api/analyze/spectrum")) {
+                  return {
+                    ok: true, status: 200,
+                    async json() {
+                      return {
+                        molecule_readings: { status: "MEASURED", features: {} },
+                        classification: { model_origin: "real_spherex_dr1_spiff_trained", all_data: { top_class: "Ultracool dwarf", confidence: 0.78 }, novelty: { status: "OK" } },
+                      };
+                    },
+                  };
+                }
+                return {
+                  ok: true, status: 200,
+                  async json() {
+                    return {
+                      query: { ra_deg: 331.07, dec_deg: -56.78, fov_arcmin: 6.5, epoch_yr: 2026.0, detector: "D6" },
+                      source_mode: "hour0_calibrated_pack",
+                      matched_target: { target_id: "TGT-03", name: "Epsilon Indi B", pm_ra_mas_yr: 3960, pm_dec_mas_yr: -2537 },
+                      patch_timeseries: makeDetTs("D6", 20),
+                      frames: [{ obs_collection: "dr1", obs_id: "f1", t_min: 60800, em_min: 4.5, s_ra: 331.07, s_dec: -56.78 }],
+                      gaia_sources: [],
+                      spectrum_102: { label: "Epsilon Indi B", wavelength_um: Array.from({ length: 102 }, (_, i) => 0.75 + i * 0.04), flux_uJy: Array(102).fill(42.0), flux_err_uJy: Array(102).fill(1.0) },
+                      warnings: [],
+                    };
+                  },
+                };
+              },
+            };
+
+            vm.runInNewContext(fs.readFileSync(process.argv[1], "utf8"), ctx);
+            (async () => {
+              await new Promise((r) => setTimeout(r, 35));
+              // Verify Proof, Motion, Change Spectrum, External Links, Confidence Word & Model Origin
+              assert(byId["proof-summary-body"].children.length >= 2, "Proof summary not rendered");
+              assert(byId["motion-summary"].children[0].textContent.includes("4.208"), "Motion readout missing");
+              assert(byId["change-spectrum-list"].children.length >= 1, "Change spectrum card empty");
+              assert.strictEqual(byId["external-links"].children.length, 4, "Other telescopes links missing");
+              const molText = byId["molecule-list"].children.map((c) => c.children.map((x) => x.textContent).join(" ")).join(" | ");
+              assert(molText.includes("Probably: Ultracool dwarf, 78%"), "Missing confidence word: " + molText);
+              assert(!molText.includes("confirmed") && !molText.includes("discovery"), "Reserved words leaked: " + molText);
+              assert(molText.includes("real_spherex_dr1_spiff_trained"), "Missing model_origin: " + molText);
+
+              // Matrix click jumps to V3 (highest MJD near right edge of 640px canvas)
+              byId["matrix-canvas"].trigger("click", { clientX: 620 });
+              assert.strictEqual(byId["visit-scrubber"].value, "2", "Matrix click did not jump to V3");
+              assert(byId["visit-label"].textContent.startsWith("V3"), byId["visit-label"].textContent);
+
+              // Follow motion stack label & Invert + Inject S/N 5 & Speed change + Coldiff D6-D4
+              byId["follow-motion-toggle"].checked = true;
+              byId["follow-motion-toggle"].trigger("change");
+              modeBtns.find((b) => b.dataset.mode === "stack").trigger("click");
+              assert.strictEqual(byId["visit-label"].textContent, "Median stack (Follow motion)");
+
+              byId["invert-toggle"].checked = true;
+              byId["invert-toggle"].trigger("change");
+              byId["inject-toggle"].checked = true;
+              byId["inject-toggle"].trigger("change");
+              assert(skyTexts.includes("Test S/N 5"), "Injected S/N 5 reticle missing");
+
+              modeBtns.find((b) => b.dataset.mode === "coldiff").trigger("click");
+              await new Promise((r) => setTimeout(r, 25));
+              assert.strictEqual(byId["visit-label"].textContent, "Colour difference (D6 and D4)");
+
+              byId["speed-select"].value = "300";
+              byId["speed-select"].trigger("change");
+              assert.strictEqual(intervals[intervals.length - 1].ms, 300);
+
+              // Export PNG & CSV
+              byId["export-png-btn"].trigger("click");
+              byId["export-csv-btn"].trigger("click");
+              assert.strictEqual(createdDownloads.length, 2);
+              assert.strictEqual(createdDownloads[0].download, "phantom-worlds-view.png");
+              assert.strictEqual(createdDownloads[1].download, "phantom-worlds-metrics.csv");
+
+              // Moving object SSO preset query
+              ssoPresetBtns[0].trigger("click");
+              await new Promise((r) => setTimeout(r, 25));
+              assert(byId["sso-status"].textContent.includes("3I/ATLAS"), byId["sso-status"].textContent);
+              assert(skyTexts.some((t) => t.startsWith("MJD ")), "SSO track labels missing on sky canvas");
+            })().catch((err) => { console.error(err); process.exit(1); });
+            """
+        ).strip()
+
+        proc = subprocess.run([node_bin, "-e", harness, viewer_js_path], capture_output=True, text=True, timeout=15)
+        self.assertEqual(proc.returncode, 0, msg=f"Tier-A viewer VM checks failed:\n{proc.stderr}\n{proc.stdout}")
 
 
 if __name__ == "__main__":

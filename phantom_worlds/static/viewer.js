@@ -37,11 +37,19 @@
     stretch: "asinh",
     visitIdx: 0,
     playing: true,
+    speedMs: 750,
     live: false,
     showGaia: true,
     showMask: true,
+    invert: false,
+    followMotion: false,
+    injectTestSource: false,
     embed: false,
     payload: null,
+    tierAMetrics: null,
+    proofSummary: null,
+    auxDetCache: {},
+    matrixMeta: null,
     timerId: null,
     querySeq: 0,
     abortController: null,
@@ -58,12 +66,26 @@
     skyCanvas: document.getElementById("sky-canvas"),
     spectrumCanvas: document.getElementById("spectrum-canvas"),
     matrixCanvas: document.getElementById("matrix-canvas"),
+    lightcurveCanvas: document.getElementById("lightcurve-canvas"),
     playToggle: document.getElementById("play-toggle"),
     scrubber: document.getElementById("visit-scrubber"),
     visitLabel: document.getElementById("visit-label"),
     stretchSelect: document.getElementById("stretch-select"),
+    speedSelect: document.getElementById("speed-select"),
     gaiaToggle: document.getElementById("gaia-overlay-toggle"),
     maskToggle: document.getElementById("mask-overlay-toggle"),
+    invertToggle: document.getElementById("invert-toggle"),
+    followMotionToggle: document.getElementById("follow-motion-toggle"),
+    injectToggle: document.getElementById("inject-toggle"),
+    exportPngBtn: document.getElementById("export-png-btn"),
+    exportCsvBtn: document.getElementById("export-csv-btn"),
+    externalLinks: document.getElementById("external-links"),
+    motionSummary: document.getElementById("motion-summary"),
+    changeSpectrumList: document.getElementById("change-spectrum-list"),
+    ssoInput: document.getElementById("sso-input"),
+    ssoQueryBtn: document.getElementById("sso-query-btn"),
+    ssoStatus: document.getElementById("sso-status"),
+    proofBody: document.getElementById("proof-summary-body"),
     pixelReadout: document.getElementById("pixel-readout"),
     moleculeList: document.getElementById("molecule-list"),
     framesTbody: document.getElementById("frames-tbody"),
@@ -402,11 +424,15 @@
           object_type: matched.object_type,
           ra_deg_at_epoch: Math.round(matchRaEp * 1e6) / 1e6,
           dec_deg_at_epoch: Math.round(matchDecEp * 1e6) / 1e6,
+          pm_ra_mas_yr: matched.pm_ra_mas_yr,
+          pm_dec_mas_yr: matched.pm_dec_mas_yr,
         },
         patch_timeseries: patchTs,
         frames,
         gaia_sources: gaiaSources,
         spectrum_102: specOut,
+        offline_tier_a_metrics: matched.tier_a_metrics || null,
+        offline_proof_summary: bundle.proof_summary || null,
         warnings: ["Backend API unavailable; showing bundled ADR-003 Hour-0 static fallback data."],
       },
     };
@@ -427,13 +453,19 @@
       if (Number.isFinite(ep) && ep >= 1900 && ep <= 2100) state.epochYr = ep;
     }
     if (params.has("det") && DETECTORS.includes(params.get("det"))) state.detector = params.get("det");
-    if (params.has("mode") && ["play", "stack", "difference", "rgb"].includes(params.get("mode"))) {
+    if (params.has("mode") && ["play", "stack", "difference", "coldiff", "rgb"].includes(params.get("mode"))) {
       state.mode = params.get("mode");
     }
     if (params.has("live")) state.live = ["1", "true"].includes(params.get("live").toLowerCase());
     if (params.has("stretch") && ["asinh", "linear"].includes(params.get("stretch"))) {
       state.stretch = params.get("stretch");
     }
+    if (params.has("speed")) {
+      const spd = Number(params.get("speed"));
+      if ([300, 750, 1200].includes(spd)) state.speedMs = spd;
+    }
+    if (params.has("invert")) state.invert = ["1", "true"].includes(params.get("invert").toLowerCase());
+    if (params.has("follow")) state.followMotion = ["1", "true"].includes(params.get("follow").toLowerCase());
     if (params.has("gaia")) state.showGaia = !["0", "false"].includes(params.get("gaia").toLowerCase());
     if (params.has("mask")) state.showMask = !["0", "false"].includes(params.get("mask").toLowerCase());
     if (params.get("embed") === "1") {
@@ -444,6 +476,9 @@
     els.epochInput.value = String(state.epochYr);
     els.liveToggle.checked = state.live;
     els.stretchSelect.value = state.stretch;
+    if (els.speedSelect) els.speedSelect.value = String(state.speedMs);
+    if (els.invertToggle) els.invertToggle.checked = state.invert;
+    if (els.followMotionToggle) els.followMotionToggle.checked = state.followMotion;
     els.gaiaToggle.checked = state.showGaia;
     els.maskToggle.checked = state.showMask;
     const matchedFovOpt = [...els.fovSelect.options].find((o) => Number(o.value) === state.fovArcmin);
@@ -469,6 +504,9 @@
     params.set("stretch", state.stretch);
     params.set("gaia", String(state.showGaia));
     params.set("mask", String(state.showMask));
+    if (state.speedMs !== 750) params.set("speed", String(state.speedMs));
+    if (state.invert) params.set("invert", "1");
+    if (state.followMotion) params.set("follow", "1");
     if (state.embed) params.set("embed", "1");
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   }
@@ -522,11 +560,208 @@
     return t;
   }
 
-  function heatColor(t) {
+  function heatColor(t, invert) {
+    if (invert) {
+      const c = Math.round((1.0 - t) * 245);
+      return [c, c, Math.min(255, c + 10)];
+    }
     const r = Math.round(Math.min(255, 255 * Math.pow(t, 0.72)));
     const g = Math.round(Math.min(255, 255 * Math.pow(t, 1.45)));
     const b = Math.round(Math.min(255, 40 + 200 * Math.pow(t, 2.3)));
     return [r, g, b];
+  }
+
+  function medianNumeric(arr) {
+    if (!arr || !arr.length) return 0.0;
+    const sorted = arr.slice().sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 1 ? sorted[mid] : 0.5 * (sorted[mid - 1] + sorted[mid]);
+  }
+
+  function getTargetProperMotion(payload) {
+    if (!payload) return [0.0, 0.0];
+    const mt = payload.matched_target || {};
+    if (isFiniteNumber(mt.pm_ra_mas_yr) && isFiniteNumber(mt.pm_dec_mas_yr)) {
+      return [mt.pm_ra_mas_yr, mt.pm_dec_mas_yr];
+    }
+    const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
+    if (bundle && bundle.targets && mt.target_id && bundle.targets[mt.target_id]) {
+      const bt = bundle.targets[mt.target_id];
+      return [Number(bt.pm_ra_mas_yr || 0), Number(bt.pm_dec_mas_yr || 0)];
+    }
+    if (state.tierAMetrics && state.tierAMetrics.motion) {
+      const m = state.tierAMetrics.motion;
+      if (isFiniteNumber(m.measured_pm_ra_mas_yr) && isFiniteNumber(m.measured_pm_dec_mas_yr)) {
+        return [m.measured_pm_ra_mas_yr, m.measured_pm_dec_mas_yr];
+      }
+    }
+    return [0.0, 0.0];
+  }
+
+  function getVisitShiftPx(payload, ts, visitIdx) {
+    if (!ts || !Array.isArray(ts.visits) || ts.visits.length < 2) return [0, 0];
+    const [pmra, pmdec] = getTargetProperMotion(payload);
+    const mjd0 = Number(ts.visits[0] && ts.visits[0].mjd);
+    const mjdV = Number(ts.visits[visitIdx] && ts.visits[visitIdx].mjd);
+    if (!isFiniteNumber(mjd0) || !isFiniteNumber(mjdV)) return [0, 0];
+    const dtYr = (mjdV - mjd0) / 365.25;
+    const pxScale = isFiniteNumber(ts.pixel_scale_arcsec) ? ts.pixel_scale_arcsec : 6.15;
+    // East-left/North-up WCS: +RA moves -x, +Dec moves -y; sample shifted source back to visit 0.
+    const dx = Math.round((-(pmra / 1000.0) * dtYr) / pxScale);
+    const dy = Math.round((-(pmdec / 1000.0) * dtYr) / pxScale);
+    return [dx, dy];
+  }
+
+  function shiftGrid(grid, dx, dy) {
+    if (!Array.isArray(grid) || (dx === 0 && dy === 0)) return grid;
+    const ny = grid.length;
+    const nx = grid[0] ? grid[0].length : 0;
+    return grid.map((_r, y) =>
+      Array.from({ length: nx }, (_c, x) => readGridCell(grid, y + dy, x + dx))
+    );
+  }
+
+  function computeFollowMotionStack(payload, ts) {
+    const nV = ts.frames_by_visit.length;
+    const ny = ts.frames_by_visit[0].length;
+    const nx = ts.frames_by_visit[0][0].length;
+    const shifted = ts.frames_by_visit.map((g, vIdx) => {
+      const [dx, dy] = getVisitShiftPx(payload, ts, vIdx);
+      return shiftGrid(g, dx, dy);
+    });
+    return Array.from({ length: ny }, (_r, y) =>
+      Array.from({ length: nx }, (_c, x) => {
+        const vals = [];
+        for (let v = 0; v < nV; v++) {
+          const val = readGridCell(shifted[v], y, x);
+          if (isFiniteNumber(val)) vals.push(val);
+        }
+        return vals.length ? medianNumeric(vals) : null;
+      })
+    );
+  }
+
+  function getCachedDetectorTs(payload, detId) {
+    const ts = payload && payload.patch_timeseries;
+    if (ts && ts.detector === detId) return ts;
+    const tid = (payload && payload.matched_target && payload.matched_target.target_id) || (ts && ts.target_id);
+    if (tid && state.auxDetCache[`${tid}:${detId}`]) {
+      return state.auxDetCache[`${tid}:${detId}`];
+    }
+    const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
+    if (bundle && bundle.targets && tid && bundle.targets[tid]) {
+      return decodeStaticDetectorTimeseries(bundle, bundle.targets[tid], detId);
+    }
+    return null;
+  }
+
+  async function ensureColourDiffGrids() {
+    const payload = state.payload;
+    if (!payload) return;
+    const tid = (payload.matched_target && payload.matched_target.target_id)
+      || (payload.patch_timeseries && payload.patch_timeseries.target_id);
+    if (!tid) return;
+    const seq = state.querySeq;
+    const needed = ["D4", "D6"].filter((d) => !getCachedDetectorTs(payload, d));
+    if (!needed.length) return;
+    await Promise.all(
+      needed.map(async (d) => {
+        try {
+          const r = await fetch(`/api/patch/timeseries?detector=${d}&target_id=${encodeURIComponent(tid)}`);
+          if (r && r.ok) {
+            const j = await r.json();
+            if (j && Array.isArray(j.stack)) {
+              state.auxDetCache[`${tid}:${d}`] = j;
+            }
+          }
+        } catch (_e) {
+          // Offline fallback handled cleanly by getCachedDetectorTs
+        }
+      })
+    );
+    if (seq === state.querySeq && state.mode === "coldiff") {
+      drawSkyCanvas();
+    }
+  }
+
+  function buildColourDiffGrid(payload) {
+    const ts4 = getCachedDetectorTs(payload, "D4");
+    const ts6 = getCachedDetectorTs(payload, "D6");
+    if (!ts4 || !ts6 || !Array.isArray(ts4.stack) || !Array.isArray(ts6.stack)) return null;
+    const ny = ts6.stack.length;
+    const nx = ts6.stack[0] ? ts6.stack[0].length : 0;
+    const flat4 = [];
+    const flat6 = [];
+    for (let y = 0; y < ny; y++) {
+      for (let x = 0; x < nx; x++) {
+        const a = readGridCell(ts4.stack, y, x);
+        const b = readGridCell(ts6.stack, y, x);
+        if (isFiniteNumber(a)) flat4.push(a);
+        if (isFiniteNumber(b)) flat6.push(b);
+      }
+    }
+    const med4 = medianNumeric(flat4);
+    const med6 = medianNumeric(flat6);
+    return Array.from({ length: ny }, (_r, y) =>
+      Array.from({ length: nx }, (_c, x) => {
+        const v4 = readGridCell(ts4.stack, y, x);
+        const v6 = readGridCell(ts6.stack, y, x);
+        return isFiniteNumber(v4) && isFiniteNumber(v6) ? (v6 - med6) - (v4 - med4) : null;
+      })
+    );
+  }
+
+  function injectTestSourceGrid(grid) {
+    if (!state.injectTestSource || !Array.isArray(grid) || !grid.length) return grid;
+    const ny = grid.length;
+    const nx = grid[0] ? grid[0].length : 0;
+    const vals = [];
+    for (let y = 2; y < ny - 2; y++) {
+      for (let x = 2; x < nx - 2; x++) {
+        const v = readGridCell(grid, y, x);
+        if (isFiniteNumber(v)) vals.push(v);
+      }
+    }
+    if (!vals.length) return grid;
+    const med = medianNumeric(vals);
+    const absDevs = vals.map((v) => Math.abs(v - med));
+    const sigma = Math.max(1e-4, 1.4826 * medianNumeric(absDevs));
+    const peak = 5.0 * sigma;
+    const cx = Math.round(nx * 0.72);
+    const cy = Math.round(ny * 0.28);
+    return grid.map((row, y) =>
+      row.map((val, x) => {
+        if (!isFiniteNumber(val)) return val;
+        const r2 = (x - cx) ** 2 + (y - cy) ** 2;
+        return r2 <= 25 ? val + peak * Math.exp(-r2 / (2.0 * 1.15 * 1.15)) : val;
+      })
+    );
+  }
+
+  function confidenceWord(prob) {
+    const p = Number(prob);
+    if (!Number.isFinite(p) || p < 0.5) return "Unclassified";
+    if (p < 0.7) return "Possibly";
+    if (p < 0.9) return "Probably";
+    return "Very likely";
+  }
+
+  function buildExternalTelescopeLinks(raDeg, decDeg) {
+    if (!Number.isFinite(raDeg) || !Number.isFinite(decDeg)) return [];
+    const raStr = raDeg.toFixed(6);
+    const decStr = decDeg.toFixed(6);
+    const coo = encodeURIComponent(`${raStr} ${decStr}`);
+    return [
+      { label: "IRSA Finder Chart", href: `https://irsa.ipac.caltech.edu/applications/finderchart/?locstr=${coo}` },
+      { label: "SIMBAD", href: `https://simbad.cds.unistra.fr/simbad/sim-coo?Coord=${coo}&Radius=2&Radius.unit=arcmin` },
+      { label: "Aladin Lite", href: `https://aladin.cds.unistra.fr/AladinLite/?target=${coo}&fov=0.12` },
+    ];
+  }
+
+  function csvCell(val) {
+    const raw = val === null || val === undefined ? "" : String(val);
+    const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+    return `"${safe.replace(/"/g, '""')}"`;
   }
 
   function drawSkyCanvas() {
@@ -547,6 +782,7 @@
       const imgData = ctx.createImageData(nx, ny);
       const out = imgData.data;
 
+      let coldiffMissing = false;
       if (state.mode === "rgb" && ts.frames_by_visit.length >= 3) {
         const nV = ts.frames_by_visit.length;
         const midIdx = Math.floor((nV - 1) / 2);
@@ -563,15 +799,47 @@
             if (!isFiniteNumber(vr) || !isFiniteNumber(vg) || !isFiniteNumber(vb)) {
               out[p] = 55; out[p + 1] = 18; out[p + 2] = 28; out[p + 3] = 255;
             } else {
-              out[p] = Math.round(scaleFlux(vr, lo, hi, state.stretch) * 255);
-              out[p + 1] = Math.round(scaleFlux(vg, lo, hi, state.stretch) * 255);
-              out[p + 2] = Math.round(scaleFlux(vb, lo, hi, state.stretch) * 255);
+              const cR = Math.round(scaleFlux(vr, lo, hi, state.stretch) * 255);
+              const cG = Math.round(scaleFlux(vg, lo, hi, state.stretch) * 255);
+              const cB = Math.round(scaleFlux(vb, lo, hi, state.stretch) * 255);
+              out[p] = state.invert ? 255 - cR : cR;
+              out[p + 1] = state.invert ? 255 - cG : cG;
+              out[p + 2] = state.invert ? 255 - cB : cB;
+              out[p + 3] = 255;
+            }
+          }
+        }
+      } else if (state.mode === "coldiff") {
+        let diffGrid = buildColourDiffGrid(payload);
+        if (!diffGrid) {
+          coldiffMissing = true;
+          ensureColourDiffGrids();
+          diffGrid = injectTestSourceGrid(ts.stack);
+        } else {
+          diffGrid = injectTestSourceGrid(diffGrid);
+        }
+        const [lo, hi] = percentileRange(diffGrid);
+        const absMax = Math.max(Math.abs(lo), Math.abs(hi), 1e-3);
+        for (let y = 0; y < ny; y++) {
+          for (let x = 0; x < nx; x++) {
+            const p = (y * nx + x) * 4;
+            const v = readGridCell(diffGrid, y, x);
+            if (!isFiniteNumber(v)) {
+              out[p] = 45; out[p + 1] = 20; out[p + 2] = 45; out[p + 3] = 255;
+            } else {
+              const s = Math.max(-1, Math.min(1, v / absMax));
+              const r = s > 0 ? Math.round(32 + s * 223) : 24;
+              const g = Math.round(28 + (1 - Math.abs(s)) * 20);
+              const b = s < 0 ? Math.round(32 + (-s) * 223) : 28;
+              out[p] = state.invert ? 255 - r : r;
+              out[p + 1] = state.invert ? 255 - g : g;
+              out[p + 2] = state.invert ? 255 - b : b;
               out[p + 3] = 255;
             }
           }
         }
       } else if (state.mode === "difference" && ts.difference) {
-        const grid = ts.difference;
+        const grid = injectTestSourceGrid(ts.difference);
         const [lo, hi] = percentileRange(grid);
         const absMax = Math.max(Math.abs(lo), Math.abs(hi), 1e-3);
         for (let y = 0; y < ny; y++) {
@@ -582,16 +850,29 @@
               out[p] = 45; out[p + 1] = 20; out[p + 2] = 45; out[p + 3] = 255;
             } else {
               const s = Math.max(-1, Math.min(1, v / absMax));
-              out[p] = s > 0 ? Math.round(32 + s * 223) : 24;
-              out[p + 1] = Math.round(28 + (1 - Math.abs(s)) * 20);
-              out[p + 2] = s < 0 ? Math.round(32 + (-s) * 223) : 28;
+              const r = s > 0 ? Math.round(32 + s * 223) : 24;
+              const g = Math.round(28 + (1 - Math.abs(s)) * 20);
+              const b = s < 0 ? Math.round(32 + (-s) * 223) : 28;
+              out[p] = state.invert ? 255 - r : r;
+              out[p + 1] = state.invert ? 255 - g : g;
+              out[p + 2] = state.invert ? 255 - b : b;
               out[p + 3] = 255;
             }
           }
         }
       } else {
         const idx = Math.min(state.visitIdx, ts.frames_by_visit.length - 1);
-        const grid = state.mode === "stack" ? ts.stack : ts.frames_by_visit[idx];
+        let baseGrid;
+        if (state.mode === "stack") {
+          baseGrid = state.followMotion && ts.frames_by_visit.length >= 2
+            ? computeFollowMotionStack(payload, ts)
+            : ts.stack;
+        } else {
+          baseGrid = state.followMotion
+            ? shiftGrid(ts.frames_by_visit[idx], ...getVisitShiftPx(payload, ts, idx))
+            : ts.frames_by_visit[idx];
+        }
+        const grid = injectTestSourceGrid(baseGrid);
         const [lo, hi] = percentileRange(grid);
         for (let y = 0; y < ny; y++) {
           for (let x = 0; x < nx; x++) {
@@ -600,7 +881,7 @@
             if (!isFiniteNumber(v)) {
               out[p] = 55; out[p + 1] = 18; out[p + 2] = 28; out[p + 3] = 255;
             } else {
-              const [r, g, b] = heatColor(scaleFlux(v, lo, hi, state.stretch));
+              const [r, g, b] = heatColor(scaleFlux(v, lo, hi, state.stretch), state.invert);
               out[p] = r; out[p + 1] = g; out[p + 2] = b; out[p + 3] = 255;
             }
           }
@@ -640,12 +921,14 @@
         epoch_iso: "",
       };
       els.visitLabel.textContent = state.mode === "stack"
-        ? "Mean Stack"
-        : state.mode === "difference"
-          ? (nV >= 2 ? `${lastId} − ${firstId}` : "Difference (needs ≥2 visits)")
-          : state.mode === "rgb"
-            ? (nV >= 3 ? `RGB (${firstId}/${midId}/${lastId})` : `Single-Visit Fallback (${nV}/3 visits)`)
-            : `${visitMeta.visit_id} (${(visitMeta.epoch_iso || "").slice(0, 10)})`;
+        ? (state.followMotion ? "Median stack (Follow motion)" : "Mean Stack")
+        : state.mode === "coldiff"
+          ? (coldiffMissing ? "Loading D6 and D4" : "Colour difference (D6 and D4)")
+          : state.mode === "difference"
+            ? (nV >= 2 ? `${lastId} − ${firstId}` : "Difference (needs ≥2 visits)")
+            : state.mode === "rgb"
+              ? (nV >= 3 ? `RGB (${firstId}/${midId}/${lastId})` : `Single-Visit Fallback (${nV}/3 visits)`)
+              : `${visitMeta.visit_id} (${(visitMeta.epoch_iso || "").slice(0, 10)})`;
     } else {
       ctx.strokeStyle = "#1f2e47";
       ctx.lineWidth = 1;
@@ -728,6 +1011,52 @@
         }
       });
     }
+
+    if (state.injectTestSource && hasValidFrames(ts)) {
+      const tx = w * 0.72;
+      const ty = h * 0.28;
+      ctx.strokeStyle = "#34d399";
+      ctx.lineWidth = 1.5;
+      if (ctx.setLineDash) ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.arc(tx, ty, 12, 0, Math.PI * 2);
+      ctx.stroke();
+      if (ctx.setLineDash) ctx.setLineDash([]);
+      ctx.fillStyle = "#34d399";
+      ctx.font = "11px monospace";
+      ctx.fillText("Test S/N 5", Math.min(w - 75, tx + 14), Math.max(14, ty + 4));
+    }
+
+    if (Array.isArray(payload.sso_track) && payload.sso_track.length > 0) {
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      let started = false;
+      payload.sso_track.forEach((pt, idx) => {
+        const [px, py] = projectSky(pt.ra_deg, pt.dec_deg);
+        if (!started) {
+          ctx.moveTo(px, py);
+          started = true;
+        } else {
+          ctx.lineTo(px, py);
+        }
+        if (idx === 0 || idx === payload.sso_track.length - 1 || idx % Math.max(1, Math.floor(payload.sso_track.length / 8)) === 0) {
+          ctx.fillStyle = "#f59e0b";
+          ctx.fillRect(px - 2.5, py - 2.5, 5, 5);
+        }
+      });
+      ctx.stroke();
+      const firstPt = payload.sso_track[0];
+      const lastPt = payload.sso_track[payload.sso_track.length - 1];
+      const [fx, fy] = projectSky(firstPt.ra_deg, firstPt.dec_deg);
+      const [lx, ly] = projectSky(lastPt.ra_deg, lastPt.dec_deg);
+      ctx.fillStyle = "#f59e0b";
+      ctx.font = "11px monospace";
+      ctx.fillText(`MJD ${Number(firstPt.mjd).toFixed(0)}`, Math.max(4, Math.min(w - 72, fx + 6)), Math.max(12, Math.min(h - 6, fy - 4)));
+      if (payload.sso_track.length > 1) {
+        ctx.fillText(`MJD ${Number(lastPt.mjd).toFixed(0)}`, Math.max(4, Math.min(w - 72, lx + 6)), Math.max(24, Math.min(h - 6, ly + 12)));
+      }
+    }
   }
 
   function drawMatrixCanvas() {
@@ -738,20 +1067,27 @@
     ctx.fillStyle = "#04070e";
     ctx.fillRect(0, 0, w, h);
     const frames = (state.payload && state.payload.frames) || [];
-    const pts = frames.filter((f) => Number.isFinite(f.t_min) && Number.isFinite(f.em_min));
+    const pts = frames.filter((f) => Number.isFinite(f.t_min) && (Number.isFinite(f.em_min) || state.payload.sso_track));
     if (pts.length === 0) {
+      state.matrixMeta = null;
       ctx.fillStyle = "#93a4bd";
       ctx.font = "13px system-ui, sans-serif";
       ctx.fillText("No SPHEREx observation metadata rows matched this sky query.", 16, 40);
       return;
     }
-    const minT = Math.min(...pts.map((p) => p.t_min));
-    const maxT = Math.max(...pts.map((p) => p.t_min));
+    const ts = state.payload && state.payload.patch_timeseries;
+    const visitMjds = (ts && Array.isArray(ts.visits))
+      ? ts.visits.map((v) => v.mjd).filter((m) => isFiniteNumber(m))
+      : [];
+    const allMjds = pts.map((p) => p.t_min).concat(visitMjds);
+    const minT = Math.min(...allMjds);
+    const maxT = Math.max(...allMjds);
     const spanT = Math.max(maxT - minT, 1.0);
     const padL = 42;
     const padR = 16;
     const padT = 16;
     const padB = 24;
+    state.matrixMeta = { minT, maxT, spanT, padL, padR, width: w };
 
     ctx.strokeStyle = "#26344d";
     ctx.strokeRect(padL, padT, w - padL - padR, h - padT - padB);
@@ -763,13 +1099,28 @@
     ctx.fillText(`MJD ${maxT.toFixed(0)}`, w - padR - 70, h - 6);
 
     pts.forEach((p) => {
-      const wlUm = p.em_min > 1e-4 ? p.em_min : p.em_min * 1e6;
+      const rawEm = Number.isFinite(p.em_min) ? p.em_min : 3.5;
+      const wlUm = rawEm > 1e-4 ? rawEm : rawEm * 1e6;
       const wl = Math.max(0.7, Math.min(5.1, wlUm > 20 ? wlUm / 1e6 : wlUm));
       const x = padL + ((p.t_min - minT) / spanT) * (w - padL - padR);
       const y = h - padB - ((wl - 0.7) / 4.4) * (h - padT - padB);
       ctx.fillStyle = p.obs_collection && p.obs_collection.includes("qr3") ? "#f59e0b" : "#38bdf8";
       ctx.fillRect(x - 2, y - 2, 4, 4);
     });
+
+    if (visitMjds.length > 0 && ts.visits[state.visitIdx] && Number.isFinite(ts.visits[state.visitIdx].mjd)) {
+      const vMjd = ts.visits[state.visitIdx].mjd;
+      const vx = Math.max(padL, Math.min(w - padR, padL + ((vMjd - minT) / spanT) * (w - padL - padR)));
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(vx, padT);
+      ctx.lineTo(vx, h - padB);
+      ctx.stroke();
+      ctx.fillStyle = "#f59e0b";
+      ctx.font = "11px monospace";
+      ctx.fillText(ts.visits[state.visitIdx].visit_id || `V${state.visitIdx + 1}`, Math.min(w - padR - 24, vx + 3), padT + 12);
+    }
   }
 
   function appendMoleculeMessage(title, message, isRefused) {
@@ -788,11 +1139,14 @@
   function renderMoleculeReadings(mr, spec, classification) {
     if (classification && classification.all_data) {
       const ad = classification.all_data;
-      const nov = classification.novelty ? classification.novelty.status : "N/A";
-      const conf = Number.isFinite(Number(ad.confidence)) ? Number(ad.confidence).toFixed(2) : "N/A";
+      const nov = classification.novelty ? classification.novelty.status : "not measured";
+      const confProb = Number(ad.confidence);
+      const confText = Number.isFinite(confProb) ? `${(confProb * 100).toFixed(0)}%` : "not measured";
+      const labelWord = confidenceWord(confProb);
+      const originText = classification.model_origin || "local";
       appendMoleculeMessage(
-        "M2/M3 Classifier (Template+Tree)",
-        `${ad.top_class} (conf=${conf}, novelty=${nov})`,
+        "Model Estimate",
+        `${labelWord}: ${ad.top_class}, ${confText}, novelty ${nov}, origin ${originText}, Estimated classifier output`,
         ad.top_class === "Unclassified"
       );
     }
@@ -970,7 +1324,7 @@
     const matchMsg = data.matched_target
       ? `Matched ${data.matched_target.name} (${data.matched_target.target_id})`
       : "Arbitrary sky query";
-    const warnMsg = data.warnings && data.warnings.length ? ` | Warning: ${data.warnings.join("; ")}` : "";
+    const warnMsg = data.warnings && data.warnings.length ? ` | Warning: ${data.warnings.join(". ")}` : "";
     setStatus(
       `${matchMsg} | RA ${data.query.ra_deg.toFixed(5)}°, Dec ${data.query.dec_deg.toFixed(5)}° | `
         + `${data.frames.length} SPHEREx frames | ${data.gaia_sources.length} Gaia DR3 stars${warnMsg}`,
@@ -979,7 +1333,374 @@
     drawSkyCanvas();
     drawMatrixCanvas();
     renderFramesTable();
+    renderExternalLinks();
     await drawSpectrumAndMolecules(seq, signal);
+    if (els.motionSummary || els.lightcurveCanvas) {
+      await loadTierAMetrics(seq, signal);
+    }
+  }
+
+  function renderExternalLinks() {
+    if (!els.externalLinks || !state.payload || !state.payload.query) return;
+    els.externalLinks.replaceChildren();
+    const links = buildExternalTelescopeLinks(state.payload.query.ra_deg, state.payload.query.dec_deg);
+    if (!links.length) return;
+    const lbl = document.createElement("span");
+    lbl.className = "presets-label";
+    lbl.textContent = "Other telescopes";
+    els.externalLinks.appendChild(lbl);
+    links.forEach((item) => {
+      const a = document.createElement("a");
+      a.href = item.href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = item.label;
+      els.externalLinks.appendChild(a);
+    });
+  }
+
+  function drawLightCurveCanvas() {
+    if (!els.lightcurveCanvas) return;
+    const canvas = els.lightcurveCanvas;
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.fillStyle = "#04070e";
+    ctx.fillRect(0, 0, w, h);
+
+    const metrics = state.tierAMetrics;
+    const detInfo = metrics && metrics.per_detector && metrics.per_detector[state.detector];
+    const visits = (detInfo && detInfo.visits) || [];
+    const pts = visits.filter((v) => isFiniteNumber(v.mjd) && isFiniteNumber(v.flux_rel));
+    if (!pts.length) {
+      ctx.fillStyle = "#93a4bd";
+      ctx.font = "12px system-ui, sans-serif";
+      ctx.fillText("Light Curve not measured for current coordinate or detector.", 16, 40);
+      return;
+    }
+
+    const padL = 48;
+    const padR = 18;
+    const padT = 18;
+    const padB = 24;
+    const minT = Math.min(...pts.map((p) => p.mjd));
+    const maxT = Math.max(...pts.map((p) => p.mjd));
+    const spanT = Math.max(maxT - minT, 1.0);
+    const vals = pts.map((p) => p.flux_rel);
+    const minF = Math.min(...vals);
+    const maxF = Math.max(...vals);
+    const padF = Math.max((maxF - minF) * 0.2, 1.0);
+    const loF = minF - padF;
+    const spanF = Math.max((maxF + padF) - loF, 1e-3);
+
+    ctx.strokeStyle = "#26344d";
+    ctx.strokeRect(padL, padT, w - padL - padR, h - padT - padB);
+    ctx.fillStyle = "#93a4bd";
+    ctx.font = "11px monospace";
+    ctx.fillText(`MJD ${minT.toFixed(0)}`, padL, h - 6);
+    ctx.fillText(`MJD ${maxT.toFixed(0)}`, w - padR - 68, h - 6);
+    ctx.fillText(detInfo.detector || state.detector, 6, padT + 10);
+
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach((pt, idx) => {
+      const x = pts.length === 1 ? (padL + w - padR) / 2 : padL + ((pt.mjd - minT) / spanT) * (w - padL - padR);
+      const y = h - padB - ((pt.flux_rel - loF) / spanF) * (h - padT - padB);
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    pts.forEach((pt, idx) => {
+      const x = pts.length === 1 ? (padL + w - padR) / 2 : padL + ((pt.mjd - minT) / spanT) * (w - padL - padR);
+      const y = h - padB - ((pt.flux_rel - loF) / spanF) * (h - padT - padB);
+      if (isFiniteNumber(pt.flux_err_rel) && pt.flux_err_rel > 0) {
+        const dy = Math.min(28, (pt.flux_err_rel / spanF) * (h - padT - padB));
+        ctx.strokeStyle = "#93a4bd";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y - dy);
+        ctx.lineTo(x, y + dy);
+        ctx.stroke();
+      }
+      ctx.fillStyle = idx === state.visitIdx ? "#f59e0b" : "#34d399";
+      ctx.beginPath();
+      ctx.arc(x, y, idx === state.visitIdx ? 5 : 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function renderTierAMetrics(metrics) {
+    state.tierAMetrics = metrics || null;
+    drawLightCurveCanvas();
+    if (els.motionSummary) {
+      els.motionSummary.replaceChildren();
+      if (!metrics || !metrics.motion) {
+        els.motionSummary.textContent = "Motion and Change Spectrum not measured outside bundled targets.";
+      } else {
+        const mo = metrics.motion;
+        const satText = metrics.saturated_detectors && metrics.saturated_detectors.length
+          ? `Core saturated in ${metrics.saturated_detectors.join(", ")}`
+          : "No core saturation detected";
+        const motionText = mo.status === "MEASURED"
+          ? `Motion (${mo.origin || "Measured"}): ${mo.measured_total_arcsec_yr}\"/yr vs catalogue ${mo.catalogue_total_arcsec_yr}\"/yr, residual ${mo.residual_arcsec_yr}\"/yr`
+          : `Motion not measured: ${mo.reason || "insufficient signal"} (catalogue ${mo.catalogue_total_arcsec_yr}\"/yr)`;
+        const line1 = document.createElement("div");
+        line1.textContent = motionText;
+        const line2 = document.createElement("div");
+        line2.className = metrics.saturated_detectors && metrics.saturated_detectors.length ? "status-warn" : "status-ok";
+        line2.textContent = `${satText}, Gaia alignment RMS ${metrics.gaia_alignment_rms_arcsec ?? "not measured"}\"`;
+        els.motionSummary.append(line1, line2);
+      }
+    }
+    if (els.changeSpectrumList) {
+      els.changeSpectrumList.replaceChildren();
+      if (metrics && metrics.per_detector) {
+        DETECTORS.forEach((detId) => {
+          const info = metrics.per_detector[detId];
+          if (!info) return;
+          const card = document.createElement("div");
+          card.className = "mol-item";
+          const n = document.createElement("div");
+          n.className = "mol-name";
+          n.textContent = `${detId} Change Spectrum`;
+          const v = document.createElement("div");
+          const chg = info.change_last_vs_first || {};
+          v.className = chg.status === "MEASURED" ? "mol-val" : "mol-val mol-refused";
+          v.textContent = chg.status === "MEASURED"
+            ? `Ratio ${chg.ratio_last_vs_first} (${chg.delta_pct >= 0 ? "+" : ""}${chg.delta_pct}%), median S/N ${info.median_snr}`
+            : (chg.reason || "Not measured");
+          card.append(n, v);
+          els.changeSpectrumList.appendChild(card);
+        });
+      }
+    }
+  }
+
+  async function loadTierAMetrics(seq, signal) {
+    const payload = state.payload;
+    if (!payload) {
+      renderTierAMetrics(null);
+      return;
+    }
+    if (payload.offline_tier_a_metrics) {
+      renderTierAMetrics(payload.offline_tier_a_metrics);
+      return;
+    }
+    const tid = (payload.matched_target && payload.matched_target.target_id)
+      || (payload.patch_timeseries && payload.patch_timeseries.target_id);
+    if (!tid) {
+      renderTierAMetrics(null);
+      return;
+    }
+    try {
+      const opts = signal ? { signal } : undefined;
+      const resp = await fetch(`/api/patch/metrics?target_id=${encodeURIComponent(tid)}`, opts);
+      if (seq !== state.querySeq) return;
+      if (resp && resp.ok) {
+        renderTierAMetrics(await resp.json());
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+    renderTierAMetrics(null);
+  }
+
+  function renderProofSummary(proof) {
+    if (!els.proofBody) return;
+    els.proofBody.replaceChildren();
+    if (!proof || !Array.isArray(proof.tier_a_targets)) {
+      els.proofBody.textContent = "Proof summary not measured.";
+      return;
+    }
+    state.proofSummary = proof;
+    const ml = proof.ml_evaluation || {};
+    const mlLine = document.createElement("p");
+    mlLine.className = "proof-meta";
+    mlLine.textContent = ml.status === "AVAILABLE"
+      ? `ML release ${ml.release_status} (${ml.model_version}), total spectra ${ml.total_spectra}, gold recall ${ml.gold_min_recall}, ECE ${ml.gold_ece}, E2 accuracy ${ml.e2_only_accuracy}`
+      : `ML evaluation: ${ml.reason || "not measured"} (${ml.release_status || "UNPUBLISHED"})`;
+    els.proofBody.appendChild(mlLine);
+
+    const wrap = document.createElement("div");
+    wrap.className = "table-scroll";
+    const tbl = document.createElement("table");
+    const thead = document.createElement("thead");
+    const hr = document.createElement("tr");
+    ["Target", "Gaia RMS", "D6 S/N", "Motion", "Residual", "Note"].forEach((h) => {
+      const th = document.createElement("th");
+      th.textContent = h;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    const tb = document.createElement("tbody");
+    proof.tier_a_targets.forEach((t) => {
+      const tr = document.createElement("tr");
+      const cells = [
+        t.target_name || t.target_id,
+        t.gaia_alignment_rms_arcsec !== null && t.gaia_alignment_rms_arcsec !== undefined ? `${t.gaia_alignment_rms_arcsec}\"` : "not measured",
+        t.d6_median_snr !== null && t.d6_median_snr !== undefined ? String(t.d6_median_snr) : "not measured",
+        t.motion_status === "MEASURED" ? `${t.measured_total_arcsec_yr}\"/yr` : "Not measured",
+        t.residual_arcsec_yr !== null && t.residual_arcsec_yr !== undefined ? `${t.residual_arcsec_yr}\"/yr` : "not measured",
+        t.note || "",
+      ];
+      cells.forEach((txt) => {
+        const td = document.createElement("td");
+        td.textContent = txt;
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    tbl.append(thead, tb);
+    wrap.appendChild(tbl);
+    els.proofBody.appendChild(wrap);
+
+    if (Array.isArray(proof.next_items) && proof.next_items.length) {
+      const nextH = document.createElement("p");
+      nextH.className = "proof-meta";
+      nextH.textContent = "Next";
+      const ul = document.createElement("ul");
+      ul.className = "proof-next";
+      proof.next_items.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+      els.proofBody.append(nextH, ul);
+    }
+  }
+
+  async function loadProofSummary() {
+    if (!els.proofBody) return;
+    try {
+      const resp = await fetch("/api/proof/summary");
+      if (resp && resp.ok) {
+        renderProofSummary(await resp.json());
+        return;
+      }
+    } catch (_err) {
+      // Fallback to static bundle when API is switched off
+    }
+    const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
+    if (bundle && bundle.proof_summary) {
+      renderProofSummary(bundle.proof_summary);
+    } else {
+      renderProofSummary(null);
+    }
+  }
+
+  async function loadSsoObject(rawName) {
+    const cleanName = (rawName || "").trim();
+    if (!cleanName) {
+      if (els.ssoStatus) els.ssoStatus.textContent = "Enter a moving object name.";
+      return;
+    }
+    const seq = ++state.querySeq;
+    if (els.ssoStatus) els.ssoStatus.textContent = `Searching ${cleanName}`;
+    setStatus(`Querying moving object ${cleanName}`, false);
+    try {
+      const resp = await fetch(`/api/sso?name=${encodeURIComponent(cleanName)}`);
+      if (seq !== state.querySeq) return;
+      if (!resp.ok) {
+        let msg = `Moving object lookup returned HTTP ${resp.status}`;
+        try {
+          const err = await resp.json();
+          if (err && err.detail) msg = err.detail;
+        } catch (_e) {}
+        if (els.ssoStatus) els.ssoStatus.textContent = msg;
+        setStatus(msg, true);
+        return;
+      }
+      const sso = await resp.json();
+      if (seq !== state.querySeq) return;
+      const mappedFrames = (sso.frames || []).map((fr) => ({
+        obs_collection: sso.query_mode || "irsa_most",
+        obs_id: fr.obs_id || "",
+        energy_bandpassname: fr.detector || "SPHEREx",
+        t_min: fr.mjd,
+        em_min: fr.em_min_um !== null && fr.em_min_um !== undefined ? fr.em_min_um : 3.5,
+        s_ra: fr.ra_deg,
+        s_dec: fr.dec_deg,
+        access_url: fr.uri || null,
+      }));
+      const trackPayload = {
+        query: {
+          coord_input: sso.object_name,
+          ra_deg: sso.center_ra_deg ?? 0.0,
+          dec_deg: sso.center_dec_deg ?? 0.0,
+          fov_arcmin: 30.0,
+          epoch_yr: state.epochYr,
+          detector: state.detector,
+        },
+        source_mode: sso.query_mode || "irsa_most_spherex",
+        matched_target: null,
+        patch_timeseries: null,
+        frames: mappedFrames,
+        total_matching_frames: sso.total_frames,
+        gaia_sources: [],
+        spectrum_102: null,
+        sso_track: sso.track_points || [],
+        warnings: sso.total_frames ? [] : ["No SPHEREx frames matched moving object ephemeris"],
+      };
+      const rateMsg = isFiniteNumber(sso.estimated_rate_arcsec_hr) ? `, rate ${sso.estimated_rate_arcsec_hr}\"/hr` : "";
+      if (els.ssoStatus) {
+        els.ssoStatus.textContent = `${sso.object_name}: ${sso.total_frames} frames${rateMsg}`;
+      }
+      await applySkyPayload(trackPayload, seq, undefined);
+    } catch (_err) {
+      const msg = "IRSA moving object archive unreachable";
+      if (els.ssoStatus) els.ssoStatus.textContent = msg;
+      setStatus(msg, true);
+    }
+  }
+
+  function triggerDownload(href, filename) {
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    if (document.body && typeof document.body.appendChild === "function") {
+      document.body.appendChild(a);
+    }
+    if (typeof a.click === "function") a.click();
+    if (typeof a.remove === "function") a.remove();
+  }
+
+  function exportPng() {
+    if (!els.skyCanvas || typeof els.skyCanvas.toDataURL !== "function") return;
+    const url = els.skyCanvas.toDataURL("image/png");
+    triggerDownload(url, "phantom-worlds-view.png");
+    setStatus("Exported PNG view.", false);
+  }
+
+  function exportCsv() {
+    if (!state.payload) return;
+    const lines = ["section,key,value,unit_or_note"];
+    const q = state.payload.query || {};
+    lines.push([csvCell("query"), csvCell("coord"), csvCell(q.coord_input || state.coord), csvCell("input")].join(","));
+    lines.push([csvCell("query"), csvCell("ra_deg"), csvCell(q.ra_deg), csvCell("deg")].join(","));
+    lines.push([csvCell("query"), csvCell("dec_deg"), csvCell(q.dec_deg), csvCell("deg")].join(","));
+    if (state.tierAMetrics && state.tierAMetrics.motion) {
+      const mo = state.tierAMetrics.motion;
+      lines.push([csvCell("motion"), csvCell("status"), csvCell(mo.status), csvCell(mo.reason || "")].join(","));
+      lines.push([csvCell("motion"), csvCell("measured_arcsec_yr"), csvCell(mo.measured_total_arcsec_yr ?? "not measured"), csvCell("arcsec/yr")].join(","));
+      lines.push([csvCell("motion"), csvCell("catalogue_arcsec_yr"), csvCell(mo.catalogue_total_arcsec_yr ?? "not measured"), csvCell("arcsec/yr")].join(","));
+    }
+    if (state.tierAMetrics && state.tierAMetrics.per_detector) {
+      DETECTORS.forEach((d) => {
+        const chg = state.tierAMetrics.per_detector[d] && state.tierAMetrics.per_detector[d].change_last_vs_first;
+        if (chg) {
+          lines.push([csvCell("change_spectrum"), csvCell(d), csvCell(chg.ratio_last_vs_first ?? "not measured"), csvCell(chg.reason || `${chg.delta_pct}%`)].join(","));
+        }
+      });
+    }
+    (state.payload.frames || []).slice(0, 120).forEach((fr) => {
+      lines.push([csvCell("frame"), csvCell(fr.obs_id), csvCell(fr.t_min), csvCell(fr.energy_bandpassname || "")].join(","));
+    });
+    const uri = `data:text/csv;charset=utf-8,${encodeURIComponent(lines.join("\n"))}`;
+    triggerDownload(uri, "phantom-worlds-metrics.csv");
+    setStatus("Exported CSV data.", false);
   }
 
   async function loadSkyQuery() {
@@ -1045,8 +1766,10 @@
         state.visitIdx = (state.visitIdx + 1) % nVisits;
         els.scrubber.value = String(state.visitIdx);
         drawSkyCanvas();
+        if (els.matrixCanvas && state.matrixMeta) drawMatrixCanvas();
+        if (els.lightcurveCanvas && state.tierAMetrics) drawLightCurveCanvas();
       }
-    }, 750);
+    }, state.speedMs);
   }
 
   els.form.addEventListener("submit", (e) => {
@@ -1117,6 +1840,7 @@
           if (state.payload.query) state.payload.query.detector = state.detector;
           syncUrlParams();
           drawSkyCanvas();
+          drawLightCurveCanvas();
           return;
         }
       }
@@ -1206,14 +1930,103 @@
       return;
     }
     const grid = state.mode === "stack"
-      ? ts.stack
-      : (state.mode === "difference" && ts.difference)
-        ? ts.difference
-        : ts.frames_by_visit[Math.min(state.visitIdx, ts.frames_by_visit.length - 1)];
+      ? (state.followMotion && ts.frames_by_visit.length >= 2 ? computeFollowMotionStack(state.payload, ts) : ts.stack)
+      : state.mode === "coldiff"
+        ? (buildColourDiffGrid(state.payload) || ts.stack)
+        : (state.mode === "difference" && ts.difference)
+          ? ts.difference
+          : ts.frames_by_visit[Math.min(state.visitIdx, ts.frames_by_visit.length - 1)];
     const val = readGridCell(grid, py, px);
     const valText = isFiniteNumber(val) ? `${val.toFixed(3)} rel` : "MASKED (NaN)";
     els.pixelReadout.textContent = `Pixel (${px}, ${py}) | Flux: ${valText} | Mask bits: ${maskVal}`;
   });
+
+  if (els.speedSelect) {
+    els.speedSelect.addEventListener("change", () => {
+      const spd = Number(els.speedSelect.value);
+      state.speedMs = [300, 750, 1200].includes(spd) ? spd : 750;
+      syncUrlParams();
+      startLoop();
+    });
+  }
+
+  if (els.invertToggle) {
+    els.invertToggle.addEventListener("change", () => {
+      state.invert = els.invertToggle.checked;
+      syncUrlParams();
+      drawSkyCanvas();
+    });
+  }
+
+  if (els.followMotionToggle) {
+    els.followMotionToggle.addEventListener("change", () => {
+      state.followMotion = els.followMotionToggle.checked;
+      syncUrlParams();
+      drawSkyCanvas();
+    });
+  }
+
+  if (els.injectToggle) {
+    els.injectToggle.addEventListener("change", () => {
+      state.injectTestSource = els.injectToggle.checked;
+      drawSkyCanvas();
+    });
+  }
+
+  if (els.matrixCanvas) {
+    els.matrixCanvas.addEventListener("click", (ev) => {
+      const meta = state.matrixMeta;
+      const ts = state.payload && state.payload.patch_timeseries;
+      if (!meta || !ts || !Array.isArray(ts.visits) || !ts.visits.length) return;
+      const rect = els.matrixCanvas.getBoundingClientRect();
+      if (!rect || !isFiniteNumber(rect.width) || rect.width <= 0 || !isFiniteNumber(ev.clientX)) return;
+      const canvasX = ((ev.clientX - rect.left) / rect.width) * meta.width;
+      const frac = Math.max(0, Math.min(1, (canvasX - meta.padL) / Math.max(1, meta.width - meta.padL - meta.padR)));
+      const clickedMjd = meta.minT + frac * meta.spanT;
+      let bestIdx = 0;
+      let bestDiff = Infinity;
+      ts.visits.forEach((v, i) => {
+        if (isFiniteNumber(v.mjd)) {
+          const d = Math.abs(v.mjd - clickedMjd);
+          if (d < bestDiff) {
+            bestDiff = d;
+            bestIdx = i;
+          }
+        }
+      });
+      state.playing = false;
+      state.mode = "play";
+      state.visitIdx = bestIdx;
+      els.scrubber.value = String(bestIdx);
+      setActiveButtons();
+      syncUrlParams();
+      drawSkyCanvas();
+      drawMatrixCanvas();
+      drawLightCurveCanvas();
+    });
+  }
+
+  if (els.ssoQueryBtn && els.ssoInput) {
+    els.ssoQueryBtn.addEventListener("click", () => {
+      loadSsoObject(els.ssoInput.value);
+    });
+  }
+
+  document.querySelectorAll(".sso-preset-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.sso || "";
+      if (els.ssoInput) els.ssoInput.value = target;
+      loadSsoObject(target);
+    });
+  });
+
+  if (els.exportPngBtn) {
+    els.exportPngBtn.addEventListener("click", exportPng);
+  }
+
+  if (els.exportCsvBtn) {
+    els.exportCsvBtn.addEventListener("click", exportCsv);
+  }
 
   els.copyUrlBtn.addEventListener("click", async () => {
     const typed = els.coordInput.value.trim();
@@ -1235,5 +2048,6 @@
   applyUrlParams();
   setActiveButtons();
   startLoop();
+  if (els.proofBody) loadProofSummary();
   loadSkyQuery();
 })();

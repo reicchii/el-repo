@@ -44,7 +44,7 @@
       </form>
 
       <div class="presets-row">
-        <span class="presets-label">5 Mandatory Test Targets:</span>
+        <span class="presets-label">Test targets</span>
         <button class="btn preset-btn" type="button" data-coord="Barnard's Star">Barnard's Star</button>
         <button class="btn preset-btn" type="button" data-coord="WISE 0855">WISE 0855</button>
         <button class="btn preset-btn" type="button" data-coord="Epsilon Indi B">Epsilon Indi B</button>
@@ -52,26 +52,35 @@
         <button class="btn preset-btn" type="button" data-coord="R Draconis">R Draconis</button>
         <button id="copy-url-btn" class="btn" type="button">Copy Share URL</button>
       </div>
-      <p id="status-banner" class="status-banner" role="status" aria-live="polite">Initializing viewer...</p>
+      <div class="sso-row">
+        <label class="presets-label" for="sso-input">Moving object lookup</label>
+        <input id="sso-input" type="text" maxlength="64" value="3I/ATLAS" placeholder="3I/ATLAS, Ceres, Vesta">
+        <button id="sso-query-btn" class="btn" type="button">Find Moving Object</button>
+        <button class="btn sso-preset-btn" type="button" data-sso="3I/ATLAS">3I/ATLAS</button>
+        <button class="btn sso-preset-btn" type="button" data-sso="Ceres">Ceres</button>
+        <span id="sso-status" class="presets-label"></span>
+      </div>
+      <p id="status-banner" class="status-banner" role="status" aria-live="polite">Initializing viewer</p>
     </section>
 
     <div class="grid-main">
       <section class="card" aria-label="Time-series image viewer">
-        <h2>Time-Series Cutout Viewer</h2>
+        <h2>View</h2>
         <div class="controls-row" role="group" aria-label="Display mode">
-          <button class="btn mode-btn active" type="button" data-mode="play" aria-pressed="true">Play Visits</button>
-          <button class="btn mode-btn" type="button" data-mode="stack" aria-pressed="false">Visit Stack</button>
-          <button class="btn mode-btn" type="button" data-mode="difference" aria-pressed="false">Difference</button>
+          <button class="btn mode-btn active" type="button" data-mode="play" aria-pressed="true">Single frame</button>
+          <button class="btn mode-btn" type="button" data-mode="stack" aria-pressed="false">Median stack</button>
+          <button class="btn mode-btn" type="button" data-mode="difference" aria-pressed="false">Subtract</button>
+          <button class="btn mode-btn" type="button" data-mode="coldiff" aria-pressed="false">Colour difference</button>
           <button class="btn mode-btn" type="button" data-mode="rgb" aria-pressed="false">Visits RGB</button>
         </div>
 
         <div class="controls-row" role="group" aria-label="SPHEREx detector band">
-          <button class="btn det-btn" type="button" data-det="D1" aria-pressed="false">D1 (0.75–1.1µm)</button>
-          <button class="btn det-btn" type="button" data-det="D2" aria-pressed="false">D2 (1.1–1.6µm)</button>
-          <button class="btn det-btn" type="button" data-det="D3" aria-pressed="false">D3 (1.6–2.4µm)</button>
-          <button class="btn det-btn" type="button" data-det="D4" aria-pressed="false">D4 (2.4–3.8µm)</button>
-          <button class="btn det-btn" type="button" data-det="D5" aria-pressed="false">D5 (3.8–4.4µm)</button>
-          <button class="btn det-btn active" type="button" data-det="D6" aria-pressed="true">D6 (4.4–5.0µm)</button>
+          <button class="btn det-btn" type="button" data-det="D1" aria-pressed="false">D1 (0.75..1.1um)</button>
+          <button class="btn det-btn" type="button" data-det="D2" aria-pressed="false">D2 (1.1..1.6um)</button>
+          <button class="btn det-btn" type="button" data-det="D3" aria-pressed="false">D3 (1.6..2.4um)</button>
+          <button class="btn det-btn" type="button" data-det="D4" aria-pressed="false">D4 (2.4..3.8um)</button>
+          <button class="btn det-btn" type="button" data-det="D5" aria-pressed="false">D5 (3.8..4.4um)</button>
+          <button class="btn det-btn active" type="button" data-det="D6" aria-pressed="true">D6 (4.4..5.0um)</button>
         </div>
 
         <div class="canvas-wrap">
@@ -80,13 +89,19 @@
 
         <div class="playback-bar">
           <button id="play-toggle" class="btn" type="button">Pause</button>
-          <label for="visit-scrubber">Visit:</label>
+          <label for="visit-scrubber">Visit</label>
           <input id="visit-scrubber" class="scrubber" type="range" min="0" max="2" step="1" value="0">
           <span id="visit-label">V1</span>
-          <label for="stretch-select">Stretch:</label>
+          <label for="stretch-select">Stretch</label>
           <select id="stretch-select">
             <option value="asinh" selected>Asinh</option>
             <option value="linear">Linear</option>
+          </select>
+          <label for="speed-select">Play speed</label>
+          <select id="speed-select">
+            <option value="1200">Slow</option>
+            <option value="750" selected>Normal</option>
+            <option value="300">Fast</option>
           </select>
           <label class="checkbox-label" for="gaia-overlay-toggle">
             <input id="gaia-overlay-toggle" type="checkbox" checked> Gaia
@@ -94,13 +109,34 @@
           <label class="checkbox-label" for="mask-overlay-toggle">
             <input id="mask-overlay-toggle" type="checkbox" checked> Mask
           </label>
+          <label class="checkbox-label" for="invert-toggle">
+            <input id="invert-toggle" type="checkbox"> Invert
+          </label>
+          <label class="checkbox-label" for="follow-motion-toggle">
+            <input id="follow-motion-toggle" type="checkbox"> Follow motion
+          </label>
+          <label class="checkbox-label" for="inject-toggle">
+            <input id="inject-toggle" type="checkbox"> Test source (S/N 5)
+          </label>
+        </div>
+        <div class="export-row">
+          <button id="export-png-btn" class="btn" type="button">Export PNG</button>
+          <button id="export-csv-btn" class="btn" type="button">Export CSV</button>
+          <div id="external-links" class="external-links"></div>
         </div>
         <div id="pixel-readout" class="readout">Hover over canvas to inspect calibrated pixel flux and mask flags.</div>
       </section>
 
       <div class="right-stack">
-        <section class="card" aria-label="On-the-fly 102-band spectrum and molecule readings">
-          <h2 id="spectrum-heading">102-Band Spectrum &amp; Layer-1 Molecule Readings</h2>
+        <section id="metrics-card" class="card" aria-label="Light curve, change spectrum, and motion">
+          <h2 id="metrics-heading">Light Curve, Change Spectrum &amp; Motion</h2>
+          <canvas id="lightcurve-canvas" width="640" height="140"></canvas>
+          <div id="motion-summary" class="metrics-strip"></div>
+          <div id="change-spectrum-list" class="molecule-list"></div>
+        </section>
+
+        <section class="card" aria-label="Search spectrum and model estimate">
+          <h2 id="spectrum-heading">Search spectrum &amp; Model Estimate</h2>
           <canvas id="spectrum-canvas" width="640" height="190"></canvas>
           <div id="molecule-list" class="molecule-list"></div>
         </section>
@@ -123,6 +159,11 @@
               <tbody id="frames-tbody"></tbody>
             </table>
           </div>
+        </section>
+
+        <section id="proof-card" class="card frames-section" aria-label="Proof report card and next items">
+          <h2>Proof</h2>
+          <div id="proof-summary-body" class="proof-body">Loading Proof summary</div>
         </section>
       </div>
     </div>
