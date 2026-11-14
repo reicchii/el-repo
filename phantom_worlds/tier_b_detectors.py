@@ -569,6 +569,22 @@ def train_and_calibrate_m1_classifier(contracts_dir=DEFAULT_CONTRACTS_DIR, force
     X = np.asarray(feats, dtype=np.float64)
     y = np.asarray(labels, dtype=np.int32)
     reg_arr = np.asarray(regions)
+    if X.ndim != 2 or X.shape[0] < 4 or np.unique(y).size < 2:
+        out = {
+            "model": None,
+            "p_threshold_1pct_fpr": 0.75,
+            "val_false_pass_rate": None,
+            "b6_recall_at_1pct_fpr": None,
+            "n_train": 0,
+            "n_val": 0,
+            "n_val_pos": 0,
+            "n_val_neg": 0,
+            "status": "NOT_MEASURED",
+            "model_version": "m1-rf-tierb-v1",
+        }
+        with _CACHE_LOCK:
+            _M1_CACHE[key] = out
+        return out
     # Strict spatial left/right split so threshold calibration & recall never leak validation samples
     tr_idx = np.flatnonzero(reg_arr == "left")
     va_idx = np.flatnonzero(reg_arr == "right")
@@ -621,6 +637,8 @@ def train_and_calibrate_m1_classifier(contracts_dir=DEFAULT_CONTRACTS_DIR, force
 
 def score_m1_candidate(m1_bundle, feat_vec, checks):
     """Score real-or-artefact probability, suppressing any explicit optical ghost / crosstalk / saturated halo fail."""
+    if m1_bundle.get("model") is None:
+        return 0.0, False
     p_raw = float(m1_bundle["model"].predict_proba(np.asarray([feat_vec], dtype=np.float64))[0, 1])
     if not checks["crosstalk_ghost_clear"] or not checks["saturated_halo_clear"] or not checks["mask_bit_clean"]:
         p_eff = min(p_raw, 0.15)

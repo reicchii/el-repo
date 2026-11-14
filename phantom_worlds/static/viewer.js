@@ -2117,6 +2117,7 @@
   }
 
   async function loadFieldCases() {
+    if (!els.casesList && !els.retroList) return;
     let payload = null;
     try {
       const resp = await fetch("/api/field/cases");
@@ -2137,6 +2138,7 @@
   }
 
   async function loadSearchedDepth() {
+    if (!els.searchedDepthToggle && !els.proofV2Extra && !els.proofPlanetXStatement) return;
     let payload = null;
     try {
       const resp = await fetch("/api/field/searched");
@@ -3196,9 +3198,9 @@
   applyUrlParams();
   setActiveButtons();
   startLoop();
+  loadSkyQuery();
   if (els.proofBody) loadProofSummary();
   loadFieldSearch();
   loadFieldCases();
   loadSearchedDepth();
-  loadSkyQuery();
 })();

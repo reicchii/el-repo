@@ -842,23 +842,29 @@ def build_static_fallback_js(
         generate_proof_report,
     )
 
-    slice2_bench = evaluate_slice2_benchmarks(contracts_dir=contracts_dir)
-    pre_report_path = os.path.join(DEFAULT_PROOF_DIR, "report.json")
-    if os.path.abspath(contracts_dir) == os.path.abspath(DEFAULT_CONTRACTS_DIR) and os.path.exists(pre_report_path):
-        with open(pre_report_path, "r", encoding="utf-8") as pf:
-            proof_report = json.load(pf)
-    else:
-        proof_report = generate_proof_report(
+    processed_fields = list_processed_fields(contracts_dir=contracts_dir)
+    if processed_fields:
+        slice2_bench = evaluate_slice2_benchmarks(contracts_dir=contracts_dir)
+        pre_report_path = os.path.join(DEFAULT_PROOF_DIR, "report.json")
+        if os.path.abspath(contracts_dir) == os.path.abspath(DEFAULT_CONTRACTS_DIR) and os.path.exists(pre_report_path):
+            with open(pre_report_path, "r", encoding="utf-8") as pf:
+                proof_report = json.load(pf)
+        else:
+            proof_report = generate_proof_report(
+                contracts_dir=contracts_dir,
+                csv_dir=csv_dir,
+                include_skybot=False,
+                write_searched=False,
+            )
+        field_cases = build_field_cases_queue(
             contracts_dir=contracts_dir,
             csv_dir=csv_dir,
-            include_skybot=False,
-            write_searched=False,
+            pred_check=proof_report.get("b7_retro"),
         )
-    field_cases = build_field_cases_queue(
-        contracts_dir=contracts_dir,
-        csv_dir=csv_dir,
-        pred_check=proof_report.get("b7_retro"),
-    )
+    else:
+        slice2_bench = {}
+        proof_report = {}
+        field_cases = {"total_cases": 0, "cases": [], "retro_movers": [], "b7_summary": {}}
     ml_bundle = get_cached_ml_pipeline()
     eval_rpt = ml_bundle.get("evaluation_report") or {}
     model_card_meta = {
@@ -867,7 +873,7 @@ def build_static_fallback_js(
         "gold_high_snr": ((eval_rpt.get("release_gates") or {}).get("high_snr_gold")) or {},
     }
 
-    for fmeta in list_processed_fields(contracts_dir=contracts_dir):
+    for fmeta in processed_fields:
         fid = fmeta["field_id"]
         b_check = evaluate_b1_b2_2mass_check(fid, contracts_dir=contracts_dir)
         by_det = {}
