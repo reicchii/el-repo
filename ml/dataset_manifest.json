@@ -1,0 +1,54 @@
+{
+  "dataset_origin": "real_spherex_dr1_hips5_cube_and_spiff_zenodo",
+  "spectral_grid_source": "SPECTRAL_CHANNELS BINTABLE (Norder5 All-Sky Cube)",
+  "w2_mag_method": "Empirical -2.5*log10(median F_nu[4.4..4.8 um] / 171.787 Jy); NaN if non-positive",
+  "sky_tile_definition": "HEALPix NESTED Norder8 (nside=256, ~0.23 deg); S3 extraction grouped by Norder5 (nside=32)",
+  "total_spectra": 419,
+  "spiff_hybrid_templates_count": 47,
+  "benchmark_targets_extracted": [
+    "Barnards_Star",
+    "Eps_Indi_B",
+    "RW_Aurigae",
+    "R_Draconis",
+    "WISE_0855"
+  ],
+  "class_summary": {
+    "Star": {
+      "total": 38,
+      "gold": 0,
+      "silver": 38,
+      "unique_h8_tiles": 21
+    },
+    "Active galaxy or quasar": {
+      "total": 24,
+      "gold": 24,
+      "silver": 0,
+      "unique_h8_tiles": 24
+    },
+    "Galaxy": {
+      "total": 36,
+      "gold": 0,
+      "silver": 36,
+      "unique_h8_tiles": 18
+    },
+    "Young star with ice or dust": {
+      "total": 58,
+      "gold": 58,
+      "silver": 0,
+      "unique_h8_tiles": 7
+    },
+    "Evolved giant star": {
+      "total": 23,
+      "gold": 0,
+      "silver": 23,
+      "unique_h8_tiles": 20
+    },
+    "Ultracool dwarf": {
+      "total": 240,
+      "gold": 240,
+      "silver": 0,
+      "unique_h8_tiles": 240
+    }
+  },
+  "output_npz": "ml/real_training_dataset.npz"
+}
