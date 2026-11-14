@@ -77,6 +77,9 @@
     timerId: null,
     querySeq: 0,
     abortController: null,
+    searchSeq: 0,
+    searchAbortController: null,
+    searchDebounceId: null,
   };
 
   const els = {
@@ -2614,6 +2617,24 @@
 
   async function loadFieldSearch() {
     if (!els.searchResultsList) return;
+    if (state.searchDebounceId) {
+      clearTimeout(state.searchDebounceId);
+      state.searchDebounceId = null;
+    }
+    const seq = ++state.searchSeq;
+    if (state.searchAbortController) state.searchAbortController.abort();
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    state.searchAbortController = controller;
+    const signal = controller ? controller.signal : undefined;
+
+    if (els.searchMatchCount) els.searchMatchCount.textContent = "Searching…";
+    if (!state.searchResults.length) {
+      const loadingEl = document.createElement("div");
+      loadingEl.className = "proof-meta";
+      loadingEl.textContent = "Loading Tier-B source index…";
+      els.searchResultsList.replaceChildren(loadingEl);
+    }
+
     let payload = null;
     try {
       const params = new URLSearchParams({
@@ -2625,11 +2646,14 @@
         sort_by: state.searchSortBy,
         limit: "80",
       });
-      const resp = await fetch(`/api/field/search?${params.toString()}`);
+      const resp = await fetch(`/api/field/search?${params.toString()}`, signal ? { signal } : undefined);
+      if (seq !== state.searchSeq) return;
       if (resp && resp.ok) payload = await resp.json();
-    } catch (_err) {
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
       // Offline fallback when API is stopped
     }
+    if (seq !== state.searchSeq) return;
     if (!payload) payload = filterOfflineFieldSearch();
     if (!payload) return;
     if (els.searchCoverageNote && payload.coverage_statement) {
@@ -2640,6 +2664,14 @@
       els.searchMatchCount.textContent = `${payload.total_matched ?? state.searchResults.length} matched`;
     }
     renderSearchResultsList();
+  }
+
+  function scheduleFieldSearch() {
+    if (state.searchDebounceId) clearTimeout(state.searchDebounceId);
+    state.searchDebounceId = setTimeout(() => {
+      state.searchDebounceId = null;
+      loadFieldSearch();
+    }, 150);
   }
 
   async function loadFieldScene(fieldId, options) {
@@ -3122,14 +3154,14 @@
     els.searchMinSnr.addEventListener("input", () => {
       state.searchMinSnr = Number(els.searchMinSnr.value) || 0;
       if (els.searchMinSnrVal) els.searchMinSnrVal.textContent = String(state.searchMinSnr);
-      loadFieldSearch();
+      scheduleFieldSearch();
     });
   }
   if (els.searchMaxBlend) {
     els.searchMaxBlend.addEventListener("input", () => {
       state.searchMaxBlend = Number(els.searchMaxBlend.value) || 1.0;
       if (els.searchMaxBlendVal) els.searchMaxBlendVal.textContent = state.searchMaxBlend.toFixed(2);
-      loadFieldSearch();
+      scheduleFieldSearch();
     });
   }
   if (els.searchUnexplainedOnly) {

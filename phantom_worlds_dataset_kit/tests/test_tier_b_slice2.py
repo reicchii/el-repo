@@ -117,6 +117,12 @@ class TestTierBSlice2ApiAndUi(unittest.TestCase):
         r_404 = client.get("/api/field/w1925/source/NONEXISTENT-999")
         self.assertEqual(r_404.status_code, 404)
 
+        # Repeated slider sweeps across /api/field/search must keep LRU cache bounded
+        for step in range(140):
+            r_sweep = client.get("/api/field/search", params={"field_id": "all", "min_snr": round(step * 0.25, 2), "limit": 5})
+            self.assertEqual(r_sweep.status_code, 200)
+        self.assertLessEqual(len(app.state.search_cache), 128)
+
     def test_t51_t52_ui_offline_search_and_identity_v2(self):
         with open(os.path.join(STATIC_DIR, "index.html"), encoding="utf-8") as hf:
             html = hf.read()
@@ -328,6 +334,16 @@ vm.runInNewContext(viewerSrc, sandbox);
   }
   if (ch4Ids.some((t) => t.startsWith('TEST-CH4-LOW-SNR'))) {
     throw new Error('Expected methane_dip offline filter to reject low-S/N CH4_3_3 record');
+  }
+  // Rapid slider input must coalesce via 150ms debounce cleanly without error
+  ch4Btn.dispatch('click');
+  byId['search-min-snr'].value = '12';
+  byId['search-min-snr'].dispatch('input');
+  byId['search-min-snr'].value = '20';
+  byId['search-min-snr'].dispatch('input');
+  await new Promise((r) => setTimeout(r, 200));
+  if (byId['search-min-snr-val'].textContent !== '20') {
+    throw new Error('Expected debounced min_snr label to update cleanly');
   }
   console.log('T51_T52_OFFLINE_OK');
 })();

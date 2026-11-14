@@ -143,6 +143,8 @@ _LIVE_IRSA_TIMEOUT = (5, 15)
 _LIVE_IRSA_MAXREC = 100
 _LIVE_IRSA_CACHE_TTL_SEC = 60.0
 _LIVE_IRSA_CACHE_MAX_ENTRIES = 64
+_SEARCH_CACHE_MAX_ENTRIES = 128
+_SOURCE_DETAIL_CACHE_MAX_ENTRIES = 256
 _LIVE_IRSA_TOTAL_BUDGET_SEC = 25.0
 _LIVE_IRSA_BUSY_MSG = "Live IRSA archive query busy; showing local results only."
 _LIVE_IRSA_SEMAPHORE = threading.BoundedSemaphore(4)
@@ -571,17 +573,35 @@ def create_app(
     frames_cache = {}
     gaia_rows_cache = {}
     json_cache = {}
+    search_cache = OrderedDict()
+    source_detail_cache = OrderedDict()
     live_cache = OrderedDict()
     live_inflight = {}
     sso_cache = OrderedDict()
+    app.state.search_cache = search_cache
+    app.state.source_detail_cache = source_detail_cache
 
-    def _cached(store, key, loader):
+    def _cached(store, key, loader, max_entries=None):
         with cache_lock:
             val = store.get(key)
-            if val is None:
-                val = loader()
-                store[key] = val
-            return val
+            if val is not None:
+                if max_entries is not None and isinstance(store, OrderedDict):
+                    store.move_to_end(key)
+                return val
+        val = loader()
+        with cache_lock:
+            existing = store.get(key)
+            if existing is not None:
+                if max_entries is not None and isinstance(store, OrderedDict):
+                    store.move_to_end(key)
+                return existing
+            if max_entries is not None and isinstance(store, OrderedDict):
+                while len(store) >= max_entries:
+                    store.popitem(last=False)
+            store[key] = val
+            if max_entries is not None and isinstance(store, OrderedDict):
+                store.move_to_end(key)
+        return val
 
     def _get_ml_pipeline():
         with cache_lock:
@@ -1002,7 +1022,7 @@ def create_app(
             raise HTTPException(status_code=422, detail=f"Unsupported category filter(s): {invalid}")
         cache_key = ("field_search", field_id, cats_parsed, round(min_snr, 3), round(max_blend, 4), only_unexplained, sort_by, limit)
         return _cached(
-            json_cache,
+            search_cache,
             cache_key,
             lambda: search_field_sources(
                 field_id=field_id,
@@ -1014,6 +1034,7 @@ def create_app(
                 limit=limit,
                 contracts_dir=contracts_dir,
             ),
+            max_entries=_SEARCH_CACHE_MAX_ENTRIES,
         )
 
     def _load_or_build_proof_report():
@@ -1126,9 +1147,10 @@ def create_app(
             raise HTTPException(status_code=422, detail="Invalid source_id format")
         try:
             return _cached(
-                json_cache,
+                source_detail_cache,
                 ("field_source", fid, source_id),
                 lambda: get_source_identity_v2(fid, source_id, contracts_dir=contracts_dir),
+                max_entries=_SOURCE_DETAIL_CACHE_MAX_ENTRIES,
             )
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
