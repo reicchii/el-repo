@@ -547,3 +547,52 @@ a {
   border-radius: 10px;
   padding: 1rem 1.15rem;
 }
+
+.case-detail-box,
+.retro-box,
+.recovery-wrap {
+  margin-top: 0.65rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.case-triage-actions {
+  margin-top: 0.45rem;
+  margin-bottom: 0;
+}
+
+.retro-list {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.retro-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 4px;
+  background: var(--surface-alt);
+}
+
+.proof-statement {
+  margin: 0.65rem 0;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid var(--accent);
+  background: var(--surface-alt);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.recovery-wrap canvas {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  display: block;
+  margin-top: 0.35rem;
+}

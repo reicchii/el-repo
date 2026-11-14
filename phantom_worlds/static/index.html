@@ -84,6 +84,9 @@
           <button class="btn rmknown-btn active" type="button" data-layer="image" aria-pressed="true">Image</button>
           <button class="btn rmknown-btn" type="button" data-layer="model" aria-pressed="false">Model</button>
           <button class="btn rmknown-btn" type="button" data-layer="residual" aria-pressed="false">Residual</button>
+          <label class="checkbox-label" for="searched-depth-layer-toggle">
+            <input id="searched-depth-layer-toggle" type="checkbox"> Searched depth
+          </label>
         </div>
 
         <div class="controls-row" role="group" aria-label="SPHEREx detector band">
@@ -154,6 +157,7 @@
             <button class="btn search-cat-btn" type="button" data-cat="water_ice" aria-pressed="false">H2O ice (3.05 um)</button>
             <button class="btn search-cat-btn" type="button" data-cat="co2_ice" aria-pressed="false">CO2 ice (4.27 um)</button>
             <button class="btn search-cat-btn" type="button" data-cat="co_ice" aria-pressed="false">CO ice (4.67 um)</button>
+            <button class="btn search-cat-btn" type="button" data-cat="methane_dip" aria-pressed="false">Methane dip (3.3 um)</button>
             <button class="btn search-cat-btn" type="button" data-cat="moving_source" aria-pressed="false">Moving</button>
             <button class="btn search-cat-btn" type="button" data-cat="variable_source" aria-pressed="false">Variable</button>
           </div>
@@ -183,6 +187,34 @@
             </label>
           </div>
           <div id="search-results-list" class="search-results-list" role="listbox" aria-label="Matching sources"></div>
+        </div>
+
+        <div id="signals-cases-panel" class="search-panel" aria-label="Signals and Cases review queue">
+          <div class="search-panel-header">
+            <h3>Signals &amp; Cases</h3>
+            <span id="cases-count-badge" class="presets-label">0 cases</span>
+          </div>
+          <div id="cases-state-tabs" class="controls-row" role="group" aria-label="Case disposition filter">
+            <button class="btn case-state-btn active" type="button" data-state="all" aria-pressed="true">All</button>
+            <button class="btn case-state-btn" type="button" data-state="Open signal" aria-pressed="false">Open signal</button>
+            <button class="btn case-state-btn" type="button" data-state="Explained by catalogue" aria-pressed="false">Explained by catalogue</button>
+            <button class="btn case-state-btn" type="button" data-state="Artefact" aria-pressed="false">Artefact</button>
+          </div>
+          <div id="signals-cases-list" class="search-results-list" role="listbox" aria-label="Priority case queue"></div>
+          <div id="case-detail-box" class="case-detail-box" hidden>
+            <div id="case-detail-title" class="mol-name">Select a case above</div>
+            <p id="case-detail-summary" class="proof-meta"></p>
+            <div id="case-detail-checks" class="band-pills"></div>
+            <div class="controls-row case-triage-actions">
+              <button id="case-flag-artefact-btn" class="btn" type="button">Flag as artefact</button>
+              <button id="case-mark-explained-btn" class="btn" type="button">Mark explained by catalogue</button>
+              <button id="case-reopen-btn" class="btn" type="button">Reopen signal</button>
+            </div>
+          </div>
+          <div id="retro-prediction-box" class="retro-box">
+            <div class="proof-meta" id="retro-prediction-summary">Loading B7 retrospective Prediction check…</div>
+            <div id="retro-prediction-list" class="retro-list"></div>
+          </div>
         </div>
       </section>
 
@@ -236,6 +268,16 @@
         <section id="proof-card" class="card frames-section" aria-label="Proof report card and next items">
           <h2>Proof</h2>
           <div id="proof-summary-body" class="proof-body">Loading Proof summary</div>
+          <div id="proof-v2-extra" class="proof-body" hidden>
+            <div id="proof-report-card-wrap"></div>
+            <div class="recovery-wrap">
+              <div class="proof-meta" id="recovery-curve-caption">Searched depth recovery curves (D3 &amp; D6 injection-recovery)</div>
+              <canvas id="recovery-curve-canvas" width="520" height="170"></canvas>
+            </div>
+            <div id="proof-ladder-wrap" class="proof-meta"></div>
+            <p id="proof-planet-x-statement" class="proof-statement"></p>
+            <div id="proof-credits-wrap" class="proof-meta"></div>
+          </div>
         </section>
       </div>
     </div>

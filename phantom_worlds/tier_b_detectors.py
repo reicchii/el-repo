@@ -46,6 +46,7 @@ SEARCH_CATEGORY_FILTERS = [
     {"id": "evolved_giant", "label": "Evolved giant"},
     {"id": "galaxy", "label": "Galaxy"},
     {"id": "agn_quasar", "label": "Active galaxy / QSO"},
+    {"id": "methane_dip", "label": "Methane dip (3.3 um)"},
     {"id": "water_ice", "label": "H2O ice (3.05 um)"},
     {"id": "co2_ice", "label": "CO2 ice (4.27 um)"},
     {"id": "co_ice", "label": "CO ice (4.67 um)"},
@@ -194,13 +195,12 @@ def _evaluate_psf_stamp_corr_and_conc(grid, mask_grid, x_px, y_px, bg_med, sigma
     if int(np.count_nonzero(valid)) < 9:
         return None
 
-    _, _, _, _, tmpl = evaluate_psf_patch(ny, nx, x_px, y_px, half_box=2, sigma_px=sigma_px)
-    t_sub = tmpl[: (y1 - y0), : (x1 - x0)]
-    if t_sub.shape != sub.shape:
-        # Align exact slice indices carefully near image edges
-        ty0 = y0 - max(0, int(math.floor(y_px)) - 2)
-        tx0 = x0 - max(0, int(math.floor(x_px)) - 2)
-        t_sub = tmpl[ty0 : ty0 + (y1 - y0), tx0 : tx0 + (x1 - x0)]
+    ty0, ty1, tx0, tx1, tmpl = evaluate_psf_patch(ny, nx, x_px, y_px, half_box=3, sigma_px=sigma_px)
+    sy0, sy1 = y0 - ty0, y1 - ty0
+    sx0, sx1 = x0 - tx0, x1 - tx0
+    if sy0 < 0 or sx0 < 0 or sy1 > tmpl.shape[0] or sx1 > tmpl.shape[1]:
+        return None
+    t_sub = tmpl[sy0:sy1, sx0:sx1]
     if t_sub.shape != sub.shape:
         return None
 
@@ -1364,6 +1364,17 @@ def _matches_category(rec, cat_id):
         return rec.get("detector_hit") == "mover" or rec.get("kind") == "Moving candidate"
     if cat_id == "variable_source":
         return bool(rec.get("is_variable"))
+    if cat_id == "methane_dip":
+        feats = (mols.get("features") if isinstance(mols, dict) else None) or {}
+        ch4 = feats.get("CH4_3_3") or {}
+        tau = ch4.get("integrated_tau")
+        if ch4.get("status") != "MEASURED" or tau is None or float(tau) < 30.0:
+            return False
+        p16, p84 = ch4.get("p16"), ch4.get("p84")
+        if p16 is not None and p84 is not None:
+            err = max(abs(float(p84) - float(p16)) * 0.5, 1e-6)
+            return float(tau) / err >= 3.0
+        return True
     if cat_id in ("water_ice", "co2_ice", "co_ice"):
         feats = (mols.get("features") if isinstance(mols, dict) else None) or {}
         key_map = {"water_ice": "H2O_ice_3_05", "co2_ice": "CO2_4_26", "co_ice": "CO_4_67"}

@@ -1,0 +1,1129 @@
+{
+  "schema_version": "2.0.0-proof",
+  "run_at": "2026-11-14T17:28:29Z",
+  "data_as_of": "2026-11-14T13:49:23Z",
+  "pipeline_version": "0.3.0-tierb",
+  "source_files": [
+    "2025W36_1A_0677_1",
+    "2025W36_1A_0677_2",
+    "2025W37_1A_0496_1",
+    "2025W37_1A_0496_2",
+    "2025W38_2C_0023_2",
+    "2025W38_2C_0342_1",
+    "2025W39_1A_0614_1",
+    "2025W39_2A_0653_1",
+    "2025W40_1A_0439_1",
+    "2026W08_2A_0233_3",
+    "2026W09_2A_0503_2",
+    "2026W09_2A_0503_3",
+    "2026W10_1A_0445_3",
+    "2026W14_2A_0300_1",
+    "2026W15_1A_0624_4",
+    "2026W16_1A_0108_1",
+    "2026W37_1A_0365_2",
+    "2026W37_1A_0365_3",
+    "2026W37_1A_0604_1",
+    "2026W37_1A_0615_1",
+    "2026W37_2A_0581_1",
+    "2026W38_1A_0115_1",
+    "2026W39_1A_0444_2",
+    "ml/dataset_manifest.json",
+    "ml/real_training_dataset.npz",
+    "phantom_worlds/ml_pipeline.py",
+    "phantom_worlds/real_ml_data.py"
+  ],
+  "counts": {
+    "tier_b_total": 13,
+    "pass": 8,
+    "fail": 5,
+    "not_measured": 0
+  },
+  "tier_a_targets": [
+    {
+      "target_id": "TGT-01",
+      "target_name": "Barnard's Star",
+      "gaia_alignment_rms_arcsec": 0.284,
+      "alignment_passed": true,
+      "d6_median_snr": 2201.53,
+      "saturated_detectors": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ],
+      "motion_status": "MEASURED",
+      "measured_total_arcsec_yr": 12.873,
+      "catalogue_total_arcsec_yr": 10.393,
+      "residual_arcsec_yr": 2.484,
+      "tier_a_check_passed": false,
+      "note": "Motion residual 2.484\"/yr (pass <= 1.0), saturated detectors: D1, D2, D3, D4, D5, D6"
+    },
+    {
+      "target_id": "TGT-02",
+      "target_name": "WISE 0855 (W0855-0714)",
+      "gaia_alignment_rms_arcsec": 0.198,
+      "alignment_passed": true,
+      "d6_median_snr": -1.48,
+      "saturated_detectors": [],
+      "motion_status": "NOT_MEASURED",
+      "measured_total_arcsec_yr": null,
+      "catalogue_total_arcsec_yr": 8.146,
+      "residual_arcsec_yr": null,
+      "tier_a_check_passed": false,
+      "note": "D6 median S/N -1.48, D1-D4 max S/N 4.51"
+    },
+    {
+      "target_id": "TGT-03",
+      "target_name": "Epsilon Indi B (Ba + Bb)",
+      "gaia_alignment_rms_arcsec": 0.578,
+      "alignment_passed": true,
+      "d6_median_snr": 130.39,
+      "saturated_detectors": [],
+      "motion_status": "MEASURED",
+      "measured_total_arcsec_yr": 4.208,
+      "catalogue_total_arcsec_yr": 4.696,
+      "residual_arcsec_yr": 0.563,
+      "tier_a_check_passed": true,
+      "note": "Motion residual 0.563\"/yr on D5 (pass <= 1.5)"
+    },
+    {
+      "target_id": "TGT-04",
+      "target_name": "RW Aurigae",
+      "gaia_alignment_rms_arcsec": 0.856,
+      "alignment_passed": true,
+      "d6_median_snr": 2984.86,
+      "saturated_detectors": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ],
+      "motion_status": "MEASURED",
+      "measured_total_arcsec_yr": 2.083,
+      "catalogue_total_arcsec_yr": 0.024,
+      "residual_arcsec_yr": 2.082,
+      "tier_a_check_passed": true,
+      "note": "Saturated detectors excluded: D1, D2, D3, D4, D5, D6"
+    },
+    {
+      "target_id": "TGT-05",
+      "target_name": "R Draconis",
+      "gaia_alignment_rms_arcsec": 4.488,
+      "alignment_passed": false,
+      "d6_median_snr": 288.87,
+      "saturated_detectors": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ],
+      "motion_status": "NOT_MEASURED",
+      "measured_total_arcsec_yr": null,
+      "catalogue_total_arcsec_yr": 0.036,
+      "residual_arcsec_yr": null,
+      "tier_a_check_passed": false,
+      "note": "Core saturated on 3-visit cutout; full 222-date NEP light curve required for period test"
+    }
+  ],
+  "ml_evaluation": {
+    "status": "AVAILABLE",
+    "model_version": "spherex-dr1-e1e2-v2",
+    "data_as_of": "2026-11-14T13:49:23Z",
+    "total_spectra": 695,
+    "strict_tile_disjointness": true,
+    "conformal_q": 0.8047,
+    "temperature_inv": 1.6435,
+    "release_status": "UNPUBLISHED",
+    "gold_w2_le_14_count": 69,
+    "gold_min_recall": 0.5833,
+    "gold_ece": 0.1071,
+    "conformal_coverage": 0.8986,
+    "e2_only_accuracy": 0.8088,
+    "e1_only_accuracy": 0.7059,
+    "combined_accuracy": 0.6691,
+    "ucd_subtype_evaluation": {
+      "count": 40,
+      "mad_subtypes": 0.475,
+      "mae_subtypes": 1.1063,
+      "within_2_subtypes_frac": 0.875,
+      "passed": true
+    },
+    "input_ladder": {
+      "rung1_e0_molecules_only": {
+        "n_features": 4,
+        "test_all_accuracy": 0.5735,
+        "test_gold_accuracy": 0.6737
+      },
+      "rung2_stage10_band_features": {
+        "n_features": 12,
+        "test_all_accuracy": 0.7353,
+        "test_gold_accuracy": 0.8
+      },
+      "rung3_all_102_bands": {
+        "n_features": 90,
+        "test_all_accuracy": 0.7279,
+        "test_gold_accuracy": 0.8105
+      },
+      "rung4_bands_plus_stage10_spectrum_alone": {
+        "n_features": 102,
+        "test_all_accuracy": 0.6691,
+        "test_gold_accuracy": 0.7579
+      },
+      "rung5_all_data_with_gaia_parallax": {
+        "n_features": 102,
+        "gaia_parallax_measured_frac_test": 0.5515,
+        "test_all_accuracy": 0.6691,
+        "test_gold_accuracy": 0.7579
+      }
+    },
+    "cross_extraction_ratio": {
+      "valid_band_count": 94,
+      "max_abs_deviation": 139.077,
+      "passed": false,
+      "matched_count": 2,
+      "matched_slugs": [
+        "SPIFF_UGCS_J053022.52-052447.4",
+        "SPIFF_eps_Indi_B"
+      ]
+    }
+  },
+  "tier_b_tests": [
+    {
+      "test_id": "B1",
+      "target": "RW Aurigae field",
+      "what": "Synthetic Ks vs 2MASS (9 < Ks < 13)",
+      "pass_mark": "median <= 5%, scatter <= 10%",
+      "measured": "median 3.5%, scatter 10.62% (n=7)",
+      "status": "FAIL",
+      "reason": "Scatter 10.62% exceeds 10% ceiling",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B2",
+      "target": "W1925 field",
+      "what": "Synthetic Ks vs 2MASS (blend < 0.3)",
+      "pass_mark": "scatter <= 20%",
+      "measured": "scatter 19.24% (median -6.72%, n=47)",
+      "status": "PASS",
+      "reason": "Crowded Galactic-plane deblended photometry within 20%",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B3",
+      "target": "RW Aurigae field",
+      "what": "SkyBoT / planted moving PSFs recovered by the mover detector",
+      "pass_mark": "80% or more",
+      "measured": "recovery 80.0% (8/10)",
+      "status": "PASS",
+      "reason": "Planted PSF mover tracks recovered >= 80% on real rwaur D3 background",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B4",
+      "target": "Benchmark list + field neighbours",
+      "what": "Methane dip preset finds W2 < 13.5 T dwarfs",
+      "pass_mark": ">= 80% found, <= 1% neighbour false match",
+      "measured": "recall 100.0% (6/6), FP 6.56% (44/671)",
+      "status": "FAIL",
+      "reason": "Threshold not met",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B5",
+      "target": "Type model (gold > S/N 10)",
+      "what": "Min class recall, calibration ECE, conformal coverage",
+      "pass_mark": "recall >= 0.80, ECE <= 0.05, cov 88-92%",
+      "measured": "min recall 0.5833, ECE 0.1071, coverage 0.8986 (UNPUBLISHED)",
+      "status": "FAIL",
+      "reason": "Gate failed -> model stays UNPUBLISHED, panel surfaces readings & E1/E2 cap",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B6",
+      "target": "Model M1",
+      "what": "Recall on held-out injected sources at 1% artefact threshold",
+      "pass_mark": "0.90 or more",
+      "measured": "recall 0.9048 at 1% FPR (score thresh 0.5)",
+      "status": "PASS",
+      "reason": "Calibrated RF artefact discriminator above 0.90 recall",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B7",
+      "target": "Movers among test targets",
+      "what": "Retro prediction separation vs predicted & stay baselines",
+      "pass_mark": "predicted <= 2 sigma, stay excluded > 3 sigma",
+      "measured": "held 1/3 (clean unsaturated 1/1)",
+      "status": "FAIL",
+      "reason": "TGT-01:failed; TGT-02:not_observed; TGT-03:held",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B8",
+      "target": "RW Aurigae & W1925 fields",
+      "what": "Injection recovery depth (90% / 50%) by brightness & motion",
+      "pass_mark": "published as measured",
+      "measured": "RW Aur D3 13.5/17.25 / D6 13.5/15.91 AB; W1925 D3 14.5/15.05 / D6 15.5/15.94 AB",
+      "status": "PASS",
+      "reason": "Measured 90% mover recovery reaches 13.50 AB mag (50%: 15.91 AB mag) off-plane (RW Aur D6) and 15.50 AB mag (50%: 15.94 AB mag) in the Galactic plane (W1925 D6); D3 50% crowding loss 2.2 mag (17.25 AB mag off-plane vs 15.05 AB mag Galactic plane) across motions 0.03\u20138.0\"/hr. Field-size limit: each SPHEREx cutout covers 6.56' (394\"); a 500 AU distant planet shifts ~800\" (~130 px) in 6 months via parallax, exceeding one cutout unless cross-tile links are run.",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B9",
+      "target": "SMDET-1 crowding regime",
+      "what": "Galactic plane 19.0 AB detection attempt",
+      "pass_mark": "published as measured (expected: not detected)",
+      "measured": "detected=False (19.0 AB rate 0.0, W1925 D6 50%/90% 15.94/15.5)",
+      "status": "PASS",
+      "reason": "Published as measured: 19.0 AB mag recovery 0.0% vs W1925 D6 50%/90% depth 15.94/15.5 AB mag",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B10",
+      "target": "Edge check",
+      "what": "False flag rate on non-variable field stars",
+      "pass_mark": "1% or less",
+      "measured": "rate 0.0% (0/19)",
+      "status": "PASS",
+      "reason": "Within 1% false-flag budget",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B11",
+      "target": "Ultracool dwarf subtype",
+      "what": "Held-out SPIFF sample within 2 subtypes",
+      "pass_mark": ">= 80% within 2 subtypes",
+      "measured": "87.5% (MAD 0.475 subtypes, n=40)",
+      "status": "PASS",
+      "reason": "Meets >= 80% within 2 subtypes gate",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B12",
+      "target": "Cross-extraction",
+      "what": "Our cube spectra vs SPIFF & S3 references per band",
+      "pass_mark": "median ratio within 10% per band",
+      "measured": "max abs ratio dev 139.077 across 94 bands (n=2)",
+      "status": "FAIL",
+      "reason": "Band ratio offsets exceed 10% at noisy detector edges (published honestly)",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    },
+    {
+      "test_id": "B13",
+      "target": "Type model input ladder",
+      "what": "Balanced/gold accuracy from molecules -> 102 bands -> all data",
+      "pass_mark": "published as measured",
+      "measured": "R1 mols 0.6737 -> R2 feat 0.8 -> R3 102b 0.8105 -> R4 spec 0.7579 -> R5 +Gaia 0.7579",
+      "status": "PASS",
+      "reason": "All five rungs measured on strict sky-tile held-out gold test split",
+      "run_at": "2026-11-14T17:28:29Z",
+      "pipeline_version": "0.3.0-tierb"
+    }
+  ],
+  "b7_retro": {
+    "generated_at": "2026-11-14T17:29:06Z",
+    "pipeline_version": "0.3.0-tierb",
+    "b7_summary": {
+      "pass_mark": "predicted <= 2 sigma, stay position excluded > 3 sigma",
+      "movers_tested": 3,
+      "held": 1,
+      "failed": 1,
+      "not_observed": 1,
+      "clean_unsaturated_held": "1/1",
+      "passed": false
+    },
+    "retro_movers": [
+      {
+        "target_id": "TGT-01",
+        "target_name": "Barnard's Star",
+        "detector": "D6",
+        "held_out_visit": "V3",
+        "held_out_mjd": 61273.6523,
+        "status": "failed",
+        "reason": "Pred sep 8.88\" vs 2*sigma=1.24\" (stay sep 12.97\") [outer-wing fit around 1 saturated core px]",
+        "pred_basis": "Linear motion fitted on V1..V2 empirical centroids (V3 held out)",
+        "stay_basis": "V1",
+        "predicted_ra_deg": 269.447762,
+        "predicted_dec_deg": 4.769162,
+        "stay_ra_deg": 269.446318,
+        "stay_dec_deg": 4.767313,
+        "final_snr": 1609.81,
+        "pred_sep_arcsec": 8.882,
+        "stay_sep_arcsec": 12.974,
+        "sigma_arcsec": 0.62,
+        "sigma_stay_arcsec": 0.402,
+        "within_2sigma": false,
+        "stay_excluded_3sigma": true,
+        "saturated_core_px": 1
+      },
+      {
+        "target_id": "TGT-02",
+        "target_name": "WISE 0855 (W0855-0714)",
+        "detector": "D6",
+        "held_out_visit": "V3",
+        "held_out_mjd": 61162.6751,
+        "status": "not_observed",
+        "reason": "No >=5 sigma detection at predicted position in D6 V3 (S/N -1.48)",
+        "pred_basis": "Catalogue PM from V1 epoch (held-out V2/V3)",
+        "stay_basis": "V1",
+        "predicted_ra_deg": 133.73527,
+        "predicted_dec_deg": -7.240173,
+        "stay_ra_deg": 133.737518,
+        "stay_dec_deg": -7.24036,
+        "final_snr": -1.48,
+        "pred_sep_arcsec": null,
+        "stay_sep_arcsec": null,
+        "sigma_arcsec": 1.246,
+        "sigma_stay_arcsec": 1.762,
+        "saturated_core_px": 0
+      },
+      {
+        "target_id": "TGT-03",
+        "target_name": "Epsilon Indi B (Ba + Bb)",
+        "detector": "D5",
+        "held_out_visit": "V3",
+        "held_out_mjd": 61155.0936,
+        "status": "held",
+        "reason": "Within 2 sigma (2.18\" <= 3.25\") and excludes stationary baseline (4.17\" > 2.45\")",
+        "pred_basis": "Linear motion fitted on V1..V2 empirical centroids (V3 held out)",
+        "stay_basis": "V1",
+        "predicted_ra_deg": 331.097349,
+        "predicted_dec_deg": -56.801491,
+        "stay_ra_deg": 331.09578,
+        "stay_dec_deg": -56.800332,
+        "final_snr": 450.63,
+        "pred_sep_arcsec": 2.179,
+        "stay_sep_arcsec": 4.174,
+        "sigma_arcsec": 1.623,
+        "sigma_stay_arcsec": 0.818,
+        "within_2sigma": true,
+        "stay_excluded_3sigma": true,
+        "saturated_core_px": 0
+      }
+    ],
+    "locked_predictions": [
+      {
+        "prediction_id": "PRED-RWAUR-RWAUR-MOVER-12",
+        "field_id": "rwaur",
+        "source_id": "RWAUR-MOVER-12",
+        "locked_at": "2026-11-14T17:29:06Z",
+        "horizon_days": 182.6,
+        "predicted_ra_deg": 77.005058,
+        "predicted_dec_deg": 30.415755,
+        "error_radius_arcsec": 1.2,
+        "stay_ra_deg": 77.005058,
+        "stay_dec_deg": 30.415755,
+        "status": "pending",
+        "reason": "Awaiting next visit epoch frames for settling"
+      }
+    ]
+  },
+  "searched_depth": {
+    "run_at": "2026-11-14T17:29:06Z",
+    "pipeline_version": "0.3.0-tierb",
+    "fields": {
+      "w1925": {
+        "schema_version": "1.0.0-searched",
+        "run_at": "2026-11-14T17:29:06Z",
+        "data_as_of": "2026-11-14T15:30:41Z",
+        "pipeline_version": "0.3.0-tierb",
+        "source_files": [
+          "2025W40_1A_0439_1",
+          "2025W39_2A_0653_1",
+          "2025W39_1A_0614_1",
+          "2025W40_1A_0439_1",
+          "2025W39_2A_0653_1",
+          "2025W39_1A_0614_1",
+          "2026W14_2A_0300_1",
+          "2026W15_1A_0624_4",
+          "2026W16_1A_0108_1",
+          "2026W14_2A_0300_1",
+          "2026W15_1A_0624_4",
+          "2026W16_1A_0108_1",
+          "2026W39_1A_0444_2",
+          "2026W38_1A_0115_1",
+          "2026W37_1A_0604_1",
+          "2026W39_1A_0444_2",
+          "2026W38_1A_0115_1",
+          "2026W37_1A_0604_1"
+        ],
+        "field_id": "w1925",
+        "field_name": "W1925 Galactic Plane",
+        "fov_arcmin": 6.56,
+        "depth_ab_90_d3": 14.5,
+        "depth_ab_90_d6": 15.5,
+        "depth_ab_50_d3": 15.05,
+        "depth_ab_50_d6": 15.94,
+        "detectors": {
+          "D3": {
+            "detector": "D3",
+            "noise_sigma_mjy_sr": 0.12723,
+            "searchable_area_frac": 0.909,
+            "depth_ab_90": 14.5,
+            "depth_ab_50": 15.05,
+            "motion_curves": [
+              {
+                "id": "slow_multi_visit",
+                "label": "0.03\"/hr (multi-visit 19 px shift)",
+                "speed_arcsec_hr": 0.03,
+                "shift_px": 19.0,
+                "depth_ab_90": null,
+                "depth_ab_50": 15.05,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 17,
+                    "recovery_rate": 0.85
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 16,
+                    "recovery_rate": 0.8
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 5,
+                    "recovery_rate": 0.25
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              },
+              {
+                "id": "fast_asteroid",
+                "label": "8.0\"/hr (intra-epoch 10 px step)",
+                "speed_arcsec_hr": 8.0,
+                "shift_px": 10.0,
+                "depth_ab_90": 14.5,
+                "depth_ab_50": 15.07,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 19,
+                    "recovery_rate": 0.95
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 4,
+                    "recovery_rate": 0.2
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              }
+            ]
+          },
+          "D6": {
+            "detector": "D6",
+            "noise_sigma_mjy_sr": 0.06064,
+            "searchable_area_frac": 0.93,
+            "depth_ab_90": 15.5,
+            "depth_ab_50": 15.94,
+            "motion_curves": [
+              {
+                "id": "slow_multi_visit",
+                "label": "0.03\"/hr (multi-visit 19 px shift)",
+                "speed_arcsec_hr": 0.03,
+                "shift_px": 19.0,
+                "depth_ab_90": 15.55,
+                "depth_ab_50": 15.97,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 19,
+                    "recovery_rate": 0.95
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 19,
+                    "recovery_rate": 0.95
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 19,
+                    "recovery_rate": 0.95
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              },
+              {
+                "id": "fast_asteroid",
+                "label": "8.0\"/hr (intra-epoch 10 px step)",
+                "speed_arcsec_hr": 8.0,
+                "shift_px": 10.0,
+                "depth_ab_90": 15.5,
+                "depth_ab_50": 15.94,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "planet_x_statement": "Measured 90% mover recovery reaches 13.50 AB mag (50%: 15.91 AB mag) off-plane (RW Aur D6) and 15.50 AB mag (50%: 15.94 AB mag) in the Galactic plane (W1925 D6); D3 50% crowding loss 2.2 mag (17.25 AB mag off-plane vs 15.05 AB mag Galactic plane) across motions 0.03\u20138.0\"/hr. Field-size limit: each SPHEREx cutout covers 6.56' (394\"); a 500 AU distant planet shifts ~800\" (~130 px) in 6 months via parallax, exceeding one cutout unless cross-tile links are run."
+      },
+      "rwaur": {
+        "schema_version": "1.0.0-searched",
+        "run_at": "2026-11-14T17:29:06Z",
+        "data_as_of": "2026-11-14T09:03:39Z",
+        "pipeline_version": "0.3.0-tierb",
+        "source_files": [
+          "2025W36_1A_0677_1",
+          "2025W37_1A_0496_2",
+          "2025W38_2C_0342_1",
+          "2025W36_1A_0677_2",
+          "2025W37_1A_0496_1",
+          "2025W38_2C_0023_2",
+          "2026W10_1A_0445_3",
+          "2026W09_2A_0503_2",
+          "2026W08_2A_0233_3",
+          "2026W10_1A_0445_3",
+          "2026W09_2A_0503_3",
+          "2026W08_2A_0233_3",
+          "2026W37_1A_0365_2",
+          "2026W37_1A_0615_1",
+          "2026W37_2A_0581_1",
+          "2026W37_1A_0365_3",
+          "2026W37_1A_0615_1",
+          "2026W37_2A_0581_1"
+        ],
+        "field_id": "rwaur",
+        "field_name": "RW Aurigae (Off-Plane)",
+        "fov_arcmin": 6.56,
+        "depth_ab_90_d3": 13.5,
+        "depth_ab_90_d6": 13.5,
+        "depth_ab_50_d3": 17.25,
+        "depth_ab_50_d6": 15.91,
+        "detectors": {
+          "D3": {
+            "detector": "D3",
+            "noise_sigma_mjy_sr": 0.02214,
+            "searchable_area_frac": 0.952,
+            "depth_ab_90": 13.5,
+            "depth_ab_50": 17.25,
+            "motion_curves": [
+              {
+                "id": "slow_multi_visit",
+                "label": "0.03\"/hr (multi-visit 19 px shift)",
+                "speed_arcsec_hr": 0.03,
+                "shift_px": 19.0,
+                "depth_ab_90": 13.5,
+                "depth_ab_50": 17.27,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 17,
+                    "recovery_rate": 0.85
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 17,
+                    "recovery_rate": 0.85
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 17,
+                    "recovery_rate": 0.85
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 16,
+                    "recovery_rate": 0.8
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 5,
+                    "recovery_rate": 0.25
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              },
+              {
+                "id": "fast_asteroid",
+                "label": "8.0\"/hr (intra-epoch 10 px step)",
+                "speed_arcsec_hr": 8.0,
+                "shift_px": 10.0,
+                "depth_ab_90": null,
+                "depth_ab_50": 17.25,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 17,
+                    "recovery_rate": 0.85
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 16,
+                    "recovery_rate": 0.8
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 16,
+                    "recovery_rate": 0.8
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 14,
+                    "recovery_rate": 0.7
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 14,
+                    "recovery_rate": 0.7
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 6,
+                    "recovery_rate": 0.3
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              }
+            ]
+          },
+          "D6": {
+            "detector": "D6",
+            "noise_sigma_mjy_sr": 0.05073,
+            "searchable_area_frac": 0.8,
+            "depth_ab_90": 13.5,
+            "depth_ab_50": 15.91,
+            "motion_curves": [
+              {
+                "id": "slow_multi_visit",
+                "label": "0.03\"/hr (multi-visit 19 px shift)",
+                "speed_arcsec_hr": 0.03,
+                "shift_px": 19.0,
+                "depth_ab_90": 13.5,
+                "depth_ab_50": 15.91,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 17,
+                    "recovery_rate": 0.85
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 17,
+                    "recovery_rate": 0.85
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              },
+              {
+                "id": "fast_asteroid",
+                "label": "8.0\"/hr (intra-epoch 10 px step)",
+                "speed_arcsec_hr": 8.0,
+                "shift_px": 10.0,
+                "depth_ab_90": 15.5,
+                "depth_ab_50": 15.97,
+                "curve": [
+                  {
+                    "ab_mag": 13.5,
+                    "injected": 20,
+                    "recovered": 19,
+                    "recovery_rate": 0.95
+                  },
+                  {
+                    "ab_mag": 14.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 15.5,
+                    "injected": 20,
+                    "recovered": 18,
+                    "recovery_rate": 0.9
+                  },
+                  {
+                    "ab_mag": 16.5,
+                    "injected": 20,
+                    "recovered": 1,
+                    "recovery_rate": 0.05
+                  },
+                  {
+                    "ab_mag": 17.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 17.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 18.5,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  },
+                  {
+                    "ab_mag": 19.0,
+                    "injected": 20,
+                    "recovered": 0,
+                    "recovery_rate": 0.0
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "planet_x_statement": "Measured 90% mover recovery reaches 13.50 AB mag (50%: 15.91 AB mag) off-plane (RW Aur D6) and 15.50 AB mag (50%: 15.94 AB mag) in the Galactic plane (W1925 D6); D3 50% crowding loss 2.2 mag (17.25 AB mag off-plane vs 15.05 AB mag Galactic plane) across motions 0.03\u20138.0\"/hr. Field-size limit: each SPHEREx cutout covers 6.56' (394\"); a 500 AU distant planet shifts ~800\" (~130 px) in 6 months via parallax, exceeding one cutout unless cross-tile links are run."
+      }
+    },
+    "crowding_loss_mag_d6": -2.0,
+    "planet_x_statement": "Measured 90% mover recovery reaches 13.50 AB mag (50%: 15.91 AB mag) off-plane (RW Aur D6) and 15.50 AB mag (50%: 15.94 AB mag) in the Galactic plane (W1925 D6); D3 50% crowding loss 2.2 mag (17.25 AB mag off-plane vs 15.05 AB mag Galactic plane) across motions 0.03\u20138.0\"/hr. Field-size limit: each SPHEREx cutout covers 6.56' (394\"); a 500 AU distant planet shifts ~800\" (~130 px) in 6 months via parallax, exceeding one cutout unless cross-tile links are run.",
+    "b8_summary": {
+      "pass_mark": "published as measured",
+      "rwaur_d3_depth_ab_90": 13.5,
+      "rwaur_d6_depth_ab_90": 13.5,
+      "rwaur_d3_depth_ab_50": 17.25,
+      "rwaur_d6_depth_ab_50": 15.91,
+      "w1925_d3_depth_ab_90": 14.5,
+      "w1925_d6_depth_ab_90": 15.5,
+      "w1925_d3_depth_ab_50": 15.05,
+      "w1925_d6_depth_ab_50": 15.94,
+      "crowding_loss_mag_d6": -2.0,
+      "passed": true
+    },
+    "b9_smdet1": {
+      "regime": "Galactic plane ~19.0 AB mag (arXiv:2608.00046 SMDET-1 depth ceiling)",
+      "expected": "not detected",
+      "detected": false,
+      "measured_19mag_recovery_rate": 0.0,
+      "w1925_d6_depth_ab_90": 15.5,
+      "w1925_d6_depth_ab_50": 15.94,
+      "w1925_uncatalogued_high_snr_movers": 0,
+      "passed": true,
+      "note": "Published as measured: 19.0 AB mag recovery 0.0% vs W1925 D6 50%/90% depth 15.94/15.5 AB mag"
+    }
+  },
+  "cases_summary": {
+    "total_cases": 182
+  },
+  "stated_limits": [
+    "Depth: SPHEREx four-survey goal is 17.8-18.8 AB mag (3.8-5.0 um, Bock et al. 2025). Our single-visit field recovery (B8, D6 90%/50%) reaches 13.50 AB mag/15.91 AB mag in RW Aurigae and 15.50 AB mag/15.94 AB mag in W1925.",
+    "Crowding: Near the Galactic plane crowding costs ~1.5 mag (SMDET-1, arXiv:2608.00046). In D3 (1.6-2.4 um) RW Aur 50% reaches 17.25 AB mag vs 15.05 AB mag in W1925, while RW Aur's bright central YSO halo caps field-wide D6 90% completeness at 13.50 AB mag, with blended ks<0.3 photometry scatter 19.24% (B2).",
+    "Measured 90% mover recovery reaches 13.50 AB mag (50%: 15.91 AB mag) off-plane (RW Aur D6) and 15.50 AB mag (50%: 15.94 AB mag) in the Galactic plane (W1925 D6); D3 50% crowding loss 2.2 mag (17.25 AB mag off-plane vs 15.05 AB mag Galactic plane) across motions 0.03\u20138.0\"/hr. Field-size limit: each SPHEREx cutout covers 6.56' (394\"); a 500 AU distant planet shifts ~800\" (~130 px) in 6 months via parallax, exceeding one cutout unless cross-tile links are run.",
+    "Classification honesty: Class percentages are calibrated on our test fields only. An estimate is a follow-up suggestion and confirms nothing; disagreement between E1 templates and E2 trees caps confidence at <= 50% (Unclassified).",
+    "Molecule readings: Values report measured feature strengths and integrated optical depths (integrated_tau). Composition percentages are shown only for ice species relative to water ice.",
+    "Input ladder (B13): Molecule readings alone give 0.6737 gold test accuracy; full 12 band features reach 0.8, 102 bands 0.8105, and Gaia parallax coverage is 0.5515."
+  ],
+  "credits": [
+    {
+      "name": "NASA SPHEREx DR1 & Quick Release (QR2, QR3) Spectral Images via IRSA",
+      "detail": "IRSA SPHEREx Archive; QR2 DOI 10.26131/IRSA652; QR3 DOI 10.26131/IRSA662; Bock et al. 2025; Akeson et al. 2025 (arXiv:2511.15823)."
+    },
+    {
+      "name": "Crowding & Sub-stellar Literature",
+      "detail": "SMDET-1 crowding depth benchmark (arXiv:2608.00046); Faherty et al. 2018; WISE 0855 & Barnard's Star reference astrometry."
+    },
+    {
+      "name": "Reference Surveys & Archives",
+      "detail": "Gaia DR3 (ESA), 2MASS (IPAC/UMass), CatWISE2020, unWISE, Spitzer GLIMPSE, SIMBAD, VizieR (CDS), AAVSO VSX, IMCCE SkyBoT."
+    },
+    {
+      "name": "Inspiration & Viewer Heritage",
+      "detail": "WiseView (byw.tools), Backyard Worlds: Planet 9, The Rogue Worlds Project, Aladin Lite (CDS), IRSA forced photometry."
+    },
+    {
+      "name": "ML Training Libraries & Python Stack (Permissive Licences)",
+      "detail": "SPIFF library (DOI 10.5281/zenodo.19051216, CC BY 4.0, Gagne et al. 2026); UltracoolSheet (DOI 10.5281/zenodo.4169084, CC BY 4.0); SPLICES (DOI 10.26131/IRSA554, Ashby et al. 2023); DESI DR1 (CC BY 4.0); Euclid; Astropy, photutils, scikit-learn, SciPy, NumPy, FastAPI."
+    }
+  ],
+  "next_items": [
+    "C1-C5 Community review workflow, pinned sky evidence notes & Brier forecast scoring (Tier C).",
+    "C6-C7 All-sky spectral cube slices & interactive Draw-the-Light spectral sketch matching.",
+    "C8-C13 Saved search recipes, GCNS 3D neighbourhood map & Indonesian localization."
+  ]
+}

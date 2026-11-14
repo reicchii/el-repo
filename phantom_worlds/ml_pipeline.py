@@ -1,5 +1,9 @@
 import math
+import os
 import re
+
+# Guard loky/joblib before importing scikit-learn so Windows worker pools avoid subprocess core probing hangs.
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
 
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor, IsolationForest

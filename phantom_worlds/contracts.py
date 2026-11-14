@@ -836,7 +836,29 @@ def build_static_fallback_js(
     fields_payload = {}
     search_records = []
     coverage_notes = []
+    from phantom_worlds.tier_b_proof import (
+        DEFAULT_PROOF_DIR,
+        build_field_cases_queue,
+        generate_proof_report,
+    )
+
     slice2_bench = evaluate_slice2_benchmarks(contracts_dir=contracts_dir)
+    pre_report_path = os.path.join(DEFAULT_PROOF_DIR, "report.json")
+    if os.path.abspath(contracts_dir) == os.path.abspath(DEFAULT_CONTRACTS_DIR) and os.path.exists(pre_report_path):
+        with open(pre_report_path, "r", encoding="utf-8") as pf:
+            proof_report = json.load(pf)
+    else:
+        proof_report = generate_proof_report(
+            contracts_dir=contracts_dir,
+            csv_dir=csv_dir,
+            include_skybot=False,
+            write_searched=False,
+        )
+    field_cases = build_field_cases_queue(
+        contracts_dir=contracts_dir,
+        csv_dir=csv_dir,
+        pred_check=proof_report.get("b7_retro"),
+    )
     ml_bundle = get_cached_ml_pipeline()
     eval_rpt = ml_bundle.get("evaluation_report") or {}
     model_card_meta = {
@@ -920,6 +942,10 @@ def build_static_fallback_js(
             "slice2_benchmarks": slice2_bench,
         },
         "proof_summary": build_proof_summary(contracts_dir=contracts_dir, csv_dir=csv_dir),
+        "prediction_check": proof_report.get("b7_retro"),
+        "searched_depth": proof_report.get("searched_depth"),
+        "field_cases": field_cases,
+        "proof_report": proof_report,
     }
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as out_f:

@@ -58,6 +58,13 @@ from phantom_worlds.tier_b_detectors import (
     get_source_identity_v2,
     search_field_sources,
 )
+from phantom_worlds.tier_b_proof import (
+    DEFAULT_PROOF_DIR,
+    build_field_cases_queue,
+    compute_searched_depth,
+    generate_proof_report,
+    run_prediction_check,
+)
 from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings, train_from_real_dataset
 from phantom_worlds.real_ml_data import (
     DEFAULT_ML_DIR,
@@ -1008,6 +1015,107 @@ def create_app(
                 contracts_dir=contracts_dir,
             ),
         )
+
+    def _load_or_build_proof_report():
+        def _loader():
+            pre_path = os.path.join(DEFAULT_PROOF_DIR, "report.json")
+            if os.path.abspath(contracts_dir) == os.path.abspath(DEFAULT_CONTRACTS_DIR) and os.path.exists(pre_path):
+                with open(pre_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            return generate_proof_report(
+                contracts_dir=contracts_dir,
+                csv_dir=csv_dir,
+                include_skybot=False,
+                write_searched=False,
+            )
+
+        return _cached(
+            json_cache,
+            ("proof_report_v2", os.path.abspath(contracts_dir), os.path.abspath(csv_dir)),
+            _loader,
+        )
+
+    @app.get("/api/proof/report")
+    def get_proof_report():
+        return _load_or_build_proof_report()
+
+    @app.get("/api/field/prediction_check")
+    def get_field_prediction_check():
+        def _loader():
+            pre_path = os.path.join(DEFAULT_PROOF_DIR, "report.json")
+            if os.path.abspath(contracts_dir) == os.path.abspath(DEFAULT_CONTRACTS_DIR) and os.path.exists(pre_path):
+                with open(pre_path, "r", encoding="utf-8") as f:
+                    rep = json.load(f)
+                if isinstance(rep.get("b7_retro"), dict):
+                    return rep["b7_retro"]
+            return run_prediction_check(contracts_dir=contracts_dir, csv_dir=csv_dir)
+
+        return _cached(
+            json_cache,
+            ("field_prediction_check", os.path.abspath(contracts_dir), os.path.abspath(csv_dir)),
+            _loader,
+        )
+
+    @app.get("/api/field/searched")
+    def get_field_searched(
+        field_id: Literal["all", "w1925", "rwaur"] = "all",
+    ):
+        def _loader():
+            pre_path = os.path.join(DEFAULT_PROOF_DIR, "report.json")
+            if os.path.abspath(contracts_dir) == os.path.abspath(DEFAULT_CONTRACTS_DIR) and os.path.exists(pre_path):
+                with open(pre_path, "r", encoding="utf-8") as f:
+                    rep = json.load(f)
+                if isinstance(rep.get("searched_depth"), dict) and rep["searched_depth"].get("fields"):
+                    return rep["searched_depth"]
+            return compute_searched_depth(contracts_dir=contracts_dir, write_files=False)
+
+        payload = _cached(
+            json_cache,
+            ("field_searched_depth", os.path.abspath(contracts_dir)),
+            _loader,
+        )
+        if field_id == "all":
+            return payload
+        fields = payload.get("fields") or {}
+        if field_id not in fields:
+            raise HTTPException(status_code=404, detail=f"Searched depth for field {field_id} has not been built.")
+        return {
+            **payload,
+            "field_id": field_id,
+            "fields": {field_id: fields[field_id]},
+        }
+
+    @app.get("/api/field/cases")
+    def get_field_cases(
+        field_id: Literal["all", "w1925", "rwaur"] = "all",
+        state_filter: Literal["all", "Open signal", "Explained by catalogue", "Artefact"] = Query(
+            default="all", alias="state"
+        ),
+    ):
+        pred_check = get_field_prediction_check()
+        queue = _cached(
+            json_cache,
+            ("field_cases_queue", os.path.abspath(contracts_dir), os.path.abspath(csv_dir)),
+            lambda: build_field_cases_queue(
+                contracts_dir=contracts_dir,
+                csv_dir=csv_dir,
+                pred_check=pred_check,
+            ),
+        )
+        rows = queue.get("cases") or []
+        if field_id != "all":
+            rows = [r for r in rows if r.get("field_id") == field_id]
+        if state_filter != "all":
+            rows = [r for r in rows if r.get("state") == state_filter]
+        return {
+            "generated_at": queue.get("generated_at"),
+            "field_id": field_id,
+            "state": state_filter,
+            "total_cases": len(rows),
+            "cases": rows,
+            "retro_movers": queue.get("retro_movers") or [],
+            "b7_summary": queue.get("b7_summary") or {},
+        }
 
     @app.get("/api/field/{field_id}/source/{source_id}")
     def get_field_source_identity(field_id: str, source_id: str):

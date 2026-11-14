@@ -65,6 +65,15 @@
     searchResults: [],
     selectedFieldSource: null,
     lastModelCard: null,
+    showSearchedDepth: false,
+    searchedDepth: null,
+    fieldCases: [],
+    retroMovers: [],
+    b7Summary: null,
+    caseStateFilter: "all",
+    selectedCaseId: null,
+    caseOverrides: {},
+    proofReportV2: null,
     timerId: null,
     querySeq: 0,
     abortController: null,
@@ -130,6 +139,24 @@
     modelCardModal: document.getElementById("model-card-modal"),
     modelCardCloseBtn: document.getElementById("model-card-close-btn"),
     modelCardBody: document.getElementById("model-card-body"),
+    searchedDepthToggle: document.getElementById("searched-depth-layer-toggle"),
+    casesCountBadge: document.getElementById("cases-count-badge"),
+    casesList: document.getElementById("signals-cases-list"),
+    caseDetailBox: document.getElementById("case-detail-box"),
+    caseDetailTitle: document.getElementById("case-detail-title"),
+    caseDetailSummary: document.getElementById("case-detail-summary"),
+    caseDetailChecks: document.getElementById("case-detail-checks"),
+    caseFlagArtefactBtn: document.getElementById("case-flag-artefact-btn"),
+    caseMarkExplainedBtn: document.getElementById("case-mark-explained-btn"),
+    caseReopenBtn: document.getElementById("case-reopen-btn"),
+    retroSummary: document.getElementById("retro-prediction-summary"),
+    retroList: document.getElementById("retro-prediction-list"),
+    proofV2Extra: document.getElementById("proof-v2-extra"),
+    proofReportCardWrap: document.getElementById("proof-report-card-wrap"),
+    recoveryCurveCanvas: document.getElementById("recovery-curve-canvas"),
+    proofLadderWrap: document.getElementById("proof-ladder-wrap"),
+    proofPlanetXStatement: document.getElementById("proof-planet-x-statement"),
+    proofCreditsWrap: document.getElementById("proof-credits-wrap"),
   };
 
   function setStatus(text, isError) {
@@ -945,7 +972,58 @@
       ctx.fillStyle = "#f59e0b";
       ctx.font = "11px monospace";
       ctx.fillText(sel.source_id || "Selected", Math.min(w - 110, cx + 10), Math.max(14, cy - 10));
+
+      const matchedCase = (state.fieldCases || []).find((c) => c.field_id === state.activeFieldId && c.source_id === sel.source_id);
+      const pred = matchedCase && matchedCase.prediction;
+      if (pred && isFiniteNumber(pred.predicted_ra_deg) && isFiniteNumber(pred.predicted_dec_deg) && isFiniteNumber(pred.stay_ra_deg) && isFiniteNumber(pred.stay_dec_deg)) {
+        const scaleAs = ((fd.fov_arcmin || 6.56) * 60.0) / Math.max(nx, 1);
+        const cosd = Math.max(Math.cos((pred.stay_dec_deg * Math.PI) / 180.0), 1e-6);
+        const dRaAs = shortestRaDeltaDeg(pred.predicted_ra_deg, pred.stay_ra_deg) * cosd * 3600.0;
+        const dDecAs = (pred.predicted_dec_deg - pred.stay_dec_deg) * 3600.0;
+        const pxPred = cx - (dRaAs / scaleAs) * sx;
+        const pyPred = cy - (dDecAs / scaleAs) * sy;
+        ctx.strokeStyle = "#38bdf8";
+        if (typeof ctx.setLineDash === "function") ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(pxPred, pyPred);
+        ctx.stroke();
+        if (typeof ctx.setLineDash === "function") ctx.setLineDash([]);
+        ctx.strokeRect(pxPred - 5, pyPred - 5, 10, 10);
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillText("Locked +183d", Math.min(w - 115, pxPred + 8), Math.max(26, pyPred + 4));
+      }
     }
+
+    if (state.showSearchedDepth) {
+      const sdRoot = state.searchedDepth || ((globalThis.__PHANTOM_STATIC_FALLBACK__ || {}).searched_depth);
+      const sf = sdRoot && sdRoot.fields && sdRoot.fields[state.activeFieldId];
+      const detS = sf && sf.detectors && sf.detectors[fd.detector];
+      const d90 = detS && isFiniteNumber(detS.depth_ab_90) ? `${detS.depth_ab_90.toFixed(2)} AB` : "below 90%";
+      const d50 = detS && isFiniteNumber(detS.depth_ab_50) ? `${detS.depth_ab_50.toFixed(2)} AB` : "n/a";
+      const sFrac = detS && isFiniteNumber(detS.searchable_area_frac) ? `${Math.round(detS.searchable_area_frac * 100)}%` : "n/a";
+      // Subtle unsearched edge vignette (detector edges excluded from injection grid)
+      const edgePx = Math.round((6.0 / Math.max(nx, 1)) * w);
+      ctx.fillStyle = "rgba(15, 23, 42, 0.35)";
+      ctx.fillRect(0, 0, w, edgePx);
+      ctx.fillRect(0, h - edgePx, w, edgePx);
+      ctx.fillRect(0, edgePx, edgePx, h - 2 * edgePx);
+      ctx.fillRect(w - edgePx, edgePx, edgePx, h - 2 * edgePx);
+
+      ctx.fillStyle = "rgba(11, 16, 27, 0.88)";
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1;
+      ctx.fillRect(10, 10, 290, 68);
+      ctx.strokeRect(10, 10, 290, 68);
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "11px monospace";
+      ctx.fillText(`Searched depth (${fd.detector}) · area ${sFrac}`, 18, 28);
+      ctx.fillStyle = "#38bdf8";
+      ctx.fillText(`90%: ${d90} | 50%: ${d50}`, 18, 46);
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillText(`FOV ${(sf && sf.fov_arcmin) || 6.56}' · 500 AU shift ~800" (~130 px)`, 18, 64);
+    }
+
     const layerLabel = state.fieldLayer === "model" ? "Model" : state.fieldLayer === "residual" ? "Residual" : "Image";
     if (els.visitLabel) {
       els.visitLabel.textContent = `${fd.field_name} · ${fd.detector} · ${layerLabel} (stretch [${lo.toFixed(2)}, ${hi.toFixed(2)}])`;
@@ -1791,23 +1869,326 @@
     }
   }
 
+  function renderRecoveryCurveCanvas(searched) {
+    const canvas = els.recoveryCurveCanvas;
+    if (!canvas || typeof canvas.getContext !== "function") return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const w = canvas.width || 520;
+    const h = canvas.height || 170;
+    ctx.fillStyle = "#04070e";
+    ctx.fillRect(0, 0, w, h);
+
+    const fields = (searched && searched.fields) || {};
+    const series = [
+      { key: "rwaur", det: "D6", label: "RW Aur D6", color: "#38bdf8" },
+      { key: "w1925", det: "D6", label: "W1925 D6", color: "#f59e0b" },
+      { key: "rwaur", det: "D3", label: "RW Aur D3", color: "#4ade80" },
+      { key: "w1925", det: "D3", label: "W1925 D3", color: "#f472b6" },
+    ].map((s) => {
+      const mcs = (((fields[s.key] || {}).detectors || {})[s.det] || {}).motion_curves || [];
+      return { ...s, curve: (mcs[0] && mcs[0].curve) || [] };
+    }).filter((s) => s.curve.length > 0);
+
+    if (!series.length) {
+      ctx.fillStyle = "#93a4bd";
+      ctx.font = "12px system-ui, sans-serif";
+      ctx.fillText("Searched depth injection curves not loaded.", 16, 36);
+      return;
+    }
+
+    const padL = 42, padR = 14, padT = 18, padB = 26;
+    const cw = w - padL - padR;
+    const ch = h - padT - padB;
+    const mags = series.flatMap((s) => s.curve.map((r) => Number(r.ab_mag))).filter(isFiniteNumber);
+    const minM = Math.min(...mags);
+    const maxM = Math.max(...mags, minM + 1.0);
+
+    ctx.strokeStyle = "#26344d";
+    ctx.strokeRect(padL, padT, cw, ch);
+    [0.9, 0.5].forEach((ref) => {
+      const yy = padT + (1.0 - ref) * ch;
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
+      if (typeof ctx.setLineDash === "function") ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(padL, yy);
+      ctx.lineTo(w - padR, yy);
+      ctx.stroke();
+    });
+    if (typeof ctx.setLineDash === "function") ctx.setLineDash([]);
+
+    series.forEach((s, idx) => {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      s.curve.forEach((pt, i) => {
+        const px = padL + ((Number(pt.ab_mag) - minM) / (maxM - minM)) * cw;
+        const py = padT + (1.0 - Math.max(0, Math.min(1, Number(pt.recovery_rate) || 0))) * ch;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      ctx.fillStyle = s.color;
+      ctx.font = "10px monospace";
+      ctx.fillText(s.label, padL + 8 + idx * 92, padT - 4);
+    });
+
+    ctx.fillStyle = "#93a4bd";
+    ctx.font = "10px monospace";
+    ctx.fillText(`${minM.toFixed(1)} AB`, padL, h - 8);
+    ctx.fillText(`${maxM.toFixed(1)} AB`, w - padR - 46, h - 8);
+    ctx.fillText("90%", 8, padT + 0.1 * ch + 4);
+    ctx.fillText("50%", 8, padT + 0.5 * ch + 4);
+  }
+
+  function renderProofV2(report) {
+    if (!els.proofV2Extra) return;
+    if (!report || !Array.isArray(report.tier_b_tests)) {
+      els.proofV2Extra.hidden = true;
+      return;
+    }
+    state.proofReportV2 = report;
+    els.proofV2Extra.hidden = false;
+
+    if (els.proofReportCardWrap) {
+      els.proofReportCardWrap.replaceChildren();
+      const cnt = report.counts || {};
+      const hdr = document.createElement("p");
+      hdr.className = "proof-meta";
+      hdr.textContent = `Tier B Report Card (${report.pipeline_version || "pipeline"}): ${cnt.pass ?? 0} PASS · ${cnt.fail ?? 0} FAIL · ${cnt.not_measured ?? 0} NOT_MEASURED (honest thresholds, unedited)`;
+      const wrap = document.createElement("div");
+      wrap.className = "table-scroll";
+      const tbl = document.createElement("table");
+      const thead = document.createElement("thead");
+      const hr = document.createElement("tr");
+      ["Test", "Target", "Pass mark", "Measured", "Status"].forEach((col) => {
+        const th = document.createElement("th");
+        th.textContent = col;
+        hr.appendChild(th);
+      });
+      thead.appendChild(hr);
+      const tb = document.createElement("tbody");
+      report.tier_b_tests.forEach((b) => {
+        const tr = document.createElement("tr");
+        [b.test_id, b.target, b.pass_mark, b.measured, b.status].forEach((val, idx) => {
+          const td = document.createElement("td");
+          if (idx === 4) {
+            const cls = val === "PASS" ? "pill-ok" : val === "FAIL" ? "pill-fail" : "pill-warn";
+            td.appendChild(makePill(String(val || "NOT_MEASURED"), cls));
+          } else {
+            td.textContent = String(val ?? "");
+          }
+          tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      });
+      tbl.append(thead, tb);
+      wrap.appendChild(tbl);
+      els.proofReportCardWrap.append(hdr, wrap);
+    }
+
+    if (report.searched_depth) {
+      state.searchedDepth = report.searched_depth;
+      renderRecoveryCurveCanvas(report.searched_depth);
+      if (els.proofPlanetXStatement) {
+        els.proofPlanetXStatement.textContent = report.searched_depth.planet_x_statement || "";
+      }
+    }
+
+    if (els.proofLadderWrap) {
+      const b13 = report.tier_b_tests.find((t) => t.test_id === "B13");
+      const lims = Array.isArray(report.stated_limits) ? report.stated_limits : [];
+      els.proofLadderWrap.textContent = (b13 ? `Input Ladder (B13): ${b13.measured}. ` : "") + (lims[0] || "");
+    }
+
+    if (els.proofCreditsWrap) {
+      const creds = Array.isArray(report.credits) ? report.credits : [];
+      const fmtCreds = creds
+        .map((c) => (typeof c === "string" ? c : c && c.name ? `${c.name}: ${c.detail || ""}` : ""))
+        .filter(Boolean);
+      els.proofCreditsWrap.textContent = fmtCreds.length ? `Credits: ${fmtCreds.join(" | ")}` : "";
+    }
+  }
+
+  function effectiveCaseState(c) {
+    return (c && state.caseOverrides[c.case_id]) || (c && c.state) || "Open signal";
+  }
+
+  function renderRetroMovers() {
+    if (!els.retroSummary && !els.retroList) return;
+    const sum = state.b7Summary || {};
+    const movers = state.retroMovers || [];
+    if (els.retroSummary) {
+      els.retroSummary.textContent = movers.length
+        ? `Prediction check (B7 held-out epoch): ${sum.held ?? 0}/${sum.movers_tested ?? movers.length} held (clean unsaturated ${sum.clean_unsaturated_held || "n/a"})`
+        : "Prediction check: no movers available.";
+    }
+    if (els.retroList) {
+      els.retroList.replaceChildren();
+      movers.forEach((m) => {
+        const row = document.createElement("div");
+        row.className = "retro-row";
+        const left = document.createElement("span");
+        left.textContent = `${m.target_name || m.target_id} (${m.detector || "det"})`;
+        const right = document.createElement("span");
+        const predTxt = isFiniteNumber(m.pred_sep_arcsec) ? `pred ${m.pred_sep_arcsec}"` : "n/a";
+        const stayTxt = isFiniteNumber(m.stay_sep_arcsec) ? `stay ${m.stay_sep_arcsec}"` : "n/a";
+        right.textContent = `${m.status} · ${predTxt} vs 2s=${m.sigma_arcsec ? (m.sigma_arcsec * 2).toFixed(2) : "n/a"}" · ${stayTxt}`;
+        row.append(left, right);
+        els.retroList.appendChild(row);
+      });
+    }
+  }
+
+  function renderSelectedCaseDetail(c) {
+    if (!els.caseDetailBox) return;
+    if (!c) {
+      els.caseDetailBox.hidden = true;
+      return;
+    }
+    els.caseDetailBox.hidden = false;
+    const dispState = effectiveCaseState(c);
+    if (els.caseDetailTitle) {
+      els.caseDetailTitle.textContent = `${c.case_id} · ${dispState} · Estimate: ${c.top_class || "Unclassified"}`;
+    }
+    if (els.caseDetailSummary) {
+      const predTxt = c.prediction
+        ? ` | Locked next-epoch prediction: (${c.prediction.predicted_ra_deg}, ${c.prediction.predicted_dec_deg})`
+        : "";
+      els.caseDetailSummary.textContent = `${c.kind} in ${c.field_id} · P(real)=${c.p_real} · S/N ${c.snr} · ${c.reason || ""}${predTxt}`;
+    }
+    if (els.caseDetailChecks) {
+      els.caseDetailChecks.replaceChildren();
+      (c.machine_checks || []).forEach((chk) => {
+        const res = String(chk.result || "");
+        const tone = res === "PASS" || res === "OK" || res === "PENDING" ? "pill-ok" : res === "FAIL" ? "pill-fail" : "pill-warn";
+        els.caseDetailChecks.appendChild(makePill(`${chk.name}: ${res}`, tone));
+      });
+    }
+  }
+
+  function renderSignalsCases() {
+    renderRetroMovers();
+    if (!els.casesList) return;
+    const allCases = state.fieldCases || [];
+    const filtered = state.caseStateFilter === "all"
+      ? allCases
+      : allCases.filter((c) => effectiveCaseState(c) === state.caseStateFilter);
+    if (els.casesCountBadge) {
+      els.casesCountBadge.textContent = `${filtered.length} of ${allCases.length} cases`;
+    }
+    els.casesList.replaceChildren();
+    if (!filtered.length) {
+      const empty = document.createElement("div");
+      empty.className = "proof-meta";
+      empty.textContent = "No cases match the selected disposition.";
+      els.casesList.appendChild(empty);
+      renderSelectedCaseDetail(null);
+      return;
+    }
+    let selectedObj = filtered.find((c) => c.case_id === state.selectedCaseId) || filtered[0];
+    state.selectedCaseId = selectedObj.case_id;
+    filtered.slice(0, 60).forEach((c) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "search-result-row";
+      btn.classList.toggle("active", c.case_id === state.selectedCaseId);
+      const left = document.createElement("span");
+      left.textContent = `${c.source_id} · ${effectiveCaseState(c)} · ${c.kind}`;
+      const right = document.createElement("span");
+      right.textContent = `P=${c.p_real} · S/N ${c.snr}`;
+      btn.append(left, right);
+      btn.addEventListener("click", () => selectCaseRecord(c));
+      els.casesList.appendChild(btn);
+    });
+    renderSelectedCaseDetail(selectedObj);
+  }
+
+  async function selectCaseRecord(c) {
+    if (!c) return;
+    state.selectedCaseId = c.case_id;
+    renderSignalsCases();
+    const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__ || {};
+    const fsRows = (bundle.field_search && Array.isArray(bundle.field_search.results)) ? bundle.field_search.results : [];
+    const hit = (state.searchResults || []).find((r) => r.field_id === c.field_id && r.source_id === c.source_id)
+      || fsRows.find((r) => r.field_id === c.field_id && r.source_id === c.source_id)
+      || c;
+    await selectFieldSearchResult(hit);
+  }
+
+  async function loadFieldCases() {
+    let payload = null;
+    try {
+      const resp = await fetch("/api/field/cases");
+      if (resp && resp.ok) payload = await resp.json();
+    } catch (_err) {
+      // Offline static fallback
+    }
+    if (!payload) {
+      const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
+      payload = bundle && bundle.field_cases;
+    }
+    if (payload) {
+      state.fieldCases = Array.isArray(payload.cases) ? payload.cases : [];
+      state.retroMovers = Array.isArray(payload.retro_movers) ? payload.retro_movers : [];
+      state.b7Summary = payload.b7_summary || null;
+      renderSignalsCases();
+    }
+  }
+
+  async function loadSearchedDepth() {
+    let payload = null;
+    try {
+      const resp = await fetch("/api/field/searched");
+      if (resp && resp.ok) payload = await resp.json();
+    } catch (_err) {
+      // Offline static fallback
+    }
+    if (!payload) {
+      const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
+      payload = bundle && bundle.searched_depth;
+    }
+    if (payload) {
+      state.searchedDepth = payload;
+      renderRecoveryCurveCanvas(payload);
+      if (els.proofPlanetXStatement && !els.proofPlanetXStatement.textContent) {
+        els.proofPlanetXStatement.textContent = payload.planet_x_statement || "";
+      }
+      if (state.activeFieldId) drawSkyCanvas();
+    }
+  }
+
   async function loadProofSummary() {
     if (!els.proofBody) return;
+    let summaryDone = false;
     try {
       const resp = await fetch("/api/proof/summary");
       if (resp && resp.ok) {
         renderProofSummary(await resp.json());
-        return;
+        summaryDone = true;
       }
     } catch (_err) {
       // Fallback to static bundle when API is switched off
     }
     const bundle = globalThis.__PHANTOM_STATIC_FALLBACK__;
-    if (bundle && bundle.proof_summary) {
-      renderProofSummary(bundle.proof_summary);
-    } else {
-      renderProofSummary(null);
+    if (!summaryDone) {
+      if (bundle && bundle.proof_summary) {
+        renderProofSummary(bundle.proof_summary);
+      } else {
+        renderProofSummary(null);
+      }
     }
+    let repV2 = null;
+    try {
+      const resp2 = await fetch("/api/proof/report");
+      if (resp2 && resp2.ok) repV2 = await resp2.json();
+    } catch (_err) {
+      // Offline fallback
+    }
+    if (!repV2 && bundle && bundle.proof_report) {
+      repV2 = bundle.proof_report;
+    }
+    if (repV2) renderProofV2(repV2);
   }
 
   async function loadSsoObject(rawName) {
@@ -1942,6 +2323,10 @@
       const kMap = { water_ice: "H2O_ice_3_05", co2_ice: "CO2_4_26", co_ice: "CO_4_67" };
       const m = feats[kMap[catId]] || {};
       return m.status === "MEASURED" && isFiniteNumber(m.integrated_tau) && m.integrated_tau >= 0.1;
+    }
+    if (catId === "methane_dip") {
+      const ch4 = ((mols && mols.features) || {}).CH4_3_3 || {};
+      return ch4.status === "MEASURED" && isFiniteNumber(ch4.feature_pct) && ch4.feature_pct >= 30.0 && isFiniteNumber(ch4.snr_sigma) && ch4.snr_sigma >= 3.0;
     }
     return true;
   }
@@ -2769,10 +3154,51 @@
     });
   }
 
+  if (els.searchedDepthToggle) {
+    els.searchedDepthToggle.addEventListener("change", () => {
+      state.showSearchedDepth = Boolean(els.searchedDepthToggle.checked);
+      if (!state.searchedDepth) loadSearchedDepth();
+      if (state.showSearchedDepth && !state.activeFieldId) {
+        loadFieldScene("w1925");
+      } else {
+        drawSkyCanvas();
+      }
+    });
+  }
+
+  document.querySelectorAll(".case-state-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.caseStateFilter = btn.dataset.state || "all";
+      document.querySelectorAll(".case-state-btn").forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      renderSignalsCases();
+    });
+  });
+
+  function applyLocalCaseTriage(newState) {
+    if (!state.selectedCaseId) return;
+    state.caseOverrides[state.selectedCaseId] = newState;
+    renderSignalsCases();
+  }
+  if (els.caseFlagArtefactBtn) {
+    els.caseFlagArtefactBtn.addEventListener("click", () => applyLocalCaseTriage("Artefact"));
+  }
+  if (els.caseMarkExplainedBtn) {
+    els.caseMarkExplainedBtn.addEventListener("click", () => applyLocalCaseTriage("Explained by catalogue"));
+  }
+  if (els.caseReopenBtn) {
+    els.caseReopenBtn.addEventListener("click", () => applyLocalCaseTriage("Open signal"));
+  }
+
   applyUrlParams();
   setActiveButtons();
   startLoop();
   if (els.proofBody) loadProofSummary();
   loadFieldSearch();
+  loadFieldCases();
+  loadSearchedDepth();
   loadSkyQuery();
 })();
