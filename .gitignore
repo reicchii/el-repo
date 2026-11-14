@@ -1,23 +1,61 @@
-# secrets
+# Python bytecode & packaging
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Test, lint & coverage caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE, temporary runners & OS junk
+.vscode/
+.idea/
+tempCodeRunnerFile*
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Browser / Playwright scratch artifacts & local logs
+.playwright-mcp/
+playwright-report/
+test-results/
+*.log
+
+# Local secrets & environment files
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.p12
+.netrc
 
-# personal agent files
+# Downloaded raw FITS tiles, mass curated target dumps & stale archives (keep CSV metadata & Hour-0 contracts tracked)
+*.fits
+*.fits.fz
+*.fits.gz
+*.zip
+data/
+phantom_worlds_dataset_kit/scripts/data_ml_curated/
+
+# Personal agent files & Node/JS/Ruff build/cache output
 CLAUDE.local.md
 .claude/settings.local.json
 AGENTS.override.md
-
-# data cache, downloads, logs
-data/
-*.fits
-*.fits.gz
-*.zip
-
-# build output
 node_modules/
 web/dist/
-.venv/
-__pycache__/
-.pytest_cache/
 .ruff_cache/

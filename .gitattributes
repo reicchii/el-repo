@@ -2,6 +2,7 @@
 * text=auto eol=lf
 
 # Binary data products. Never diffed or merged as text.
+*.bin binary
 *.fits binary
 *.fits.gz binary
 *.parquet binary
