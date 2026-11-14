@@ -1,6 +1,6 @@
 # Phantom Worlds
 
-[![CI](https://github.com/CapCayHambar/el-repo/actions/workflows/ci.yml/badge.svg)](https://github.com/CapCayHambar/el-repo/actions/workflows/ci.yml)
+[![CI](https://github.com/reicchii/el-repo/actions/workflows/ci.yml/badge.svg)](https://github.com/reicchii/el-repo/actions/workflows/ci.yml)
 
 Phantom Worlds lets anyone search NASA's SPHEREx sky by the light each object gives off in 102 infrared bands, to find moving and unexplained objects that no catalogue lists yet, including in the crowded Milky Way.
 
@@ -21,10 +21,11 @@ Entry for NASA Space Apps Challenge 2026, challenge 12, "Planet X and SPHEREx". 
 | Claim a task, open a pull request, review, merge | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | Understand the product, the methods and every decision | [`docs/PROJECT-CONTEXT.md`](docs/PROJECT-CONTEXT.md) |
 | See the build plan and what is done | [`docs/PROJECT-CONTEXT.md`](docs/PROJECT-CONTEXT.md) section 12 |
-| See who is working on what | the [open pull requests](https://github.com/CapCayHambar/el-repo/pulls) |
+| See who is working on what | the [open pull requests](https://github.com/reicchii/el-repo/pulls) |
 | Find a link, file name, table or query | [`docs/DATA-LINKS.md`](docs/DATA-LINKS.md) |
 | See new decisions and what waits on outside action | [`docs/decisions.md`](docs/decisions.md) |
 | Create your Claude Code cloud environment | [`docs/cloud-environment.md`](docs/cloud-environment.md) |
+| Read the v2 prototype specs, architecture & ML design | [`phantom-worlds-product-v2.md`](phantom-worlds-product-v2.md), [`system_specifications.md`](system_specifications.md), [`technical_architecture.md`](technical_architecture.md), [`architecture_decision_records.md`](architecture_decision_records.md), [`phantom-worlds-ml-research.md`](phantom-worlds-ml-research.md) |
 
 ## What we are building
 
@@ -36,9 +37,33 @@ Entry for NASA Space Apps Challenge 2026, challenge 12, "Planet X and SPHEREx". 
 
 The tool gives readings and estimates. People decide what an object is.
 
+## Running the current prototype locally (`phantom_worlds` & `phantom_worlds_dataset_kit`)
+
+Install pinned Python 3.13+ dependencies and verify the contract + ML + downloader suite:
+
+```bash
+pip install -r requirements.lock
+python -m phantom_worlds.contracts
+python -m pytest phantom_worlds_dataset_kit/tests -v
+```
+
+Start the interactive FastAPI + static viewer server:
+
+```bash
+python -m uvicorn phantom_worlds.api:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+Download real SPHEREx SIA + Gaia DR3 benchmark tables (5 targets) or build and resume the 1,500-target curated ML catalog (`curated_ml_targets.csv`):
+
+```bash
+python phantom_worlds_dataset_kit/scripts/download_real_spherex_gaia.py --all-targets
+python phantom_worlds_dataset_kit/scripts/build_ml_catalog.py
+python phantom_worlds_dataset_kit/scripts/download_real_spherex_gaia.py --targets-csv phantom_worlds_dataset_kit/scripts/curated_ml_targets.csv --out-dir phantom_worlds_dataset_kit/scripts/data_ml_curated --workers 4 --datasets gaia,sia
+```
+
 ## Repository layout
 
-Folders marked with a task ID do not exist yet. That task creates them.
+Folders marked with a task ID (`T01-E`, `T01-M`, `T01-W`, `T02-E`) describe the shared lane structure alongside the working local prototype (`phantom_worlds/` and `phantom_worlds_dataset_kit/`).
 
 ```
 README.md          this page
@@ -56,6 +81,11 @@ docs/              PROJECT-CONTEXT.md   the product, decisions, methods, build p
 prompts/           prompts that start sessions, tasks and reviews
 scripts/           bootstrap.sh, check-network.sh, check-docs.py, hosts.txt
 
+phantom_worlds/              Working FastAPI prototype, Hour-0 contract loader, and E1/E2 ML pipeline
+phantom_worlds_dataset_kit/  Hour-0 synthetic binary fixtures, curated catalog builder, real downloader & pytest tests
+requirements.txt             Direct Python dependencies
+requirements.lock            Exact pinned versions and hashes
+
 contracts/         JSON Schemas for data products, OpenAPI for the API, URL contract   (T02-E)
 engine/            Python package `phantom`: archive access, cutouts, stacks,
                    photometry, spectra, features, detectors, checks, predictions, CLI   (T01-E)
@@ -68,7 +98,6 @@ data/              local cache and downloads, git-ignored
 
 .github/           CI, labels, pull request and issue templates
 .devcontainer/     Codespaces and VS Code dev container
-.claude/ .codex/   settings for Claude Code and Codex
 ```
 
 ## Lanes

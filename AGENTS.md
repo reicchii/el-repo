@@ -59,6 +59,8 @@ api/         FastAPI app. Imports `phantom`. No science code of its own
 web/         Vite + React + TypeScript single-page app
 proof/       one script that produces every number on the Proof panel
 data/        local cache and downloads, git-ignored
+phantom_worlds/              Current local FastAPI + Hour-0 contract + E1/E2 ML prototype package
+phantom_worlds_dataset_kit/  Hour-0 synthetic fixtures, real archive downloader, catalog builder & pytest suite
 .github/workflows/   CI, deploy, weekly update
 .devcontainer/       Codespaces and VS Code dev container
 ```
@@ -99,6 +101,7 @@ Commands that work today:
 bash scripts/bootstrap.sh                       # checks the tools, installs packages from the lockfiles
 bash scripts/check-network.sh                   # shows which archive hosts this machine reaches
 python3 scripts/check-docs.py                   # relative links in the docs resolve
+python -m pytest phantom_worlds_dataset_kit/tests -v
 ```
 
 CI runs on every pull request from `.github/workflows/ci.yml`. Lanes extend that file and do not add a second CI workflow. A new host goes into `scripts/hosts.txt` in the pull request that first calls it.
@@ -107,7 +110,7 @@ CI runs on every pull request from `.github/workflows/ci.yml`. Lanes extend that
 
 1. The acceptance check in the build plan passes, and its output is pasted in the pull request.
 2. Lint and tests pass in the lane.
-3. Every string added to the interface matches the language. Every number has a unit and an origin label.
+3. No unverified archive detail or fabricated data was introduced.
 4. Loading, empty, partial and error states exist for anything that fetches.
 5. No new dependency without a one-line reason and its licence in the pull request.
 6. The build plan checkbox is ticked and the AI log has its line.
@@ -156,3 +159,30 @@ Full list: `docs/DATA-LINKS.md`.
 - Files: https://irsa.ipac.caltech.edu/ibe/data/spherex/
 - Moving Object Search Tool API: https://irsa.ipac.caltech.edu/applications/MOST/MOSTProgramInterface.html
 - WiseView: http://byw.tools/wiseview
+
+## 12. Current Prototype Guardrails (`phantom_worlds` & `phantom_worlds_dataset_kit`)
+
+### Runtime & Dependencies
+- Target Python runtime is Python 3.13+ (`python`, via system Python or a project virtual environment).
+- Keep `requirements.txt` (direct dependencies) and `requirements.lock` (exact `==` pins) synchronized.
+- Confirm permissive open-source licences before importing any external package: PyPI metadata for `spxquery` lacks an explicit license, so do not vendor it; only `TabPFN` v2 weights qualify under Apache-2.0 with attribution (later versions carry non-commercial terms).
+
+### Hour-0 Data Contracts & Binary Format
+- `pack.bin` is uncompressed little-endian `uint16` `[visit, detector, y, x]` scaled via `flux = raw * flux_scale + flux_zero` with `invalid_u16` reserved for missing samples. Never reintroduce lossy/uncalibrated raw ints without bitmask handling.
+- `mask.bin` is an uncompressed `uint8` bitmask (`IRSA_REJECTED=1`, `OVERFLOW_SATURATED=2`, `EDGE_MASKED=4`). `decode_calibrated_pack` must convert invalid/flagged samples to `NaN`.
+- `cases.json` (`cases` array) and `csv_tables/ml_cases_output.csv` must match row-for-row and column-for-column (`product_tier`, `anomaly_class`, etc.), with top-level `data_origin: "synthetic_mock_fixture"` in `cases.json` and `cutout_origin: "synthetic_hour0_mock_cutout"` in all 5 target `manifest.json` files until replaced by real trained model outputs and S3 WCS FITS cutouts. `sources.json` derives from `csv_tables/` (including all 25 rows of `gaia_dr3_wise0855_patch.csv`); always run `python -m phantom_worlds.contracts` (`sync_hour0_contracts`) instead of duplicating JSON/CSV edits by hand.
+
+### Scientific & Product Truth Guardrails
+- Always distinguish J2000 catalog coordinates from 2026+ observation/prediction epochs by explicitly propagating `pmra` / `pmdec` (critical for high-PM benchmarks like WISE 0855).
+- Enforce molecule refusal rules in `phantom_worlds/ml_pipeline.py`: refuse optical-depth/column-density measurements when `is_variable=True`, `blend_share > 0.3`, or `< 3` bands cover a feature, and always report the reason.
+- Enforce Tier A/B Truth Rule #4 (`phantom-worlds-product-v2.md`): frame WISE 0855 and W1925/RW Aurigae test benchmarks accurately as benchmark recovery, unlisted variable, or catalogue label mismatch checks — never fabricate blind discovery claims, never fabricate `p_real` or confidence scores, and cap classification confidence at `<= 0.50` (`Unclassified`) when `E1` templates and `E2` trees disagree.
+
+### Downloader Security (`download_real_spherex_gaia.py`)
+- Only allow HTTPS requests to the explicit IRSA/AWS host allowlist (`irsa.ipac.caltech.edu`, `nasa-irsa-spherex.s3.us-east-1.amazonaws.com`), validate coordinates/radii cleanly, validate S3 `cloud_access` buckets/keys before Range GETs, and enforce `os.path.commonpath` checks on all output paths.
+
+### Verification
+- After code, contract, or documentation edits, run:
+  ```bash
+  python -m pytest phantom_worlds_dataset_kit/tests -v
+  ```
+- Report only observed test counts, commands, and file paths.
