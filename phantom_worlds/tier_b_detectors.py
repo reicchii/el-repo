@@ -57,9 +57,21 @@ SEARCH_CATEGORY_FILTERS = [
 _IMCCE_SKYBOT_URL = "https://ssp.imcce.fr/webservices/skybot/api/conesearch.php"
 
 _CACHE_LOCK = threading.Lock()
+_ML_BUILD_LOCK = threading.Lock()
+_M1_BUILD_LOCK = threading.Lock()
+_FIELD_BUILD_LOCKS = {}
 _TRAINED_PIPE_CACHE = {}
 _M1_CACHE = {}
 _FIELD_ANALYSIS_CACHE = {}
+
+
+def _get_field_build_lock(cache_key):
+    with _CACHE_LOCK:
+        lock = _FIELD_BUILD_LOCKS.get(cache_key)
+        if lock is None:
+            lock = threading.Lock()
+            _FIELD_BUILD_LOCKS[cache_key] = lock
+        return lock
 
 
 def get_cached_ml_pipeline(dataset_path=None):
@@ -69,6 +81,11 @@ def get_cached_ml_pipeline(dataset_path=None):
         cached = _TRAINED_PIPE_CACHE.get(d_path)
         if cached is not None:
             return cached
+    with _ML_BUILD_LOCK:
+        with _CACHE_LOCK:
+            cached = _TRAINED_PIPE_CACHE.get(d_path)
+            if cached is not None:
+                return cached
         dataset = load_real_training_dataset(d_path)
         fit_res = train_from_real_dataset(dataset, build_balanced_e1_templates, max_per_class=6, random_state=42)
         eval_report_path = os.path.join(os.path.dirname(d_path), "evaluation_report.json")
@@ -82,7 +99,8 @@ def get_cached_ml_pipeline(dataset_path=None):
             "evaluation_report": eval_report,
             "model_version": eval_report.get("model_version", "spherex-dr1-e1e2-v2"),
         }
-        _TRAINED_PIPE_CACHE[d_path] = out
+        with _CACHE_LOCK:
+            _TRAINED_PIPE_CACHE[d_path] = out
         return out
 
 
@@ -402,9 +420,25 @@ def _build_m1_feature_vector(
 def train_and_calibrate_m1_classifier(contracts_dir=DEFAULT_CONTRACTS_DIR, force_rebuild=False, random_state=42):
     """Train M1 real-or-artefact RF classifier on real cutouts + injected PSFs vs glitches/halos/ghosts (B6 <=1% FPR)."""
     key = os.path.abspath(contracts_dir)
-    with _CACHE_LOCK:
-        if not force_rebuild and key in _M1_CACHE:
-            return _M1_CACHE[key]
+    if not force_rebuild:
+        with _CACHE_LOCK:
+            cached = _M1_CACHE.get(key)
+            if cached is not None:
+                return cached
+    with _M1_BUILD_LOCK:
+        if not force_rebuild:
+            with _CACHE_LOCK:
+                cached = _M1_CACHE.get(key)
+                if cached is not None:
+                    return cached
+        out = _train_and_calibrate_m1_uncached(contracts_dir=contracts_dir, random_state=random_state)
+        with _CACHE_LOCK:
+            _M1_CACHE[key] = out
+        return out
+
+
+def _train_and_calibrate_m1_uncached(contracts_dir=DEFAULT_CONTRACTS_DIR, random_state=42):
+    """Fit and spatially calibrate the M1 real-or-artefact RF classifier without cache locking."""
 
     rng = np.random.default_rng(random_state)
     feats, labels, regions = [], [], []
@@ -582,8 +616,6 @@ def train_and_calibrate_m1_classifier(contracts_dir=DEFAULT_CONTRACTS_DIR, force
             "status": "NOT_MEASURED",
             "model_version": "m1-rf-tierb-v1",
         }
-        with _CACHE_LOCK:
-            _M1_CACHE[key] = out
         return out
     # Strict spatial left/right split so threshold calibration & recall never leak validation samples
     tr_idx = np.flatnonzero(reg_arr == "left")
@@ -630,8 +662,6 @@ def train_and_calibrate_m1_classifier(contracts_dir=DEFAULT_CONTRACTS_DIR, force
         "n_val_neg": int(va_neg.size),
         "model_version": "m1-rf-tierb-v1",
     }
-    with _CACHE_LOCK:
-        _M1_CACHE[key] = out
     return out
 
 
@@ -834,8 +864,27 @@ def analyze_field_candidates(field_id, contracts_dir=DEFAULT_CONTRACTS_DIR, incl
     """Run T44 detectors, T45b machine/crosstalk checks, M1 p_real, and T45 Identity v2 for one field."""
     cache_key = (os.path.abspath(contracts_dir), field_id, bool(include_skybot))
     with _CACHE_LOCK:
-        if cache_key in _FIELD_ANALYSIS_CACHE:
-            return _FIELD_ANALYSIS_CACHE[cache_key]
+        cached = _FIELD_ANALYSIS_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
+    field_lock = _get_field_build_lock(cache_key)
+    with field_lock:
+        with _CACHE_LOCK:
+            cached = _FIELD_ANALYSIS_CACHE.get(cache_key)
+            if cached is not None:
+                return cached
+        result = _analyze_field_candidates_uncached(
+            field_id=field_id,
+            contracts_dir=contracts_dir,
+            include_skybot=include_skybot,
+        )
+        with _CACHE_LOCK:
+            _FIELD_ANALYSIS_CACHE[cache_key] = result
+        return result
+
+
+def _analyze_field_candidates_uncached(field_id, contracts_dir=DEFAULT_CONTRACTS_DIR, include_skybot=False):
+    """Compute T44 detectors, T45b machine/crosstalk checks, M1 p_real, and Identity v2 for one field."""
 
     ml_bundle = get_cached_ml_pipeline()
     pipe = ml_bundle["pipeline"]
@@ -1087,8 +1136,6 @@ def analyze_field_candidates(field_id, contracts_dir=DEFAULT_CONTRACTS_DIR, incl
         "skybot_matches": skybot_rows,
         "records": records,
     }
-    with _CACHE_LOCK:
-        _FIELD_ANALYSIS_CACHE[cache_key] = result
     return result
 
 

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from contextlib import asynccontextmanager
 import csv
 import json
 import math
@@ -55,8 +56,10 @@ from phantom_worlds.tier_b_detectors import (
     SEARCH_CATEGORY_FILTERS,
     analyze_field_candidates,
     evaluate_slice2_benchmarks,
+    get_cached_ml_pipeline,
     get_source_identity_v2,
     search_field_sources,
+    train_and_calibrate_m1_classifier,
 )
 from phantom_worlds.tier_b_proof import (
     DEFAULT_PROOF_DIR,
@@ -65,11 +68,9 @@ from phantom_worlds.tier_b_proof import (
     generate_proof_report,
     run_prediction_check,
 )
-from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings, train_from_real_dataset
+from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings
 from phantom_worlds.real_ml_data import (
     DEFAULT_ML_DIR,
-    build_balanced_e1_templates,
-    load_real_training_dataset,
     resample_spectrum_to_grid,
 )
 
@@ -211,9 +212,8 @@ class SpectrumAnalyzeRequest(BaseModel):
 
 def _build_default_discovery_pipeline(spectra_ref, dataset_npz_path=None):
     if dataset_npz_path and os.path.exists(dataset_npz_path):
-        dataset = load_real_training_dataset(dataset_npz_path)
-        fit_res = train_from_real_dataset(dataset, build_balanced_e1_templates, max_per_class=6, random_state=42)
-        return fit_res["pipeline"], "real_spherex_dr1_spiff_trained"
+        ml_bundle = get_cached_ml_pipeline(dataset_npz_path)
+        return ml_bundle["pipeline"], "real_spherex_dr1_spiff_trained"
 
     wl = np.asarray(spectra_ref["wavelength_um"], dtype=np.float64)
     bw = np.asarray(spectra_ref["bandwidth_um"], dtype=np.float64)
@@ -553,7 +553,6 @@ def create_app(
         if dataset_npz_path is _UNSET_DATASET
         else dataset_npz_path
     )
-    app = FastAPI(title="Phantom Worlds API", version="1.0.0-hour0")
     embed_security_headers = (
         _build_embed_csp_headers(embed_frame_ancestors)
         if embed_frame_ancestors is not None or os.environ.get("PHANTOM_EMBED_FRAME_ANCESTORS", "").strip()
@@ -578,8 +577,6 @@ def create_app(
     live_cache = OrderedDict()
     live_inflight = {}
     sso_cache = OrderedDict()
-    app.state.search_cache = search_cache
-    app.state.source_detail_cache = source_detail_cache
 
     def _cached(store, key, loader, max_entries=None):
         with cache_lock:
@@ -616,6 +613,42 @@ def create_app(
                 with cache_lock:
                     json_cache["ml_pipeline"] = cached
             return cached
+
+    prewarm_stop = threading.Event()
+
+    @asynccontextmanager
+    async def _lifespan(_app):
+        if (
+            os.environ.get("PHANTOM_DISABLE_PREWARM", "").strip() != "1"
+            and os.path.exists(os.path.join(contracts_dir, "fields", "w1925", "scene.json"))
+        ):
+            def _prewarm_worker():
+                try:
+                    if resolved_dataset_npz and os.path.exists(resolved_dataset_npz):
+                        _get_ml_pipeline()
+                    if prewarm_stop.is_set():
+                        return
+                    train_and_calibrate_m1_classifier(contracts_dir=contracts_dir)
+                    if prewarm_stop.is_set():
+                        return
+                    search_field_sources(contracts_dir=contracts_dir)
+                except Exception:
+                    pass
+
+            threading.Thread(
+                target=_prewarm_worker,
+                name="phantom-prewarm",
+                daemon=True,
+            ).start()
+        try:
+            yield
+        finally:
+            prewarm_stop.set()
+
+    app = FastAPI(title="Phantom Worlds API", version="1.0.0-hour0", lifespan=_lifespan)
+    app.state.search_cache = search_cache
+    app.state.source_detail_cache = source_detail_cache
+    app.state.prewarm_stop = prewarm_stop
 
     def _query_live_cached(live_ra, live_dec, radius_deg):
         cache_key = (round(live_ra, 4), round(live_dec, 4), round(radius_deg, 4))

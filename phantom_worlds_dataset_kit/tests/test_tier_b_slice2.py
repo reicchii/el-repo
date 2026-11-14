@@ -357,3 +357,52 @@ vm.runInNewContext(viewerSrc, sandbox);
         )
         self.assertEqual(proc.returncode, 0, f"Node T51/T52 UI failed:\nSTDOUT: {proc.stdout}\nSTDERR: {proc.stderr}")
         self.assertIn("T51_T52_OFFLINE_OK", proc.stdout)
+
+    def test_ml_pipeline_single_fit_shared_and_lifespan_prewarm(self):
+        import concurrent.futures
+        import os
+        import threading
+        from unittest.mock import patch
+        from fastapi.testclient import TestClient
+        from phantom_worlds import api as api_mod
+        from phantom_worlds import tier_b_detectors
+        from phantom_worlds.contracts import load_spectra_table
+
+        spectra_ref = load_spectra_table(api_mod.DEFAULT_CSV_DIR)
+        cached_bundle = tier_b_detectors.get_cached_ml_pipeline(api_mod.DEFAULT_REAL_DATASET_NPZ)
+        api_pipe, api_origin = api_mod._build_default_discovery_pipeline(
+            spectra_ref,
+            dataset_npz_path=api_mod.DEFAULT_REAL_DATASET_NPZ,
+        )
+        self.assertEqual(api_origin, "real_spherex_dr1_spiff_trained")
+        self.assertIs(api_pipe, cached_bundle["pipeline"])
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(lambda _: tier_b_detectors.analyze_field_candidates("rwaur"), range(4)))
+        self.assertTrue(all(r is results[0] for r in results))
+
+        orig_thread = threading.Thread
+        started_names = []
+
+        class RecordingThread:
+            def __init__(self, *args, **kwargs):
+                started_names.append(kwargs.get("name"))
+                self._inner = orig_thread(*args, **kwargs)
+
+            def start(self):
+                self._inner.start()
+
+        with patch.dict(os.environ, {"PHANTOM_DISABLE_PREWARM": "1"}), patch.object(api_mod.threading, "Thread", RecordingThread):
+            with TestClient(api_mod.create_app()) as client_no_warm:
+                self.assertEqual(client_no_warm.get("/health").status_code, 200)
+                self.assertFalse(client_no_warm.app.state.prewarm_stop.is_set())
+            self.assertTrue(client_no_warm.app.state.prewarm_stop.is_set())
+        self.assertNotIn("phantom-prewarm", started_names)
+
+        started_names.clear()
+        env_no_disable = {k: v for k, v in os.environ.items() if k != "PHANTOM_DISABLE_PREWARM"}
+        with patch.dict(os.environ, env_no_disable, clear=True), patch.object(api_mod.threading, "Thread", RecordingThread):
+            with TestClient(api_mod.create_app()) as client_warm:
+                self.assertEqual(client_warm.get("/health").status_code, 200)
+            self.assertTrue(client_warm.app.state.prewarm_stop.is_set())
+        self.assertIn("phantom-prewarm", started_names)
