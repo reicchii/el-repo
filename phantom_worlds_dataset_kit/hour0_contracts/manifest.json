@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0.0-hour0",
+  "target_id": "TGT-02",
+  "target_name": "WISE 0855 (W0855-0714)",
+  "cutout_origin": "synthetic_hour0_mock_cutout",
+  "center_ra_deg": 133.736027,
+  "center_dec_deg": -7.240236,
+  "center_epoch": "2026.0",
+  "target_j2000_ra_deg": 133.795129,
+  "target_j2000_dec_deg": -7.245147,
+  "fov_arcmin": 6.56,
+  "cutout_size_px": [
+    64,
+    64
+  ],
+  "pixel_scale_arcsec": 6.15,
+  "gaia_alignment_rms_arcsec": 0.42,
+  "searched_depth_mag_d6": 19.8,
+  "visits": [
+    {
+      "visit_id": "V1",
+      "epoch_iso": "2025-11-04T08:14:22Z",
+      "mjd": 60983.3433,
+      "detectors_present": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ]
+    },
+    {
+      "visit_id": "V2",
+      "epoch_iso": "2026-05-08T19:42:10Z",
+      "mjd": 61168.8209,
+      "detectors_present": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ]
+    },
+    {
+      "visit_id": "V3",
+      "epoch_iso": "2026-11-02T11:05:49Z",
+      "mjd": 61346.4624,
+      "detectors_present": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6"
+      ]
+    }
+  ],
+  "pack_binary_layout": {
+    "file": "pack.bin",
+    "dtype": "uint16",
+    "endianness": "little",
+    "compression": "none",
+    "shape": [
+      3,
+      6,
+      64,
+      64
+    ],
+    "axes_order": [
+      "visit",
+      "detector",
+      "y",
+      "x"
+    ],
+    "byte_length": 147456,
+    "flux_unit": "relative_flux",
+    "flux_scale": 0.01,
+    "flux_zero": -10.0,
+    "invalid_u16": 65535
+  },
+  "quality_mask_layout": {
+    "file": "mask.bin",
+    "dtype": "uint8",
+    "compression": "none",
+    "shape": [
+      3,
+      6,
+      64,
+      64
+    ],
+    "axes_order": [
+      "visit",
+      "detector",
+      "y",
+      "x"
+    ],
+    "byte_length": 73728,
+    "flag_bits": {
+      "OK": 0,
+      "IRSA_REJECTED": 1,
+      "OVERFLOW_SATURATED": 2,
+      "EDGE_MASKED": 4
+    }
+  }
+}
