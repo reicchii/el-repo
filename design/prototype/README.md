@@ -1,5 +1,7 @@
 # Phantom Worlds: UI prototype
 
+The interface design has moved to a fresh start from [`../DESIGN-BRIEF.md`](../DESIGN-BRIEF.md). The owner judged the look of this prototype not good enough, so treat it as an experiment. Its scripts in `py/` remain useful: they make real SPHEREx images and data for any new design.
+
 The interface for the whole product, built as one page so the team can see, test and change it before the engine, the API and the models exist. Open [`phantom-worlds.html`](phantom-worlds.html) in a browser, or view the published copy at https://claude.ai/artifact/XYhEy7thRQMip1pWQLTQUR.
 
 The Web lane builds the real app in `web/` from this design. The prototype is a reference and a placeholder. It is not the product code.
