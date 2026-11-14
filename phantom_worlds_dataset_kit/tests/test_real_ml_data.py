@@ -372,6 +372,66 @@ class RealMLDataTests(unittest.TestCase):
             self.assertEqual(loaded_rep["model_version"], "spherex-dr1-e1e2-v1")
             self.assertTrue(os.path.exists(os.path.join(out_dir, "model_card.md")))
 
+    def test_narrow_instrument_gaps_do_not_leak_s3_vs_spiff_classes(self):
+        from phantom_worlds.contracts import load_spectra_table
+        from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline
+
+        ref = load_spectra_table()
+        wl = np.asarray(ref["wavelength_um"], dtype=np.float64)
+        bw = np.asarray(ref["bandwidth_um"], dtype=np.float64)
+        base_map = {
+            "Star": np.array([float(r["Barnards_Star_uJy"]) for r in ref["rows"]], dtype=np.float64),
+            "Ultracool dwarf": np.array([float(r["Eps_Indi_B_uJy"]) for r in ref["rows"]], dtype=np.float64),
+            "Young star with ice or dust": np.array([float(r["RW_Aurigae_uJy"]) for r in ref["rows"]], dtype=np.float64),
+            "Evolved giant star": np.array([float(r["R_Draconis_uJy"]) for r in ref["rows"]], dtype=np.float64),
+        }
+        rng = np.random.default_rng(7)
+        X_rows, y_rows = [], []
+        for cls, base in base_map.items():
+            for _ in range(16):
+                row = np.maximum(base * rng.uniform(0.85, 1.15) + rng.normal(0.0, 0.015 * np.maximum(base, 0.2)), 0.05)
+                if cls == "Ultracool dwarf":
+                    row[101] = np.nan  # SPIFF upper wavelength bound
+                else:
+                    row[50:52] = np.nan  # S3 cube blank planes
+                X_rows.append(row)
+                y_rows.append(cls)
+        pipe = SpectralDiscoveryPipeline(wl, bw, template_library=base_map, random_state=7)
+        pipe.fit(np.vstack(X_rows), np.array(y_rows))
+        # Clean 102-band Star must NOT be hijacked into Ultracool dwarf just because [50, 51] are finite.
+        pred_clean_star = pipe.predict_one(base_map["Star"], blend_share=0.02)
+        self.assertEqual(pred_clean_star["spectrum_alone"]["tree_class"], "Star")
+        self.assertEqual(pred_clean_star["spectrum_alone"]["top_class"], "Star")
+        # S3-gapped Ultracool dwarf must NOT be misrouted away from Ultracool dwarf.
+        gapped_bd = base_map["Ultracool dwarf"].copy()
+        gapped_bd[50:52] = np.nan
+        pred_gapped_bd = pipe.predict_one(gapped_bd, blend_share=0.05)
+        self.assertEqual(pred_gapped_bd["spectrum_alone"]["tree_class"], "Ultracool dwarf")
+
+    def test_sparse_e1_template_blocked_from_hijacking_and_high_chi2_probs_stay_informative(self):
+        from phantom_worlds.contracts import load_spectra_table
+        from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline
+
+        ref = load_spectra_table()
+        wl = np.asarray(ref["wavelength_um"], dtype=np.float64)
+        bw = np.asarray(ref["bandwidth_um"], dtype=np.float64)
+        star_sp = np.array([float(r["Barnards_Star_uJy"]) for r in ref["rows"]], dtype=np.float64)
+        giant_partial = star_sp.copy()
+        giant_partial[39:] = np.nan  # 39/102 sparse coverage matching saturated S3 cube rows
+        X = np.vstack([np.tile(star_sp, (6, 1)), np.tile(giant_partial, (2, 1)), np.tile(star_sp * 1.1, (6, 1))])
+        y = np.array(["Star"] * 6 + ["Evolved giant star"] * 8)
+        tmpls = build_balanced_e1_templates(X, y, max_per_class=3)
+        self.assertGreater(int(np.count_nonzero(np.isfinite(tmpls["Evolved giant star"][-1]))), 70)
+
+        pipe = SpectralDiscoveryPipeline(wl, bw, template_library={"Star": star_sp, "Evolved giant star": giant_partial})
+        self.assertTrue(math.isinf(pipe._reduced_chi2(pipe._normalize(star_sp), pipe._normalize(giant_partial))))
+
+        probs = pipe._template_probs("Star", {"Star": 150.0, "Evolved giant star": 450.0})
+        star_idx = pipe.classes_.index("Star")
+        giant_idx = pipe.classes_.index("Evolved giant star")
+        self.assertGreater(probs[star_idx], 0.99)
+        self.assertLess(probs[giant_idx], 0.01)
+
 
 if __name__ == "__main__":
     unittest.main()

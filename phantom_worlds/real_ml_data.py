@@ -1180,19 +1180,43 @@ def _color_slope_archetypes(rows, k=6):
     arr = np.asarray(rows, dtype=np.float64)
     if arr.ndim == 1 or len(arr) <= 1:
         return [_safe_normalized_nanmedian(arr)]
-    mid = max(1, arr.shape[1] // 2)
+    valid_counts = np.sum(np.isfinite(arr) & (arr > 0.0), axis=1)
+    min_good = max(3, int(0.75 * arr.shape[1]))
+    if np.any(valid_counts >= min_good):
+        arr = arr[valid_counts >= min_good]
+    elif np.max(valid_counts) > 0:
+        arr = arr[valid_counts == np.max(valid_counts)]
+    if len(arr) <= 1:
+        return [_safe_normalized_nanmedian(arr)]
+
+    q1 = max(1, arr.shape[1] // 4)
+    q3 = max(q1 + 1, (3 * arr.shape[1]) // 4)
     slopes = np.empty(len(arr), dtype=np.float64)
     for i, r in enumerate(arr):
-        b = r[:mid]
-        d = r[mid:]
+        b = r[:q1]
+        d = r[q3:]
         bf = b[np.isfinite(b) & (b > 0.0)]
         df = d[np.isfinite(d) & (d > 0.0)]
-        if len(bf) > 0 and len(df) > 0:
+        if len(bf) == 0:
+            bf = r[: arr.shape[1] // 2]
+            bf = bf[np.isfinite(bf) & (bf > 0.0)]
+        if len(df) > 0 and len(bf) > 0:
             slopes[i] = math.log(float(np.median(df))) - math.log(float(np.median(bf)))
         else:
             slopes[i] = 0.0
     order = np.argsort(slopes, kind="mergesort")
     n_bins = max(1, min(int(k), len(order)))
+    # Emphasize reddest/coldest tail archetypes (e.g., T/Y dwarfs) instead of merging extremes into large central chunks.
+    if n_bins >= 3 and len(order) >= n_bins * 3:
+        edges = [0] + [int(round(len(order) * (t ** 0.8))) for t in np.linspace(0.0, 1.0, n_bins + 1)[1:]]
+        chunks = []
+        for idx in range(n_bins):
+            lo = min(edges[idx], len(order) - (n_bins - idx))
+            hi = max(lo + 1, min(edges[idx + 1], len(order) - (n_bins - 1 - idx)))
+            if idx == n_bins - 1:
+                hi = len(order)
+            chunks.append(order[lo:hi])
+        return [_safe_normalized_nanmedian(arr[chunk]) for chunk in chunks if len(chunk) > 0]
     return [_safe_normalized_nanmedian(arr[chunk]) for chunk in np.array_split(order, n_bins) if len(chunk) > 0]
 
 
@@ -1204,10 +1228,14 @@ def build_balanced_e1_templates(X_train, y_train, hybrid_templates=None, max_per
     for cls in sorted(set(str(c) for c in y_arr.tolist())):
         cls_rows = X_arr[y_arr == cls]
         if cls == "Ultracool dwarf" and hybrid_templates is not None and len(hybrid_templates) > 0:
-            n_hyb = max(1, int(max_per_class) - 1) if len(cls_rows) > 0 else int(max_per_class)
-            variants = _color_slope_archetypes(hybrid_templates, k=n_hyb)
-            if len(cls_rows) > 0:
-                variants.append(_safe_normalized_nanmedian(cls_rows))
+            if len(cls_rows) > 0 and int(max_per_class) >= 2:
+                n_cls = int(max_per_class) // 2
+                n_hyb = int(max_per_class) - n_cls
+                variants = _color_slope_archetypes(cls_rows, k=n_cls) + _color_slope_archetypes(hybrid_templates, k=n_hyb)
+            elif len(cls_rows) > 0:
+                variants = [_safe_normalized_nanmedian(cls_rows)]
+            else:
+                variants = _color_slope_archetypes(hybrid_templates, k=int(max_per_class))
             templates[cls] = variants[:max_per_class]
         else:
             templates[cls] = _color_slope_archetypes(cls_rows, k=max_per_class)

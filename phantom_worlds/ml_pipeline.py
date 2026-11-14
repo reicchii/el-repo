@@ -198,7 +198,7 @@ def compute_molecule_readings(
     if err is not None:
         safe_err = np.where(valid, err, 0.0)
         rng = np.random.default_rng(rng_seed)
-        floor = np.maximum(0.25 * fl, np.finfo(np.float64).tiny)
+        floor = np.where(valid, np.maximum(0.25 * np.abs(fl), 1e-12), 1.0)
         for _ in range(int(n_draws)):
             raw = fl + rng.normal(0.0, safe_err)
             soft = fl * (0.25 + 0.25 * np.exp(np.clip((raw - 0.5 * fl) / floor, -50.0, 0.0)))
@@ -303,7 +303,45 @@ class SpectralDiscoveryPipeline:
         denom = float(np.mean(np.abs(arr[finite]))) if np.any(finite) else 1.0
         return arr / max(denom, 1e-6)
 
-    def _spectral_colors(self, flux):
+    def _bridge_narrow_log_gaps(self, log_fl, swl):
+        n = len(log_fl)
+        if n < 3 or len(swl) != n:
+            return log_fl
+        out = log_fl.copy()
+        finite = np.isfinite(out)
+        if np.count_nonzero(finite) < 2 or np.all(finite):
+            return out
+        i = 0
+        while i < n:
+            if finite[i]:
+                i += 1
+                continue
+            j = i
+            while j < n and not finite[j]:
+                j += 1
+            gap_len = j - i
+            if i > 0 and j < n and gap_len <= 3:
+                x0, x1 = float(swl[i - 1]), float(swl[j])
+                y0, y1 = float(out[i - 1]), float(out[j])
+                dx = x1 - x0
+                for p in range(i, j):
+                    t = (float(swl[p]) - x0) / dx if abs(dx) > 1e-9 else 0.5
+                    out[p] = y0 + t * (y1 - y0)
+            elif gap_len == 1 and n >= 10:
+                if i == 0 and finite[1] and finite[2]:
+                    dx = float(swl[2] - swl[1])
+                    slope = (float(out[2] - out[1]) / dx) if abs(dx) > 1e-9 else 0.0
+                    step = max(-0.5, min(0.5, slope * float(swl[0] - swl[1])))
+                    out[0] = float(out[1]) + step
+                elif j == n and finite[n - 2] and finite[n - 3]:
+                    dx = float(swl[n - 2] - swl[n - 3])
+                    slope = (float(out[n - 2] - out[n - 3]) / dx) if abs(dx) > 1e-9 else 0.0
+                    step = max(-0.5, min(0.5, slope * float(swl[n - 1] - swl[n - 2])))
+                    out[n - 1] = float(out[n - 2]) + step
+            i = j
+        return out
+
+    def _sorted_log_flux(self, flux):
         raw_arr = np.asarray(flux, dtype=np.float64)
         n = len(raw_arr)
         arr = raw_arr[self._wl_order] if len(self._wl_order) == n else raw_arr
@@ -312,18 +350,40 @@ class SpectralDiscoveryPipeline:
         pos = np.isfinite(arr) & (arr > 0)
         if np.any(pos):
             log_fl[pos] = np.log(arr[pos])
+        return self._bridge_narrow_log_gaps(log_fl, swl), swl
+
+    def _spectral_colors(self, flux):
+        log_fl, swl = self._sorted_log_flux(flux)
+        n = len(log_fl)
         k = max(1, min(12, n // 4))
         broad = log_fl[k:] - log_fl[: n - k]
         if n > 1:
             local_idx = np.linspace(0, n - 2, k, dtype=int)
             local = log_fl[local_idx + 1] - log_fl[local_idx]
+            finite = np.isfinite(log_fl)
             if k >= 4 and len(swl) == n:
-                cont_m = _in_windows(swl, CONTINUUM_WINDOWS) & np.isfinite(log_fl)
+                ref = float(np.median(log_fl[finite])) if np.any(finite) else np.nan
+                bands = ((0.75, 1.11), (1.11, 1.64), (1.64, 2.42), (2.42, 3.82), (3.82, 4.42), (4.42, 5.05))
+                bvals = np.full(len(bands), np.nan, dtype=np.float64)
+                for idx, (lo, hi) in enumerate(bands):
+                    hi_mask = (swl <= hi) if idx == len(bands) - 1 else (swl < hi)
+                    bm = (swl >= lo) & hi_mask & finite
+                    if np.any(bm):
+                        bvals[idx] = float(np.median(log_fl[bm]))
+                # Pack physical band levels + long-baseline slopes into local[:k-4] while keeping len == len(wl).
+                shape_feats = np.concatenate([
+                    bvals - ref if np.isfinite(ref) else np.full(len(bands), np.nan, dtype=np.float64),
+                    np.array([bvals[2] - bvals[0], bvals[5] - bvals[2]], dtype=np.float64),
+                ])
+                n_pack = min(k - 4, len(shape_feats))
+                if n_pack > 0 and np.any(np.isfinite(shape_feats[:n_pack])):
+                    local[:n_pack] = shape_feats[:n_pack]
+                cont_m = _in_windows(swl, CONTINUUM_WINDOWS) & finite
                 cont_ref = float(np.mean(log_fl[cont_m])) if np.any(cont_m) else (
-                    float(np.nanmean(log_fl)) if np.any(np.isfinite(log_fl)) else np.nan
+                    float(np.mean(log_fl[finite])) if np.any(finite) else np.nan
                 )
                 for idx_offset, (lo, hi) in enumerate(MOLECULE_WINDOWS.values()):
-                    wm = (swl >= lo) & (swl <= hi) & np.isfinite(log_fl)
+                    wm = (swl >= lo) & (swl <= hi) & finite
                     if np.any(wm) and np.isfinite(cont_ref):
                         local[k - 4 + idx_offset] = cont_ref - float(np.mean(log_fl[wm]))
         else:
@@ -331,28 +391,40 @@ class SpectralDiscoveryPipeline:
         return np.concatenate([broad, local])
 
     def _extract_features(self, X):
-        # E2 trees train on scale- and mask-invariant spectral colors alone (zero E1 leakage).
+        # E2 trees train on scale- and gap-invariant spectral colors + physical band slopes (zero E1 leakage).
         return np.vstack([self._spectral_colors(row) for row in X])
 
     @staticmethod
     def _reduced_chi2(norm_flux, tmpl, norm_err=None):
+        nf_finite = int(np.count_nonzero(np.isfinite(norm_flux)))
         valid = np.isfinite(norm_flux) & np.isfinite(tmpl)
-        if np.count_nonzero(valid) < 3:
+        n_valid = int(np.count_nonzero(valid))
+        if n_valid < 3:
+            return float("inf")
+        if nf_finite >= 20 and n_valid < int(0.55 * nf_finite):
             return float("inf")
         nf = norm_flux[valid]
         tp = tmpl[valid]
+        fallback_err = np.maximum(0.05 * np.abs(nf), 0.02)
         if norm_err is not None:
             ne = np.asarray(norm_err, dtype=np.float64)
-            if ne.shape == norm_flux.shape and np.all(np.isfinite(ne[valid])) and np.all(ne[valid] > 0):
-                err = np.maximum(ne[valid], 0.01)
-                w = 1.0 / (err ** 2)
-                scale = float(np.dot(w * nf, tp) / max(float(np.dot(w * tp, tp)), 1e-9))
+            if ne.shape == norm_flux.shape:
+                ne_valid = ne[valid]
+                good_e = np.isfinite(ne_valid) & (ne_valid > 0)
+                if np.any(good_e):
+                    err = np.where(good_e, np.maximum(ne_valid, 0.01), fallback_err)
+                    w = 1.0 / (err ** 2)
+                    scale = float(np.dot(w * nf, tp) / max(float(np.dot(w * tp, tp)), 1e-9))
+                else:
+                    err = fallback_err
+                    denom = float(np.dot(tp, tp))
+                    scale = float(np.dot(nf, tp) / max(denom, 1e-9))
             else:
-                err = np.maximum(0.05 * np.abs(nf), 0.02)
+                err = fallback_err
                 denom = float(np.dot(tp, tp))
                 scale = float(np.dot(nf, tp) / max(denom, 1e-9))
         else:
-            err = np.maximum(0.05 * np.abs(nf), 0.02)
+            err = fallback_err
             denom = float(np.dot(tp, tp))
             scale = float(np.dot(nf, tp) / max(denom, 1e-9))
         chi2_terms = ((nf - scale * tp) / err) ** 2
@@ -369,8 +441,22 @@ class SpectralDiscoveryPipeline:
         return best, scores
 
     def _template_probs(self, tmpl_class, chi2_map):
-        if chi2_map and all(c in chi2_map and np.isfinite(chi2_map[c]) for c in self.classes_):
-            raw = np.array([math.exp(-0.5 * min(float(chi2_map[c]), 100.0)) for c in self.classes_], dtype=np.float64)
+        finite_vals = (
+            [float(chi2_map[c]) for c in self.classes_ if c in chi2_map and math.isfinite(float(chi2_map[c]))]
+            if chi2_map
+            else []
+        )
+        if chi2_map and finite_vals:
+            best_val = min(finite_vals)
+            raw = np.array(
+                [
+                    math.exp(-0.5 * min(max(0.0, float(chi2_map[c]) - best_val), 100.0))
+                    if c in chi2_map and math.isfinite(float(chi2_map[c]))
+                    else 0.0
+                    for c in self.classes_
+                ],
+                dtype=np.float64,
+            )
         else:
             raw = np.array([1.0 if c == tmpl_class else 0.0 for c in self.classes_], dtype=np.float64)
         total = float(np.sum(raw))
@@ -380,10 +466,12 @@ class SpectralDiscoveryPipeline:
         probs = self.tree_model.predict_proba(feat_row.reshape(1, -1))[0]
         return {str(label): float(p) for label, p in zip(self.tree_model.classes_, probs)}
 
-    def _combined_meta_features(self, norm_rows, e2_probs_matrix):
-        e1_matrix = np.vstack(
-            [self._template_probs(*self._predict_template_class(row)) for row in norm_rows]
-        )
+    def _combined_meta_features(self, norm_rows, e2_probs_matrix, norm_errs=None):
+        e1_rows = []
+        for idx, row in enumerate(norm_rows):
+            nerr = norm_errs[idx] if norm_errs is not None else None
+            e1_rows.append(self._template_probs(*self._predict_template_class(row, norm_err=nerr)))
+        e1_matrix = np.vstack(e1_rows)
         return np.hstack([e1_matrix, e2_probs_matrix])
 
     def _apply_isotonic(self, raw_probs):
@@ -447,7 +535,7 @@ class SpectralDiscoveryPipeline:
         )
 
     def _augment_masked_training(self, X_subset, y_subset, weights_subset=None):
-        # Simulate missing SPHEREx detector blocks during E2 training so NaN bands route cleanly without affecting calibration splits.
+        # Simulate missing SPHEREx detector blocks and sensor gaps during E2 training without affecting calibration splits.
         n_bands = X_subset.shape[1]
         segs = min(5, max(1, n_bands // 2))
         block = max(1, n_bands // segs)
@@ -464,13 +552,31 @@ class SpectralDiscoveryPipeline:
                 y_parts.append(y_subset)
                 if weights_subset is not None:
                     w_parts.append(weights_subset)
+        if n_bands >= 16:
+            edge_mid_rows = X_subset.copy()
+            edge_mid_rows[:, :2] = np.nan
+            edge_mid_rows[:, -2:] = np.nan
+            mid = n_bands // 2
+            edge_mid_rows[:, max(0, mid - 2) : min(n_bands, mid + 2)] = np.nan
+            feat_parts.append(self._extract_features(edge_mid_rows))
+            y_parts.append(y_subset)
+            if weights_subset is not None:
+                w_parts.append(weights_subset)
         aug_w = np.concatenate(w_parts) if w_parts else None
         return np.vstack(feat_parts), np.concatenate(y_parts), aug_w
 
-    def fit(self, X_flux, y_labels, blend_shares=None, sky_tiles=None, label_grades=None):
+    def fit(self, X_flux, y_labels, blend_shares=None, sky_tiles=None, label_grades=None, X_err=None):
         X = np.asarray(X_flux, dtype=np.float64)
         y = np.asarray(y_labels)
-        normed = np.vstack([self._normalize(row) for row in X])
+        denoms = np.array(
+            [
+                max(float(np.mean(np.abs(row[np.isfinite(row)]))) if np.any(np.isfinite(row)) else 1.0, 1e-6)
+                for row in X
+            ],
+            dtype=np.float64,
+        )
+        normed = X / denoms[:, None]
+        norm_errs = (np.asarray(X_err, dtype=np.float64) / denoms[:, None]) if X_err is not None else None
         feats = self._extract_features(X)
         train_idx, iso_idx, conf_idx = self._split_fit_indices(y, sky_tiles=sky_tiles, label_grades=label_grades)
 
@@ -500,11 +606,13 @@ class SpectralDiscoveryPipeline:
             X[train_idx], y[train_idx], tr_weights
         )
         self.tree_model.fit(full_aug_f, full_aug_y, sample_weight=full_aug_w)
-        meta_train = self._combined_meta_features(normed[train_idx], oof_e2)
+        tr_nerr = norm_errs[train_idx] if norm_errs is not None else None
+        meta_train = self._combined_meta_features(normed[train_idx], oof_e2, norm_errs=tr_nerr)
         self.meta_combiner.fit(meta_train, y[train_idx], sample_weight=tr_weights)
 
         # Stage 2: fit one-vs-rest isotonic calibrators strictly on held-out iso_idx
-        iso_meta = self._combined_meta_features(normed[iso_idx], self.tree_model.predict_proba(feats[iso_idx]))
+        iso_nerr = norm_errs[iso_idx] if norm_errs is not None else None
+        iso_meta = self._combined_meta_features(normed[iso_idx], self.tree_model.predict_proba(feats[iso_idx]), norm_errs=iso_nerr)
         raw_iso_probs = self.meta_combiner.predict_proba(iso_meta)
         self.calibrators_ = {}
         for col, cls in enumerate(self.meta_combiner.classes_):
@@ -514,7 +622,8 @@ class SpectralDiscoveryPipeline:
         self.isotonic_size_ = len(iso_idx)
 
         # Stage 3: calibrate conformal quantile strictly on unseen held-out conf_idx
-        conf_meta = self._combined_meta_features(normed[conf_idx], self.tree_model.predict_proba(feats[conf_idx]))
+        conf_nerr = norm_errs[conf_idx] if norm_errs is not None else None
+        conf_meta = self._combined_meta_features(normed[conf_idx], self.tree_model.predict_proba(feats[conf_idx]), norm_errs=conf_nerr)
         cal_conf_probs = self._apply_isotonic(self.meta_combiner.predict_proba(conf_meta))
         class_to_col = {c: idx for idx, c in enumerate(self.meta_combiner.classes_)}
         nonconformity = [1.0 - float(cal_conf_probs[i, class_to_col[y[conf_idx][i]]]) for i in range(len(conf_idx))]
@@ -645,11 +754,12 @@ class SpectralDiscoveryPipeline:
             "novelty": novelty,
         }
 
-    def evaluate_release_gates(self, X_test, y_test, w2_mags=None, label_grades=None, blend_shares=None):
+    def evaluate_release_gates(self, X_test, y_test, w2_mags=None, label_grades=None, blend_shares=None, X_err=None):
         """Evaluate Gold-only test split and per-W2 brightness bins against ml-research.md §9 pass marks."""
         if not self.fitted_:
             raise RuntimeError("Pipeline must be fitted before calling evaluate_release_gates")
         X = np.asarray(X_test, dtype=np.float64)
+        X_err_arr = np.asarray(X_err, dtype=np.float64) if X_err is not None else None
         y = np.asarray(y_test)
         n_total = len(y)
         if label_grades is not None:
@@ -659,12 +769,17 @@ class SpectralDiscoveryPipeline:
         excluded_silver = int(np.count_nonzero(~gold_mask))
 
         X_gold = X[gold_mask]
+        err_gold = X_err_arr[gold_mask] if X_err_arr is not None else None
         y_gold = y[gold_mask]
         w2_gold = np.asarray(w2_mags, dtype=np.float64)[gold_mask] if w2_mags is not None else np.full(len(y_gold), 12.0)
         bshares = np.asarray(blend_shares, dtype=np.float64)[gold_mask] if blend_shares is not None else np.full(len(y_gold), 0.05)
 
         preds = [
-            self.predict_one(X_gold[i], blend_share=float(bshares[i]))["spectrum_alone"]
+            self.predict_one(
+                X_gold[i],
+                blend_share=float(bshares[i]),
+                flux_err=(err_gold[i] if err_gold is not None else None),
+            )["spectrum_alone"]
             for i in range(len(y_gold))
         ]
 
@@ -811,6 +926,7 @@ def train_from_real_dataset(dataset, build_templates_fn, max_per_class=6, random
     wl = np.asarray(dataset["wavelength_um"], dtype=np.float64)
     bw = np.asarray(dataset["bandwidth_um"], dtype=np.float64)
     X = np.asarray(dataset["X_flux_uJy"], dtype=np.float64)
+    X_err = np.asarray(dataset["X_err_uJy"], dtype=np.float64) if "X_err_uJy" in dataset else None
     y = np.asarray(dataset["y_class"])
     tiles = np.asarray(dataset["sky_tiles"])
     grades = np.asarray(dataset["label_grades"]) if "label_grades" in dataset else np.full(len(y), "gold")
@@ -852,6 +968,7 @@ def train_from_real_dataset(dataset, build_templates_fn, max_per_class=6, random
         blend_shares=blends[fit_mask],
         sky_tiles=tiles[fit_mask],
         label_grades=grades[fit_mask],
+        X_err=(X_err[fit_mask] if X_err is not None else None),
     )
     return {
         "pipeline": pipe,
@@ -884,7 +1001,7 @@ def evaluate_cross_extraction_ratio(our_spectra, reference_spectra, max_band_tol
     }
 
 
-def evaluate_fixed_targets(wavelengths, bandwidths, spectra_by_slug, pipeline):
+def evaluate_fixed_targets(wavelengths, bandwidths, spectra_by_slug, pipeline, errs_by_slug=None):
     """Verify the 5 fixed NASA benchmark targets against ml-research.md §8 expected readings."""
     target_configs = (
         ("Barnards_Star", False, 0.02, ("Star",)),
@@ -897,8 +1014,9 @@ def evaluate_fixed_targets(wavelengths, bandwidths, spectra_by_slug, pipeline):
     all_passed = True
     for slug, is_var, blend, allowed_classes in target_configs:
         fl = np.asarray(spectra_by_slug[slug], dtype=np.float64)
-        mol = compute_molecule_readings(wavelengths, bandwidths, fl, blend_share=blend, is_variable=is_var, rng_seed=0)
-        pred = pipeline.predict_one(fl, blend_share=blend, is_variable=is_var)
+        ferr = np.asarray(errs_by_slug[slug], dtype=np.float64) if (errs_by_slug is not None and slug in errs_by_slug) else None
+        mol = compute_molecule_readings(wavelengths, bandwidths, fl, flux_err=ferr, blend_share=blend, is_variable=is_var, rng_seed=0)
+        pred = pipeline.predict_one(fl, blend_share=blend, is_variable=is_var, flux_err=ferr)
         top_cls = pred["spectrum_alone"]["top_class"]
         mol_status = mol["status"]
         ch4_tau = (mol.get("features", {}).get("CH4_3_3", {}) or {}).get("integrated_tau")

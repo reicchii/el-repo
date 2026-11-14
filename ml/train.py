@@ -42,10 +42,17 @@ def _sanitize_json(obj):
     return obj
 
 
-def _evaluate_multiclass_subset(pipe, X_sub, y_sub, blends_sub):
+def _evaluate_multiclass_subset(pipe, X_sub, y_sub, blends_sub, err_sub=None):
     if len(y_sub) == 0:
         return {"count": 0, "overall_accuracy": 0.0, "e1_only_accuracy": 0.0, "e2_only_accuracy": 0.0, "agreement_rate": 0.0, "per_class": {}}
-    preds = [pipe.predict_one(X_sub[i], blend_share=float(blends_sub[i])) for i in range(len(y_sub))]
+    preds = [
+        pipe.predict_one(
+            X_sub[i],
+            blend_share=float(blends_sub[i]),
+            flux_err=(err_sub[i] if err_sub is not None else None),
+        )
+        for i in range(len(y_sub))
+    ]
     y_list = [str(v) for v in y_sub.tolist()]
     n = len(y_list)
     overall_acc = round(sum(preds[i]["spectrum_alone"]["top_class"] == y_list[i] for i in range(n)) / n, 4)
@@ -180,6 +187,7 @@ def run_training(
     wl = np.asarray(dataset["wavelength_um"], dtype=np.float64)
     bw = np.asarray(dataset["bandwidth_um"], dtype=np.float64)
     X = np.asarray(dataset["X_flux_uJy"], dtype=np.float64)
+    X_err = np.asarray(dataset["X_err_uJy"], dtype=np.float64) if "X_err_uJy" in dataset else None
     y = np.asarray(dataset["y_class"])
     grades = np.asarray(dataset["label_grades"])
     w2 = np.asarray(dataset["w2_mag_est"], dtype=np.float64)
@@ -204,6 +212,7 @@ def run_training(
         w2_mags=w2[te_gold_idx],
         label_grades=grades[te_gold_idx],
         blend_shares=blends[te_gold_idx],
+        X_err=(X_err[te_gold_idx] if X_err is not None else None),
     )
     _log(
         f"Gold release gate status={release_gates['release_status']} | "
@@ -213,7 +222,13 @@ def run_training(
         f"coverage={release_gates['high_snr_gold']['conformal_coverage']:.4f}"
     )
 
-    all_diag = _evaluate_multiclass_subset(pipe, X[te_all_idx], y[te_all_idx], blends[te_all_idx])
+    all_diag = _evaluate_multiclass_subset(
+        pipe,
+        X[te_all_idx],
+        y[te_all_idx],
+        blends[te_all_idx],
+        err_sub=(X_err[te_all_idx] if X_err is not None else None),
+    )
     _log(
         f"All-6-class held-out tiles ({all_diag['count']} spectra): "
         f"acc={all_diag['overall_accuracy']:.4f} e1={all_diag['e1_only_accuracy']:.4f} "
@@ -229,9 +244,17 @@ def run_training(
         str(slug): dataset["benchmark_flux_uJy"][i]
         for i, slug in enumerate(dataset["benchmark_slugs"].tolist())
     }
+    cube_errs = (
+        {
+            str(slug): dataset["benchmark_err_uJy"][i]
+            for i, slug in enumerate(dataset["benchmark_slugs"].tolist())
+        }
+        if "benchmark_err_uJy" in dataset
+        else None
+    )
     for slug in ("Barnards_Star", "Eps_Indi_B", "WISE_0855", "RW_Aurigae", "R_Draconis"):
         cube_bench.setdefault(slug, np.full(len(wl), np.nan, dtype=np.float64))
-    fixed_cube = evaluate_fixed_targets(wl, bw, cube_bench, pipe)
+    fixed_cube = evaluate_fixed_targets(wl, bw, cube_bench, pipe, errs_by_slug=cube_errs)
 
     ref_tbl = load_spectra_table()
     ref_wl = np.asarray(ref_tbl["wavelength_um"], dtype=np.float64)
