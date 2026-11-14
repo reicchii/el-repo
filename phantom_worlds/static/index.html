@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phantom Worlds — SPHEREx Sky Time-Series Viewer</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1 class="brand-title">Phantom Worlds</h1>
+      <p class="brand-sub">NASA SPHEREx 102-Band Time-Series Viewer &amp; Gaia DR3 Astrometric Baseline</p>
+    </div>
+    <span id="mode-badge" class="badge">Hour-0 Static Fallback Ready</span>
+  </header>
+
+  <main class="container">
+    <section class="query-panel" aria-label="Sky coordinate search">
+      <form id="sky-query-form" class="query-form">
+        <div class="field">
+          <label for="coord-input">Sky Coordinate (ICRS HMS/DMS, Decimal RA Dec, or Target Name)</label>
+          <input id="coord-input" name="coord" type="text" value="WISE 0855" maxlength="100" required
+                 placeholder="e.g. 08h55m10.831s -07d14m42.53s or 269.452 4.693">
+        </div>
+        <div class="field">
+          <label for="fov-select">FOV (arcmin)</label>
+          <select id="fov-select" name="fov_arcmin">
+            <option value="2.5">2.5′</option>
+            <option value="5.0">5.0′</option>
+            <option value="6.5" selected>6.5′</option>
+            <option value="12.0">12.0′</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="epoch-input">Epoch (yr)</label>
+          <input id="epoch-input" name="epoch_yr" type="number" min="1900" max="2100" step="0.5" value="2026.0">
+        </div>
+        <label class="checkbox-label" for="live-toggle">
+          <input id="live-toggle" type="checkbox"> Query Live IRSA
+        </label>
+        <button id="submit-query" class="btn btn-primary" type="submit">Load Sky Patch</button>
+      </form>
+
+      <div class="presets-row">
+        <span class="presets-label">5 Mandatory Test Targets:</span>
+        <button class="btn preset-btn" type="button" data-coord="Barnard's Star">Barnard's Star</button>
+        <button class="btn preset-btn" type="button" data-coord="WISE 0855">WISE 0855</button>
+        <button class="btn preset-btn" type="button" data-coord="Epsilon Indi B">Epsilon Indi B</button>
+        <button class="btn preset-btn" type="button" data-coord="RW Aurigae">RW Aurigae</button>
+        <button class="btn preset-btn" type="button" data-coord="R Draconis">R Draconis</button>
+        <button id="copy-url-btn" class="btn" type="button">Copy Share URL</button>
+      </div>
+      <p id="status-banner" class="status-banner" role="status" aria-live="polite">Initializing viewer...</p>
+    </section>
+
+    <div class="grid-main">
+      <section class="card" aria-label="Time-series image viewer">
+        <h2>Time-Series Cutout Viewer</h2>
+        <div class="controls-row" role="group" aria-label="Display mode">
+          <button class="btn mode-btn active" type="button" data-mode="play" aria-pressed="true">Play Visits</button>
+          <button class="btn mode-btn" type="button" data-mode="stack" aria-pressed="false">Visit Stack</button>
+          <button class="btn mode-btn" type="button" data-mode="difference" aria-pressed="false">Difference</button>
+          <button class="btn mode-btn" type="button" data-mode="rgb" aria-pressed="false">Visits RGB</button>
+        </div>
+
+        <div class="controls-row" role="group" aria-label="SPHEREx detector band">
+          <button class="btn det-btn" type="button" data-det="D1" aria-pressed="false">D1 (0.75–1.1µm)</button>
+          <button class="btn det-btn" type="button" data-det="D2" aria-pressed="false">D2 (1.1–1.6µm)</button>
+          <button class="btn det-btn" type="button" data-det="D3" aria-pressed="false">D3 (1.6–2.4µm)</button>
+          <button class="btn det-btn" type="button" data-det="D4" aria-pressed="false">D4 (2.4–3.8µm)</button>
+          <button class="btn det-btn" type="button" data-det="D5" aria-pressed="false">D5 (3.8–4.4µm)</button>
+          <button class="btn det-btn active" type="button" data-det="D6" aria-pressed="true">D6 (4.4–5.0µm)</button>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="sky-canvas" width="512" height="512"></canvas>
+        </div>
+
+        <div class="playback-bar">
+          <button id="play-toggle" class="btn" type="button">Pause</button>
+          <label for="visit-scrubber">Visit:</label>
+          <input id="visit-scrubber" class="scrubber" type="range" min="0" max="2" step="1" value="0">
+          <span id="visit-label">V1</span>
+          <label for="stretch-select">Stretch:</label>
+          <select id="stretch-select">
+            <option value="asinh" selected>Asinh</option>
+            <option value="linear">Linear</option>
+          </select>
+          <label class="checkbox-label" for="gaia-overlay-toggle">
+            <input id="gaia-overlay-toggle" type="checkbox" checked> Gaia
+          </label>
+          <label class="checkbox-label" for="mask-overlay-toggle">
+            <input id="mask-overlay-toggle" type="checkbox" checked> Mask
+          </label>
+        </div>
+        <div id="pixel-readout" class="readout">Hover over canvas to inspect calibrated pixel flux and mask flags.</div>
+      </section>
+
+      <div class="right-stack">
+        <section class="card" aria-label="On-the-fly 102-band spectrum and molecule readings">
+          <h2 id="spectrum-heading">102-Band Spectrum &amp; Layer-1 Molecule Readings</h2>
+          <canvas id="spectrum-canvas" width="640" height="190"></canvas>
+          <div id="molecule-list" class="molecule-list"></div>
+        </section>
+
+        <section class="card frames-section" aria-label="SPHEREx observation matrix and frames">
+          <h2 id="frames-heading">Observation Matrix &amp; Matching SPHEREx Frames</h2>
+          <canvas id="matrix-canvas" width="640" height="150"></canvas>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Collection</th>
+                  <th>Obs ID</th>
+                  <th>Bandpass</th>
+                  <th>MJD Start</th>
+                  <th>Center (RA, Dec)</th>
+                  <th>Archive Link</th>
+                </tr>
+              </thead>
+              <tbody id="frames-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/fallback_data.js"></script>
+  <script src="/static/viewer.js"></script>
+</body>
+</html>
