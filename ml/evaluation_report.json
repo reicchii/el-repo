@@ -1,0 +1,240 @@
+{
+  "model_version": "spherex-dr1-e1e2-v1",
+  "pipeline_version": "phantom-ml-slice3",
+  "data_as_of": "2026-11-14T11:04:23Z",
+  "source_files": [
+    "ml/real_training_dataset.npz",
+    "ml/dataset_manifest.json",
+    "phantom_worlds/ml_pipeline.py",
+    "phantom_worlds/real_ml_data.py"
+  ],
+  "dataset_path": "ml/real_training_dataset.npz",
+  "dataset_sha256": "38d39fb22fd0cd6bf818a995d4802bbf9538285c98de4d0e6a63fdadcce81e46",
+  "total_spectra": 292,
+  "strict_tile_disjointness": true,
+  "conformal_q": 1.0,
+  "silver_weight_applied": 0.5,
+  "split_sizes": {
+    "train_core": 175,
+    "isotonic": 28,
+    "conformal": 28,
+    "test_gold": 37,
+    "test_all_classes": 61
+  },
+  "e1_templates_per_class": {
+    "Active galaxy or quasar": 6,
+    "Evolved giant star": 6,
+    "Galaxy": 6,
+    "Star": 6,
+    "Ultracool dwarf": 6,
+    "Young star with ice or dust": 6
+  },
+  "release_gates": {
+    "excluded_silver_count": 0,
+    "high_snr_gold": {
+      "count": 33,
+      "per_class_recall": {
+        "Active galaxy or quasar": 0.2,
+        "Ultracool dwarf": 0.9231,
+        "Young star with ice or dust": 0.3333
+      },
+      "min_recall": 0.2,
+      "ece": 0.2576,
+      "conformal_coverage": 1.0,
+      "passed": false
+    },
+    "brightness_bins": {
+      "W2<=12": {
+        "count": 21,
+        "per_class_recall": {
+          "Ultracool dwarf": 0.8333,
+          "Young star with ice or dust": 0.3333
+        },
+        "min_recall": 0.3333,
+        "ece": 0.2857,
+        "conformal_coverage": 1.0,
+        "passed": false
+      },
+      "12<W2<=13": {
+        "count": 3,
+        "per_class_recall": {
+          "Ultracool dwarf": 1.0
+        },
+        "min_recall": 1.0,
+        "ece": 0.0,
+        "conformal_coverage": 1.0,
+        "passed": true
+      },
+      "13<W2<=14": {
+        "count": 9,
+        "per_class_recall": {
+          "Active galaxy or quasar": 0.2,
+          "Ultracool dwarf": 1.0
+        },
+        "min_recall": 0.2,
+        "ece": 0.2778,
+        "conformal_coverage": 1.0,
+        "passed": false
+      },
+      "W2>14": {
+        "count": 4,
+        "per_class_recall": {
+          "Active galaxy or quasar": 0.0,
+          "Ultracool dwarf": 0.3333
+        },
+        "min_recall": 0.0,
+        "ece": 0.4528,
+        "conformal_coverage": 1.0,
+        "passed": false
+      }
+    },
+    "release_status": "UNPUBLISHED"
+  },
+  "heldout_all_classes_diagnostic": {
+    "count": 61,
+    "overall_accuracy": 0.5574,
+    "e1_only_accuracy": 0.6393,
+    "e2_only_accuracy": 0.8361,
+    "agreement_rate": 0.6885,
+    "per_class": {
+      "Active galaxy or quasar": {
+        "count": 6,
+        "combined_recall": 0.1667,
+        "unclassified_rate": 0.6667,
+        "e1_recall": 0.1667,
+        "e2_recall": 0.6667,
+        "conformal_coverage": 1.0
+      },
+      "Evolved giant star": {
+        "count": 5,
+        "combined_recall": 0.8,
+        "unclassified_rate": 0.2,
+        "e1_recall": 1.0,
+        "e2_recall": 0.8,
+        "conformal_coverage": 1.0
+      },
+      "Galaxy": {
+        "count": 8,
+        "combined_recall": 0.375,
+        "unclassified_rate": 0.5,
+        "e1_recall": 0.375,
+        "e2_recall": 0.625,
+        "conformal_coverage": 1.0
+      },
+      "Star": {
+        "count": 11,
+        "combined_recall": 0.7273,
+        "unclassified_rate": 0.2727,
+        "e1_recall": 1.0,
+        "e2_recall": 1.0,
+        "conformal_coverage": 1.0
+      },
+      "Ultracool dwarf": {
+        "count": 16,
+        "combined_recall": 0.8125,
+        "unclassified_rate": 0.125,
+        "e1_recall": 0.8125,
+        "e2_recall": 0.9375,
+        "conformal_coverage": 1.0
+      },
+      "Young star with ice or dust": {
+        "count": 15,
+        "combined_recall": 0.3333,
+        "unclassified_rate": 0.6,
+        "e1_recall": 0.4,
+        "e2_recall": 0.8,
+        "conformal_coverage": 1.0
+      }
+    }
+  },
+  "fixed_targets_cube": {
+    "all_passed": false,
+    "targets": {
+      "Barnards_Star": {
+        "top_class": "Unclassified",
+        "molecule_status": "REFUSED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": null,
+        "co_tau": null,
+        "passed": false
+      },
+      "Eps_Indi_B": {
+        "top_class": "Unclassified",
+        "molecule_status": "MEASURED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": 487.6580689734977,
+        "co_tau": -11.233116404390552,
+        "passed": false
+      },
+      "WISE_0855": {
+        "top_class": "Unclassified",
+        "molecule_status": "MEASURED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": 44.527834460195805,
+        "co_tau": -6.839540814089897,
+        "passed": false
+      },
+      "RW_Aurigae": {
+        "top_class": "Unclassified",
+        "molecule_status": "REFUSED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": null,
+        "co_tau": null,
+        "passed": true
+      },
+      "R_Draconis": {
+        "top_class": "Unclassified",
+        "molecule_status": "REFUSED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": null,
+        "co_tau": null,
+        "passed": true
+      }
+    }
+  },
+  "fixed_targets_reference": {
+    "all_passed": false,
+    "targets": {
+      "Barnards_Star": {
+        "top_class": "Unclassified",
+        "molecule_status": "MEASURED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": -6.4189675641300425,
+        "co_tau": 2.796609380207784,
+        "passed": false
+      },
+      "Eps_Indi_B": {
+        "top_class": "Unclassified",
+        "molecule_status": "MEASURED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": 1043.9919698014216,
+        "co_tau": -6.22378999267787,
+        "passed": false
+      },
+      "WISE_0855": {
+        "top_class": "Unclassified",
+        "molecule_status": "MEASURED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": 1000.7637922389936,
+        "co_tau": 16.602262984422023,
+        "passed": true
+      },
+      "RW_Aurigae": {
+        "top_class": "Ultracool dwarf",
+        "molecule_status": "REFUSED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": null,
+        "co_tau": null,
+        "passed": false
+      },
+      "R_Draconis": {
+        "top_class": "Unclassified",
+        "molecule_status": "REFUSED",
+        "novelty_status": "CONTAMINATION_SCREENED",
+        "ch4_tau": null,
+        "co_tau": null,
+        "passed": true
+      }
+    }
+  }
+}

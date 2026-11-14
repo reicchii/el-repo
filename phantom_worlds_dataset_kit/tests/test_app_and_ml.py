@@ -78,7 +78,11 @@ class TestDependencyLockfile(unittest.TestCase):
             return dists
 
         imported_dists = set()
-        for subroot in (os.path.join(ROOT_DIR, "phantom_worlds"), os.path.join(ROOT_DIR, "phantom_worlds_dataset_kit")):
+        for subroot in (
+            os.path.join(ROOT_DIR, "phantom_worlds"),
+            os.path.join(ROOT_DIR, "ml"),
+            os.path.join(ROOT_DIR, "phantom_worlds_dataset_kit"),
+        ):
             for walk_root, dirnames, filenames in os.walk(subroot):
                 dirnames[:] = [d for d in dirnames if d not in {"__pycache__", ".pytest_cache", "data_real"}]
                 for fname in filenames:
@@ -87,7 +91,7 @@ class TestDependencyLockfile(unittest.TestCase):
                     with open(os.path.join(walk_root, fname), encoding="utf-8") as f:
                         tree = ast.parse(f.read(), filename=fname)
                     imported_dists |= _third_party_imports(
-                        tree, {"phantom_worlds", "download_real_spherex_gaia", "build_ml_catalog"}
+                        tree, {"phantom_worlds", "ml", "download_real_spherex_gaia", "build_ml_catalog"}
                     )
 
         with open(os.path.join(ROOT_DIR, "requirements.txt"), encoding="utf-8") as f:
@@ -3098,9 +3102,35 @@ class TestFastAPIBackend(unittest.TestCase):
         self.assertIn("spectrum_alone", cls_out)
         self.assertIn("all_data", cls_out)
         self.assertIn("novelty", cls_out)
-        self.assertEqual(cls_out.get("model_origin"), "hour0_reference_template_bootstrap")
+        self.assertEqual(cls_out.get("model_origin"), "real_spherex_dr1_spiff_trained")
         self.assertTrue(cls_out["all_data"]["parallax_gate_applied"])
         self.assertEqual(cls_out["novelty"]["status"], "CONTAMINATION_SCREENED")
+
+        # Complete finite 102-band spectra align across the ~0.007 um S3/CSV boundary without false CONTAMINATION_SCREENED.
+        r_full = self.client.post(
+            "/api/analyze/spectrum",
+            json={
+                "flux_uJy": spectra["RW_Aurigae"].tolist(),
+                "flux_err_uJy": (spectra["RW_Aurigae"] * 0.03).tolist(),
+                "blend_share": 0.12,
+                "is_variable": False,
+            },
+        )
+        self.assertEqual(r_full.status_code, 200)
+        full_cls = r_full.json()["classification"]
+        self.assertEqual(full_cls.get("model_origin"), "real_spherex_dr1_spiff_trained")
+        self.assertIn(full_cls["novelty"]["status"], ("OK", "NOVEL"))
+
+        # Explicit dataset_npz_path=None preserves explicit Hour-0 bootstrap fallback for custom/offline test harnesses.
+        import phantom_worlds.api as api_mod
+
+        fallback_client = TestClient(api_mod.create_app(dataset_npz_path=None))
+        r_fb = fallback_client.post(
+            "/api/analyze/spectrum",
+            json={"flux_uJy": spectra["Barnards_Star"].tolist(), "blend_share": 0.02, "is_variable": False},
+        )
+        self.assertEqual(r_fb.status_code, 200)
+        self.assertEqual(r_fb.json()["classification"].get("model_origin"), "hour0_reference_template_bootstrap")
 
         # Fewer than 3 finite bands must be rejected with HTTP 422
         r_sparse = self.client.post(

@@ -9,6 +9,7 @@ import zipfile
 
 from astropy.io import fits
 import numpy as np
+import requests
 
 from phantom_worlds.fits_cutout import validate_remote_url
 from phantom_worlds.real_ml_data import (
@@ -16,12 +17,15 @@ from phantom_worlds.real_ml_data import (
     ALLOWED_ML_DATA_HOSTS,
     _flambda_to_ujy,
     _estimate_w2_mag_from_spectrum,
+    _read_range_retry,
     ang2pix_nest,
     ang2pix_nest32,
+    build_balanced_e1_templates,
     extract_cube_tile_spectra,
     load_spiff_hybrid_templates,
     load_spiff_known_bd_spectra,
     s3_cube_url_for_ipix,
+    select_isolated_gaia_stars,
 )
 
 
@@ -229,6 +233,144 @@ class RealMLDataTests(unittest.TestCase):
             validate_remote_url("https://169.254.169.254/latest/meta-data", allowed_hosts=ALLOWED_ML_DATA_HOSTS)
         with self.assertRaises(ValueError):
             s3_cube_url_for_ipix(99999)
+
+    def test_select_isolated_gaia_stars_filters_blended_and_out_of_range_sources(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = os.path.join(tmpdir, "OBJ1_gaia_dr3.csv")
+            # Interior coordinate inside Norder5 tile 7370; first row clean & isolated, second row blended with third row, fourth ruwe >= 1.25.
+            ra0, dec0 = 200.5, 40.2
+            ip0 = ang2pix_nest32(ra0, dec0)
+            rows = [
+                "source_id,ra,dec,pmra,pmdec,parallax,phot_g_mean_mag,phot_bp_mean_mag,phot_rp_mean_mag,ruwe",
+                f"1001,{ra0},{dec0},1.0,-2.0,3.2,13.5,14.2,12.9,1.02",
+                f"1002,{ra0 + 0.05},{dec0 + 0.05},0.5,0.5,4.0,13.8,14.4,13.1,1.05",
+                f"1003,{ra0 + 0.051},{dec0 + 0.05},0.0,0.0,2.5,12.0,12.5,11.6,1.01",
+                f"1004,{ra0 - 0.05},{dec0 - 0.05},0.0,0.0,5.0,13.2,14.0,12.8,1.80",
+            ]
+            with open(csv_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(rows) + "\n")
+            df = select_isolated_gaia_stars(meta_dir=tmpdir, candidate_tiles=[ip0], max_stars=10)
+            self.assertEqual(df["source_id"].tolist(), ["1001"])
+            self.assertEqual(df["ml_class"].tolist(), ["Star"])
+            self.assertEqual(df["label_grade"].tolist(), ["silver"])
+
+    def test_build_balanced_e1_templates_equalizes_classes_and_handles_all_nan_channels(self):
+        X = np.vstack([
+            np.tile(np.linspace(100.0, 20.0, 20), (14, 1)),
+            np.tile(np.linspace(20.0, 120.0, 20), (14, 1)),
+            np.tile(np.linspace(50.0, 80.0, 20), (14, 1)),
+        ])
+        X[:, 8] = np.nan  # Simulate dichroic gap column all-NaN across classes.
+        y = np.array(["Star"] * 14 + ["Young star with ice or dust"] * 14 + ["Ultracool dwarf"] * 14)
+        hybrids = np.vstack([np.linspace(15.0 + i, 90.0 - i, 20) for i in range(47)])
+        tmpls = build_balanced_e1_templates(X, y, hybrid_templates=hybrids, max_per_class=6)
+        self.assertEqual(len(tmpls["Star"]), 6)
+        self.assertEqual(len(tmpls["Young star with ice or dust"]), 6)
+        self.assertEqual(len(tmpls["Ultracool dwarf"]), 6)
+        self.assertTrue(np.isnan(tmpls["Star"][0][8]))
+        self.assertTrue(np.all(np.isfinite(np.delete(tmpls["Star"][0], 8))))
+
+    def test_read_range_retry_recovers_from_chunked_encoding_error(self):
+        class _FlakyReader:
+            def __init__(self):
+                self.calls = 0
+
+            def read_range(self, start, length):
+                self.calls += 1
+                if self.calls < 2:
+                    raise requests.exceptions.ChunkedEncodingError("reset")
+                return b"ok"
+
+        rdr = _FlakyReader()
+        self.assertEqual(_read_range_retry(rdr, 0, 2, max_attempts=3), b"ok")
+        self.assertEqual(rdr.calls, 2)
+
+    def test_train_from_real_dataset_enforces_strict_tile_disjointness_and_zero_leakage(self):
+        from phantom_worlds.contracts import load_spectra_table
+        from phantom_worlds.ml_pipeline import train_from_real_dataset
+
+        ref = load_spectra_table()
+        wl = ref["wavelength_um"]
+        bw = ref["bandwidth_um"]
+        # Create 6 classes with realistic tile skew (one rare class has 12 tiles among 90 total).
+        base_map = {
+            "Star": [float(r["Barnards_Star_uJy"]) for r in ref["rows"]],
+            "Ultracool dwarf": [float(r["Eps_Indi_B_uJy"]) for r in ref["rows"]],
+            "Young star with ice or dust": [float(r["RW_Aurigae_uJy"]) for r in ref["rows"]],
+            "Evolved giant star": [float(r["R_Draconis_uJy"]) for r in ref["rows"]],
+            "Galaxy": np.linspace(40.0, 70.0, len(wl)).tolist(),
+            "Active galaxy or quasar": (25.0 + 90.0 * ((wl - wl.min()) / max(wl.max() - wl.min(), 1e-6)) ** 3).tolist(),
+        }
+        rng = np.random.default_rng(19)
+        X_rows, y_rows, tile_rows, grade_rows, blend_rows = [], [], [], [], []
+        tile_counts = {"Young star with ice or dust": 12, "Star": 16, "Galaxy": 16, "Evolved giant star": 16, "Active galaxy or quasar": 16, "Ultracool dwarf": 24}
+        t_counter = 0
+        for cls, n_tiles in tile_counts.items():
+            base = np.asarray(base_map[cls], dtype=np.float64)
+            grade = "silver" if cls in ("Star", "Galaxy", "Evolved giant star") else "gold"
+            for _ in range(n_tiles):
+                tname = f"h8_syn_{t_counter}"
+                t_counter += 1
+                for _k in range(3):
+                    noisy = np.maximum(base * rng.uniform(0.85, 1.15) + rng.normal(0.0, 0.02 * np.maximum(base, 0.5)), 0.05)
+                    X_rows.append(noisy)
+                    y_rows.append(cls)
+                    tile_rows.append(tname)
+                    grade_rows.append(grade)
+                    blend_rows.append(0.05)
+
+        dataset = {
+            "wavelength_um": wl,
+            "bandwidth_um": bw,
+            "X_flux_uJy": np.vstack(X_rows),
+            "y_class": np.array(y_rows),
+            "sky_tiles": np.array(tile_rows),
+            "label_grades": np.array(grade_rows),
+            "blend_shares": np.array(blend_rows, dtype=np.float64),
+            "spiff_hybrid_templates_uJy": np.tile(np.asarray(base_map["Ultracool dwarf"]), (12, 1)),
+        }
+        res = train_from_real_dataset(dataset, build_balanced_e1_templates, max_per_class=6, random_state=42)
+        self.assertTrue(res["strict_tile_disjointness"])
+        self.assertEqual({cls: len(vs) for cls, vs in res["e1_templates"].items()}, {c: 6 for c in base_map})
+        # Every class including the 12-tile rare class must appear in the held-out outer test tiles.
+        held_classes = set(dataset["y_class"][res["test_all_idx"]].tolist())
+        self.assertEqual(held_classes, set(base_map.keys()))
+
+        # Verify ml.train.run_training writes compliant JSON report & model card without NaN/Inf.
+        import json as _json
+        from ml.train import run_training
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            npz_path = os.path.join(tmpdir, "syn.npz")
+            out_dir = os.path.join(tmpdir, "out")
+            np.savez_compressed(
+                npz_path,
+                wavelength_um=wl,
+                bandwidth_um=bw,
+                X_flux_uJy=dataset["X_flux_uJy"],
+                X_err_uJy=0.02 * dataset["X_flux_uJy"],
+                y_class=dataset["y_class"],
+                sky_tiles=dataset["sky_tiles"],
+                label_grades=dataset["label_grades"],
+                w2_mag_est=np.full(len(y_rows), 12.2),
+                blend_shares=dataset["blend_shares"],
+                spiff_hybrid_templates_uJy=dataset["spiff_hybrid_templates_uJy"],
+                benchmark_slugs=np.array(["Barnards_Star", "WISE_0855", "Eps_Indi_B", "RW_Aurigae", "R_Draconis"], dtype="U32"),
+                benchmark_flux_uJy=np.vstack([
+                    np.asarray(base_map["Star"]),
+                    np.asarray(base_map["Ultracool dwarf"]),
+                    np.asarray(base_map["Ultracool dwarf"]),
+                    np.asarray(base_map["Young star with ice or dust"]),
+                    np.asarray(base_map["Evolved giant star"]),
+                ]),
+            )
+            rep = run_training(dataset_path=npz_path, output_dir=out_dir, max_per_class=6, seed=42)
+            self.assertIn(rep["release_gates"]["release_status"], ("PUBLISHED", "UNPUBLISHED"))
+            self.assertTrue(rep["strict_tile_disjointness"])
+            with open(os.path.join(out_dir, "evaluation_report.json"), encoding="utf-8") as rf:
+                loaded_rep = _json.load(rf)
+            self.assertEqual(loaded_rep["model_version"], "spherex-dr1-e1e2-v1")
+            self.assertTrue(os.path.exists(os.path.join(out_dir, "model_card.md")))
 
 
 if __name__ == "__main__":

@@ -287,7 +287,7 @@ class SpectralDiscoveryPipeline:
         self.random_state = random_state
         self.classes_ = sorted(self.template_library.keys())
         self.tree_model = self._build_tree()
-        self.meta_combiner = LogisticRegression(max_iter=500, random_state=random_state)
+        self.meta_combiner = LogisticRegression(max_iter=500, class_weight="balanced", random_state=random_state)
         self.novelty_forest = IsolationForest(contamination=0.05, random_state=random_state)
         self.calibrators_ = {}
         self.calibration_size_ = 0
@@ -409,18 +409,12 @@ class SpectralDiscoveryPipeline:
             tiles = np.asarray(sky_tiles)
             uniq_tiles = sorted(set(tiles.tolist()), key=str)
             if len(uniq_tiles) >= 3:
-                rng = np.random.default_rng(self.random_state)
-                perm_tiles = [uniq_tiles[i] for i in rng.permutation(len(uniq_tiles))]
-                n_cal_tiles = max(2, int(round(0.25 * len(perm_tiles))))
-                n_train_tiles = max(1, len(perm_tiles) - n_cal_tiles)
-                train_tile_set = set(perm_tiles[:n_train_tiles])
-                hold_tiles = perm_tiles[n_train_tiles:]
-                mid = max(1, len(hold_tiles) // 2)
-                iso_tile_set = set(hold_tiles[:mid])
-                conf_tile_set = set(hold_tiles[mid:])
-                tr_idx = np.where(np.isin(tiles, list(train_tile_set)))[0]
-                iso_idx = np.where(np.isin(tiles, list(iso_tile_set)))[0]
-                conf_idx = np.where(np.isin(tiles, list(conf_tile_set)))[0]
+                tile_buckets = _allocate_stratified_tiles(
+                    tiles, y, fracs=(0.75, 0.125, 0.125), random_state=self.random_state
+                )
+                tr_idx = np.where(np.isin(tiles, list(tile_buckets[0])))[0]
+                iso_idx = np.where(np.isin(tiles, list(tile_buckets[1])))[0]
+                conf_idx = np.where(np.isin(tiles, list(tile_buckets[2])))[0]
                 if label_grades is not None:
                     grades = np.array([str(g).strip().lower() for g in label_grades])
                     iso_gold = iso_idx[grades[iso_idx] == "gold"]
@@ -448,6 +442,7 @@ class SpectralDiscoveryPipeline:
             min_samples_leaf=2,
             max_features=0.25,
             learning_rate=0.1,
+            class_weight="balanced",
             random_state=self.random_state,
         )
 
@@ -732,21 +727,68 @@ class SpectralDiscoveryPipeline:
         }
 
 
+def _allocate_stratified_tiles(tiles, y=None, fracs=(0.60, 0.20, 0.20), random_state=42):
+    """Partition unique sky tiles into disjoint buckets while stratifying rare classes first."""
+    uniq_tiles = sorted(set(tiles.tolist()), key=str)
+    n_tiles = len(uniq_tiles)
+    k = len(fracs)
+    if n_tiles < k:
+        raise ValueError(f"Need at least {k} distinct sky tiles, got {n_tiles}")
+    rng = np.random.default_rng(random_state)
+    if y is None:
+        perm = [uniq_tiles[i] for i in rng.permutation(n_tiles)]
+        n2 = max(1, int(round(fracs[2] * n_tiles)))
+        n1 = max(1, int(round(fracs[1] * n_tiles)))
+        n0 = max(1, n_tiles - n1 - n2)
+        return [set(perm[:n0]), set(perm[n0 : n0 + n1]), set(perm[n0 + n1 :])]
+
+    y_arr = np.asarray(y)
+    cls_tiles = {}
+    tile_classes = {t: set() for t in uniq_tiles}
+    for tile_val, cls_val in zip(tiles.tolist(), y_arr.tolist()):
+        cls_str = str(cls_val)
+        tile_classes[tile_val].add(cls_str)
+        cls_tiles.setdefault(cls_str, set()).add(tile_val)
+
+    rarity = {c: len(ts) for c, ts in cls_tiles.items()}
+    strata = {}
+    for t in uniq_tiles:
+        rarest_cls = min(tile_classes[t], key=lambda c: (rarity[c], c))
+        strata.setdefault(rarest_cls, []).append(t)
+
+    buckets = [set() for _ in range(k)]
+    # Allocate rarest-class tile strata first so small classes get disjoint coverage across all splits.
+    for cls_key in sorted(strata.keys(), key=lambda c: (len(strata[c]), rarity[c], c)):
+        group = sorted(strata[cls_key], key=str)
+        shuffled = [group[i] for i in rng.permutation(len(group))]
+        m = len(shuffled)
+        if m >= k:
+            counts = [1] * k
+            for _ in range(m - k):
+                b_pick = max(range(k), key=lambda b: (m * fracs[b] - counts[b], -b))
+                counts[b_pick] += 1
+        else:
+            counts = [0] * k
+            for _ in range(m):
+                b_pick = max(range(k), key=lambda b: (fracs[b] * max(n_tiles, 1) - len(buckets[b]) - counts[b], -b))
+                counts[b_pick] += 1
+        offset = 0
+        for b, cnt in enumerate(counts):
+            if cnt > 0:
+                buckets[b].update(shuffled[offset : offset + cnt])
+                offset += cnt
+    return buckets
+
+
 def split_by_sky_tile(sky_tiles, y=None, label_grades=None, train_frac=0.60, cal_frac=0.20, test_frac=0.20, random_state=42):
     """Split dataset indices by disjoint sky tiles (60% train, 20% calibrate, 20% test) with Gold-only test set."""
     tiles = np.asarray(sky_tiles)
     uniq_tiles = sorted(set(tiles.tolist()), key=str)
     if len(uniq_tiles) < 3:
         raise ValueError("split_by_sky_tile requires at least 3 distinct sky tiles")
-    rng = np.random.default_rng(random_state)
-    perm = [uniq_tiles[i] for i in rng.permutation(len(uniq_tiles))]
-    n_tiles = len(perm)
-    n_test = max(1, int(round(test_frac * n_tiles)))
-    n_cal = max(1, int(round(cal_frac * n_tiles)))
-    n_train = max(1, n_tiles - n_cal - n_test)
-    train_tiles = set(perm[:n_train])
-    cal_tiles = set(perm[n_train : n_train + n_cal])
-    test_tiles = set(perm[n_train + n_cal :])
+    train_tiles, cal_tiles, test_tiles = _allocate_stratified_tiles(
+        tiles, y=y, fracs=(train_frac, cal_frac, test_frac), random_state=random_state
+    )
 
     train_idx = np.where(np.isin(tiles, list(train_tiles)))[0]
     cal_idx = np.where(np.isin(tiles, list(cal_tiles)))[0]
@@ -761,6 +803,67 @@ def split_by_sky_tile(sky_tiles, y=None, label_grades=None, train_frac=0.60, cal
         "train_tiles": sorted(train_tiles, key=str),
         "cal_tiles": sorted(cal_tiles, key=str),
         "test_tiles": sorted(test_tiles, key=str),
+    }
+
+
+def train_from_real_dataset(dataset, build_templates_fn, max_per_class=6, random_state=42):
+    """Single shared zero-leakage training entrypoint used by both ml/train.py and phantom_worlds/api.py."""
+    wl = np.asarray(dataset["wavelength_um"], dtype=np.float64)
+    bw = np.asarray(dataset["bandwidth_um"], dtype=np.float64)
+    X = np.asarray(dataset["X_flux_uJy"], dtype=np.float64)
+    y = np.asarray(dataset["y_class"])
+    tiles = np.asarray(dataset["sky_tiles"])
+    grades = np.asarray(dataset["label_grades"]) if "label_grades" in dataset else np.full(len(y), "gold")
+    blends = np.asarray(dataset["blend_shares"], dtype=np.float64) if "blend_shares" in dataset else np.full(len(y), 0.05)
+    hybrids = np.asarray(dataset["spiff_hybrid_templates_uJy"], dtype=np.float64) if "spiff_hybrid_templates_uJy" in dataset else None
+
+    split = split_by_sky_tile(tiles, y=y, label_grades=grades, random_state=random_state)
+    fit_mask = np.concatenate([split["train_idx"], split["cal_idx"]])
+    outer_test_tiles = set(split["test_tiles"])
+    test_all_idx = np.where(np.isin(tiles, list(outer_test_tiles)))[0]
+
+    # Determine internal train/isotonic/conformal tile split before building E1 templates so E1 sees train-only rows.
+    dummy_lib = {str(c): np.ones(len(wl), dtype=np.float64) for c in sorted(set(str(v) for v in y.tolist()))}
+    probe = SpectralDiscoveryPipeline(wl, bw, template_library=dummy_lib, random_state=random_state)
+    tr_rel, iso_rel, conf_rel = probe._split_fit_indices(y[fit_mask], sky_tiles=tiles[fit_mask], label_grades=grades[fit_mask])
+
+    e1_templates = build_templates_fn(
+        X[fit_mask][tr_rel],
+        y[fit_mask][tr_rel],
+        hybrid_templates=hybrids,
+        max_per_class=max_per_class,
+    )
+    tr_tiles_in = set(tiles[fit_mask][tr_rel].tolist())
+    iso_tiles_in = set(tiles[fit_mask][iso_rel].tolist())
+    conf_tiles_in = set(tiles[fit_mask][conf_rel].tolist())
+    strict_disjoint = bool(
+        not (tr_tiles_in & iso_tiles_in)
+        and not (tr_tiles_in & conf_tiles_in)
+        and not (iso_tiles_in & conf_tiles_in)
+        and not (tr_tiles_in & outer_test_tiles)
+        and not (iso_tiles_in & outer_test_tiles)
+        and not (conf_tiles_in & outer_test_tiles)
+    )
+
+    pipe = SpectralDiscoveryPipeline(wl, bw, template_library=e1_templates, random_state=random_state)
+    pipe.fit(
+        X[fit_mask],
+        y[fit_mask],
+        blend_shares=blends[fit_mask],
+        sky_tiles=tiles[fit_mask],
+        label_grades=grades[fit_mask],
+    )
+    return {
+        "pipeline": pipe,
+        "e1_templates": e1_templates,
+        "split": split,
+        "fit_mask": fit_mask,
+        "tr_rel": tr_rel,
+        "iso_rel": iso_rel,
+        "conf_rel": conf_rel,
+        "test_all_idx": test_all_idx,
+        "test_gold_idx": split["test_idx"],
+        "strict_tile_disjointness": strict_disjoint,
     }
 
 

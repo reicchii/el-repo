@@ -38,10 +38,18 @@ from phantom_worlds.contracts import (
     safe_remote_url,
     safe_s3_cloud_access_url,
 )
-from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings
+from phantom_worlds.ml_pipeline import SpectralDiscoveryPipeline, compute_molecule_readings, train_from_real_dataset
+from phantom_worlds.real_ml_data import (
+    DEFAULT_ML_DIR,
+    build_balanced_e1_templates,
+    load_real_training_dataset,
+    resample_spectrum_to_grid,
+)
 
 CASE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{3,64}$")
 DEFAULT_DATA_REAL_DIR = os.path.join(PACKAGE_ROOT, "phantom_worlds_dataset_kit", "scripts", "data_real")
+DEFAULT_REAL_DATASET_NPZ = os.path.join(DEFAULT_ML_DIR, "real_training_dataset.npz")
+_UNSET_DATASET = object()
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 _STATIC_ASSETS = {
     "viewer.js": "application/javascript; charset=utf-8",
@@ -172,7 +180,12 @@ class SpectrumAnalyzeRequest(BaseModel):
         return fv
 
 
-def _build_default_discovery_pipeline(spectra_ref):
+def _build_default_discovery_pipeline(spectra_ref, dataset_npz_path=None):
+    if dataset_npz_path and os.path.exists(dataset_npz_path):
+        dataset = load_real_training_dataset(dataset_npz_path)
+        fit_res = train_from_real_dataset(dataset, build_balanced_e1_templates, max_per_class=6, random_state=42)
+        return fit_res["pipeline"], "real_spherex_dr1_spiff_trained"
+
     wl = np.asarray(spectra_ref["wavelength_um"], dtype=np.float64)
     bw = np.asarray(spectra_ref["bandwidth_um"], dtype=np.float64)
     rows = spectra_ref["rows"]
@@ -197,7 +210,31 @@ def _build_default_discovery_pipeline(spectra_ref):
             y_ref.append(label)
     pipe = SpectralDiscoveryPipeline(wl, bw, template_library=templates, random_state=42)
     pipe.fit(np.asarray(X_ref, dtype=np.float64), np.asarray(y_ref), blend_shares=np.full(len(y_ref), 0.05))
-    return pipe
+    return pipe, "hour0_reference_template_bootstrap"
+
+
+def _align_spectrum_to_model_grid(src_wl, fl_arr, err_arr, dst_wl):
+    if len(dst_wl) == len(src_wl) and np.allclose(dst_wl, src_wl, atol=1e-4):
+        return fl_arr, err_arr
+    if err_arr is not None:
+        fl_out, err_out = resample_spectrum_to_grid(src_wl, fl_arr, dst_wl, src_err=err_arr)
+    else:
+        fl_out = resample_spectrum_to_grid(src_wl, fl_arr, dst_wl)
+        err_out = None
+    # Preserve endpoint continuity across ~0.007 um SPHEREx filter-edge offsets only when boundary inputs are finite.
+    i_lo = int(np.argmin(src_wl))
+    i_hi = int(np.argmax(src_wl))
+    if np.isfinite(fl_arr[i_lo]) and fl_arr[i_lo] > 0:
+        mask_lo = (dst_wl < src_wl[i_lo]) & (dst_wl >= src_wl[i_lo] - 0.025)
+        fl_out[mask_lo] = fl_arr[i_lo]
+        if err_out is not None and err_arr is not None and np.isfinite(err_arr[i_lo]):
+            err_out[mask_lo] = err_arr[i_lo]
+    if np.isfinite(fl_arr[i_hi]) and fl_arr[i_hi] > 0:
+        mask_hi = (dst_wl > src_wl[i_hi]) & (dst_wl <= src_wl[i_hi] + 0.025)
+        fl_out[mask_hi] = fl_arr[i_hi]
+        if err_out is not None and err_arr is not None and np.isfinite(err_arr[i_hi]):
+            err_out[mask_hi] = err_arr[i_hi]
+    return fl_out, err_out
 
 
 def _angular_sep_arcmin(ra1_deg, dec1_deg, ra2_deg, dec2_deg):
@@ -479,8 +516,14 @@ def create_app(
     csv_dir=DEFAULT_CSV_DIR,
     data_real_dir=DEFAULT_DATA_REAL_DIR,
     embed_frame_ancestors=None,
+    dataset_npz_path=_UNSET_DATASET,
 ):
     """Build FastAPI application wired to Hour-0 contracts, ML Layer-1, Sky Time-Series API, and Web UI."""
+    resolved_dataset_npz = (
+        (DEFAULT_REAL_DATASET_NPZ if csv_dir == DEFAULT_CSV_DIR else None)
+        if dataset_npz_path is _UNSET_DATASET
+        else dataset_npz_path
+    )
     app = FastAPI(title="Phantom Worlds API", version="1.0.0-hour0")
     embed_security_headers = (
         _build_embed_csp_headers(embed_frame_ancestors)
@@ -825,16 +868,24 @@ def create_app(
                 blend_share=payload.blend_share,
                 is_variable=payload.is_variable,
             )
-            ml_pipe = _cached(json_cache, "ml_pipeline", lambda: _build_default_discovery_pipeline(spectra_ref))
+            ml_pipe, model_origin = _cached(
+                json_cache,
+                "ml_pipeline",
+                lambda: _build_default_discovery_pipeline(spectra_ref, dataset_npz_path=resolved_dataset_npz),
+            )
+            src_wl = np.asarray(spectra_ref["wavelength_um"], dtype=np.float64)
             fl_arr = np.asarray(payload.flux_uJy, dtype=np.float64)
+            err_arr = np.asarray(payload.flux_err_uJy, dtype=np.float64) if payload.flux_err_uJy is not None else None
+            fl_model, err_model = _align_spectrum_to_model_grid(src_wl, fl_arr, err_arr, ml_pipe.wavelengths)
+            has_masked = bool(not np.all(np.isfinite(fl_arr)) or not np.all(np.isfinite(fl_model)))
             classification = ml_pipe.predict_one(
-                fl_arr,
+                fl_model,
                 blend_share=payload.blend_share,
                 parallax_snr=payload.parallax_snr,
-                has_masked_pixels=bool(not np.all(np.isfinite(fl_arr))),
-                flux_err=payload.flux_err_uJy,
+                has_masked_pixels=has_masked,
+                flux_err=err_model,
             )
-            classification["model_origin"] = "hour0_reference_template_bootstrap"
+            classification["model_origin"] = model_origin
         except (ValueError, np.linalg.LinAlgError) as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return {"molecule_readings": readings, "classification": classification}
