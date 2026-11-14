@@ -1,0 +1,6108 @@
+[
+  {
+    "target_name": "Barnards_Star",
+    "source_id": "SRC-Barnards-Star",
+    "readings": {
+      "source_id": "SRC-Barnards-Star",
+      "target_name": "Barnards_Star",
+      "spectral_bands": [
+        {
+          "index": 0,
+          "wavelength_um": 0.7606,
+          "flux_mjy": 1470.5142,
+          "flux_error_mjy": 40.0185,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow_suspected"
+        },
+        {
+          "index": 1,
+          "wavelength_um": 0.7818,
+          "flux_mjy": 1389.4712,
+          "flux_error_mjy": 69.3368,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow_suspected"
+        },
+        {
+          "index": 2,
+          "wavelength_um": 0.8029,
+          "flux_mjy": 1342.2701,
+          "flux_error_mjy": 56.9592,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow_suspected"
+        },
+        {
+          "index": 3,
+          "wavelength_um": 0.8241,
+          "flux_mjy": 1277.4987,
+          "flux_error_mjy": 64.0816,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow_suspected"
+        },
+        {
+          "index": 4,
+          "wavelength_um": 0.8453,
+          "flux_mjy": 1211.2826,
+          "flux_error_mjy": 57.2812,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow_suspected"
+        },
+        {
+          "index": 5,
+          "wavelength_um": 0.8665,
+          "flux_mjy": 1163.0442,
+          "flux_error_mjy": 48.764,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow_suspected"
+        },
+        {
+          "index": 6,
+          "wavelength_um": 0.8876,
+          "flux_mjy": 1105.3267,
+          "flux_error_mjy": 31.2341,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow_suspected"
+        },
+        {
+          "index": 7,
+          "wavelength_um": 0.9088,
+          "flux_mjy": 1069.3564,
+          "flux_error_mjy": 52.6993,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 8,
+          "wavelength_um": 0.93,
+          "flux_mjy": 1017.3971,
+          "flux_error_mjy": 53.6215,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 9,
+          "wavelength_um": 0.9512,
+          "flux_mjy": 975.9314,
+          "flux_error_mjy": 22.3635,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 10,
+          "wavelength_um": 0.9724,
+          "flux_mjy": 949.6828,
+          "flux_error_mjy": 37.941,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 11,
+          "wavelength_um": 0.9935,
+          "flux_mjy": 915.2316,
+          "flux_error_mjy": 30.7333,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 12,
+          "wavelength_um": 1.0147,
+          "flux_mjy": 871.1583,
+          "flux_error_mjy": 31.1154,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 13,
+          "wavelength_um": 1.0359,
+          "flux_mjy": 843.0271,
+          "flux_error_mjy": 33.9833,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 14,
+          "wavelength_um": 1.0571,
+          "flux_mjy": 819.5756,
+          "flux_error_mjy": 23.5205,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 15,
+          "wavelength_um": 1.0782,
+          "flux_mjy": 786.4525,
+          "flux_error_mjy": 40.7553,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 16,
+          "wavelength_um": 1.0994,
+          "flux_mjy": 752.195,
+          "flux_error_mjy": 22.1055,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 17,
+          "wavelength_um": 1.1259,
+          "flux_mjy": 732.0284,
+          "flux_error_mjy": 35.0562,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 18,
+          "wavelength_um": 1.1576,
+          "flux_mjy": 688.8622,
+          "flux_error_mjy": 24.8926,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 19,
+          "wavelength_um": 1.1894,
+          "flux_mjy": 662.4348,
+          "flux_error_mjy": 30.3874,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 20,
+          "wavelength_um": 1.2212,
+          "flux_mjy": 626.5106,
+          "flux_error_mjy": 31.9945,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 21,
+          "wavelength_um": 1.2529,
+          "flux_mjy": 594.5317,
+          "flux_error_mjy": 31.9388,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 22,
+          "wavelength_um": 1.2847,
+          "flux_mjy": 569.5264,
+          "flux_error_mjy": 16.5872,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 23,
+          "wavelength_um": 1.3165,
+          "flux_mjy": 552.1711,
+          "flux_error_mjy": 25.491,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 24,
+          "wavelength_um": 1.3482,
+          "flux_mjy": 527.6433,
+          "flux_error_mjy": 28.8081,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 25,
+          "wavelength_um": 1.38,
+          "flux_mjy": 501.2904,
+          "flux_error_mjy": 10.8742,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 26,
+          "wavelength_um": 1.4118,
+          "flux_mjy": 482.3854,
+          "flux_error_mjy": 15.0109,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 27,
+          "wavelength_um": 1.4435,
+          "flux_mjy": 467.5098,
+          "flux_error_mjy": 26.8139,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 28,
+          "wavelength_um": 1.4753,
+          "flux_mjy": 446.8209,
+          "flux_error_mjy": 11.551,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 29,
+          "wavelength_um": 1.5071,
+          "flux_mjy": 429.3686,
+          "flux_error_mjy": 14.818,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 30,
+          "wavelength_um": 1.5388,
+          "flux_mjy": 416.1616,
+          "flux_error_mjy": 11.869,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 31,
+          "wavelength_um": 1.5706,
+          "flux_mjy": 395.3973,
+          "flux_error_mjy": 10.3349,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 32,
+          "wavelength_um": 1.6024,
+          "flux_mjy": 386.6674,
+          "flux_error_mjy": 21.8561,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 33,
+          "wavelength_um": 1.6341,
+          "flux_mjy": 374.8005,
+          "flux_error_mjy": 16.1498,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 34,
+          "wavelength_um": 1.6729,
+          "flux_mjy": 353.7228,
+          "flux_error_mjy": 10.6234,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 35,
+          "wavelength_um": 1.7188,
+          "flux_mjy": 339.9886,
+          "flux_error_mjy": 16.2404,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 36,
+          "wavelength_um": 1.7647,
+          "flux_mjy": 325.8117,
+          "flux_error_mjy": 15.0986,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 37,
+          "wavelength_um": 1.8106,
+          "flux_mjy": 308.5761,
+          "flux_error_mjy": 17.3405,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 38,
+          "wavelength_um": 1.8565,
+          "flux_mjy": 296.9249,
+          "flux_error_mjy": 16.126,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 39,
+          "wavelength_um": 1.9024,
+          "flux_mjy": 284.0521,
+          "flux_error_mjy": 17.2196,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 40,
+          "wavelength_um": 1.9482,
+          "flux_mjy": 269.5231,
+          "flux_error_mjy": 13.6669,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 41,
+          "wavelength_um": 1.9941,
+          "flux_mjy": 261.6246,
+          "flux_error_mjy": 7.8425,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 42,
+          "wavelength_um": 2.04,
+          "flux_mjy": 248.4814,
+          "flux_error_mjy": 6.1642,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 43,
+          "wavelength_um": 2.0859,
+          "flux_mjy": 241.0868,
+          "flux_error_mjy": 6.1737,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 44,
+          "wavelength_um": 2.1318,
+          "flux_mjy": 230.9253,
+          "flux_error_mjy": 7.4686,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 45,
+          "wavelength_um": 2.1776,
+          "flux_mjy": 223.6794,
+          "flux_error_mjy": 10.9213,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 46,
+          "wavelength_um": 2.2235,
+          "flux_mjy": 214.8323,
+          "flux_error_mjy": 12.3318,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 47,
+          "wavelength_um": 2.2694,
+          "flux_mjy": 206.3738,
+          "flux_error_mjy": 7.7054,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 48,
+          "wavelength_um": 2.3153,
+          "flux_mjy": 198.7123,
+          "flux_error_mjy": 6.9483,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 49,
+          "wavelength_um": 2.3612,
+          "flux_mjy": 191.7184,
+          "flux_error_mjy": 5.2991,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 50,
+          "wavelength_um": 2.4071,
+          "flux_mjy": 184.5184,
+          "flux_error_mjy": 8.182,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 51,
+          "wavelength_um": 2.4718,
+          "flux_mjy": 177.6372,
+          "flux_error_mjy": 4.8497,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 52,
+          "wavelength_um": 2.5553,
+          "flux_mjy": 164.7621,
+          "flux_error_mjy": 10.1781,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 53,
+          "wavelength_um": 2.6388,
+          "flux_mjy": 155.3505,
+          "flux_error_mjy": 5.7075,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 54,
+          "wavelength_um": 2.7224,
+          "flux_mjy": 145.1484,
+          "flux_error_mjy": 3.8184,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 55,
+          "wavelength_um": 2.8059,
+          "flux_mjy": 135.8877,
+          "flux_error_mjy": 5.3038,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 56,
+          "wavelength_um": 2.8894,
+          "flux_mjy": 128.918,
+          "flux_error_mjy": 3.1164,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 57,
+          "wavelength_um": 2.9729,
+          "flux_mjy": 120.0127,
+          "flux_error_mjy": 3.9866,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 58,
+          "wavelength_um": 3.0565,
+          "flux_mjy": 113.3006,
+          "flux_error_mjy": 4.1228,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 59,
+          "wavelength_um": 3.14,
+          "flux_mjy": 108.9598,
+          "flux_error_mjy": 3.0974,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 60,
+          "wavelength_um": 3.2235,
+          "flux_mjy": 105.0697,
+          "flux_error_mjy": 6.5227,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 61,
+          "wavelength_um": 3.3071,
+          "flux_mjy": 100.8233,
+          "flux_error_mjy": 3.5788,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 62,
+          "wavelength_um": 3.3906,
+          "flux_mjy": 97.9668,
+          "flux_error_mjy": 6.3185,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 63,
+          "wavelength_um": 3.4741,
+          "flux_mjy": 94.5754,
+          "flux_error_mjy": 2.8234,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 64,
+          "wavelength_um": 3.5576,
+          "flux_mjy": 91.4823,
+          "flux_error_mjy": 5.688,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 65,
+          "wavelength_um": 3.6412,
+          "flux_mjy": 86.5952,
+          "flux_error_mjy": 5.6446,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 66,
+          "wavelength_um": 3.7247,
+          "flux_mjy": 84.3888,
+          "flux_error_mjy": 4.8007,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 67,
+          "wavelength_um": 3.8082,
+          "flux_mjy": 79.681,
+          "flux_error_mjy": 4.448,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 68,
+          "wavelength_um": 3.8671,
+          "flux_mjy": 78.0868,
+          "flux_error_mjy": 3.9931,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 69,
+          "wavelength_um": 3.9012,
+          "flux_mjy": 76.1112,
+          "flux_error_mjy": 2.8299,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 70,
+          "wavelength_um": 3.9353,
+          "flux_mjy": 75.293,
+          "flux_error_mjy": 2.0185,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 71,
+          "wavelength_um": 3.9694,
+          "flux_mjy": 73.1015,
+          "flux_error_mjy": 4.348,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 72,
+          "wavelength_um": 4.0035,
+          "flux_mjy": 72.4814,
+          "flux_error_mjy": 2.5417,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 73,
+          "wavelength_um": 4.0376,
+          "flux_mjy": 71.6401,
+          "flux_error_mjy": 3.3155,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 74,
+          "wavelength_um": 4.0718,
+          "flux_mjy": 70.6007,
+          "flux_error_mjy": 4.5343,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 75,
+          "wavelength_um": 4.1059,
+          "flux_mjy": 68.7826,
+          "flux_error_mjy": 3.6897,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 76,
+          "wavelength_um": 4.14,
+          "flux_mjy": 67.0541,
+          "flux_error_mjy": 3.8256,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 77,
+          "wavelength_um": 4.1741,
+          "flux_mjy": 66.3166,
+          "flux_error_mjy": 2.5893,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 78,
+          "wavelength_um": 4.2082,
+          "flux_mjy": 65.9565,
+          "flux_error_mjy": 3.7767,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 79,
+          "wavelength_um": 4.2424,
+          "flux_mjy": 63.6762,
+          "flux_error_mjy": 2.45,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 80,
+          "wavelength_um": 4.2765,
+          "flux_mjy": 63.4264,
+          "flux_error_mjy": 3.6646,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 81,
+          "wavelength_um": 4.3106,
+          "flux_mjy": 62.7428,
+          "flux_error_mjy": 1.805,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 82,
+          "wavelength_um": 4.3447,
+          "flux_mjy": 61.0607,
+          "flux_error_mjy": 3.6456,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 83,
+          "wavelength_um": 4.3788,
+          "flux_mjy": 60.665,
+          "flux_error_mjy": 3.6246,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 84,
+          "wavelength_um": 4.4129,
+          "flux_mjy": 59.0535,
+          "flux_error_mjy": 1.7764,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 85,
+          "wavelength_um": 4.4468,
+          "flux_mjy": 58.8438,
+          "flux_error_mjy": 3.1212,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 86,
+          "wavelength_um": 4.4803,
+          "flux_mjy": 57.5844,
+          "flux_error_mjy": 1.7483,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 87,
+          "wavelength_um": 4.5138,
+          "flux_mjy": 57.9,
+          "flux_error_mjy": 3.7093,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 88,
+          "wavelength_um": 4.5474,
+          "flux_mjy": 56.5667,
+          "flux_error_mjy": 1.6473,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 89,
+          "wavelength_um": 4.5809,
+          "flux_mjy": 55.792,
+          "flux_error_mjy": 1.6942,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 90,
+          "wavelength_um": 4.6144,
+          "flux_mjy": 55.8395,
+          "flux_error_mjy": 3.6435,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 91,
+          "wavelength_um": 4.6479,
+          "flux_mjy": 55.096,
+          "flux_error_mjy": 3.7244,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 92,
+          "wavelength_um": 4.6815,
+          "flux_mjy": 54.1991,
+          "flux_error_mjy": 2.7779,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 93,
+          "wavelength_um": 4.715,
+          "flux_mjy": 53.7059,
+          "flux_error_mjy": 3.5234,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 94,
+          "wavelength_um": 4.7485,
+          "flux_mjy": 53.3672,
+          "flux_error_mjy": 2.1619,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 95,
+          "wavelength_um": 4.7821,
+          "flux_mjy": 52.9642,
+          "flux_error_mjy": 3.2135,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 96,
+          "wavelength_um": 4.8156,
+          "flux_mjy": 51.3862,
+          "flux_error_mjy": 1.7406,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 97,
+          "wavelength_um": 4.8491,
+          "flux_mjy": 51.0866,
+          "flux_error_mjy": 1.8479,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 98,
+          "wavelength_um": 4.8826,
+          "flux_mjy": 50.5493,
+          "flux_error_mjy": 2.3019,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 99,
+          "wavelength_um": 4.9162,
+          "flux_mjy": 50.1927,
+          "flux_error_mjy": 3.3226,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 100,
+          "wavelength_um": 4.9497,
+          "flux_mjy": 49.7944,
+          "flux_error_mjy": 2.6545,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 101,
+          "wavelength_um": 4.9832,
+          "flux_mjy": 48.8719,
+          "flux_error_mjy": 2.8616,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        }
+      ],
+      "coverage_mask": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "gaia": {
+        "source_id": "4472832130942575872",
+        "ra_deg": 269.44850252543836,
+        "dec_deg": 4.739420051112412,
+        "parallax_mas": 546.975939730948,
+        "pmra_mas_yr": -801.5509783684709,
+        "pmdec_mas_yr": 10362.394206546573,
+        "pm_total_mas_yr": 10393.349,
+        "phot_g_mean_mag": 8.1939745,
+        "phot_bp_mean_mag": 9.791788,
+        "phot_rp_mean_mag": 6.9580913,
+        "ruwe": 1.0848505,
+        "distance_pc": 1.828,
+        "absolute_magnitude_g": 11.884,
+        "tangential_velocity_km_s": 90.067,
+        "parallax_significance": 33.333
+      },
+      "molecules": [
+        {
+          "molecule": "H2O",
+          "feature_label": "Water ice / water bands",
+          "wavelength_um": 3.05,
+          "value": 0.02,
+          "unit": "mag",
+          "error_16_84": [
+            -0.03,
+            0.07
+          ],
+          "sigma": 0.6,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": null
+        },
+        {
+          "molecule": "CH4",
+          "feature_label": "Methane dip",
+          "wavelength_um": 3.3,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: fewer than 3 bands cover the feature"
+        },
+        {
+          "molecule": "CO2",
+          "feature_label": "Carbon dioxide",
+          "wavelength_um": 4.27,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: fewer than 3 bands cover the feature"
+        },
+        {
+          "molecule": "CO",
+          "feature_label": "Carbon monoxide",
+          "wavelength_um": 4.67,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not detected: under 2 sigma"
+        }
+      ],
+      "blend_share": 0.0,
+      "variable_flag": false,
+      "notes": "Real metadata: Gaia DR3 1719 rows, SPHEREx 387 frames, time span 515.8 days."
+    },
+    "identity": {
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.7259903324078835,
+          "Ultracool dwarf": 0.10618346052622181,
+          "Young star": 0.07729692605299257,
+          "Evolved giant star": 0.09052928101290217,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.726,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.0148,
+          0.4348
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 7,
+            "wavelength_um": 0.9088,
+            "label": "0.91 \u00b5m measured"
+          },
+          {
+            "band_index": 8,
+            "wavelength_um": 0.93,
+            "label": "0.93 \u00b5m measured"
+          },
+          {
+            "band_index": 9,
+            "wavelength_um": 0.9512,
+            "label": "0.95 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Galaxy",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.9901898305632639,
+          "Ultracool dwarf": 0.006354880551188438,
+          "Young star": 0.0,
+          "Evolved giant star": 0.003455288885547653,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Star",
+        "raw_confidence": 0.9902,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Star"
+        ],
+        "resampled_confidence_range": [
+          0.1231,
+          0.8646
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 7,
+            "wavelength_um": 0.9088,
+            "label": "0.91 \u00b5m measured"
+          },
+          {
+            "band_index": 8,
+            "wavelength_um": 0.93,
+            "label": "0.93 \u00b5m measured"
+          },
+          {
+            "band_index": 9,
+            "wavelength_um": 0.9512,
+            "label": "0.95 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Galaxy",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Unclassified",
+        "all_data_top": "Star",
+        "agreement": false,
+        "capped_at_50": true,
+        "final_label_unclassified": false
+      }
+    },
+    "cross_surveys": {
+      "gaia_match": true,
+      "gaia_match_note": "True",
+      "two_mass_match": true,
+      "catwise_match": true,
+      "neowise_match": true,
+      "simbad_type": null,
+      "splices_class": null,
+      "solar_system_object": false
+    }
+  },
+  {
+    "target_name": "Epsilon_Indi_B",
+    "source_id": "SRC-Epsilon-Indi-B",
+    "readings": {
+      "source_id": "SRC-Epsilon-Indi-B",
+      "target_name": "Epsilon_Indi_B",
+      "spectral_bands": [
+        {
+          "index": 0,
+          "wavelength_um": 0.7606,
+          "flux_mjy": 60.5495,
+          "flux_error_mjy": 2.7422,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 1,
+          "wavelength_um": 0.7818,
+          "flux_mjy": 60.1174,
+          "flux_error_mjy": 3.2779,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 2,
+          "wavelength_um": 0.8029,
+          "flux_mjy": 59.6264,
+          "flux_error_mjy": 3.9559,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 3,
+          "wavelength_um": 0.8241,
+          "flux_mjy": 60.53,
+          "flux_error_mjy": 2.9473,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 4,
+          "wavelength_um": 0.8453,
+          "flux_mjy": 60.436,
+          "flux_error_mjy": 3.5309,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 5,
+          "wavelength_um": 0.8665,
+          "flux_mjy": 59.9385,
+          "flux_error_mjy": 2.0407,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 6,
+          "wavelength_um": 0.8876,
+          "flux_mjy": 59.6261,
+          "flux_error_mjy": 3.8264,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 7,
+          "wavelength_um": 0.9088,
+          "flux_mjy": 59.5772,
+          "flux_error_mjy": 1.7218,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 8,
+          "wavelength_um": 0.93,
+          "flux_mjy": 60.4022,
+          "flux_error_mjy": 2.4345,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 9,
+          "wavelength_um": 0.9512,
+          "flux_mjy": 60.3078,
+          "flux_error_mjy": 2.584,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 10,
+          "wavelength_um": 0.9724,
+          "flux_mjy": 60.2395,
+          "flux_error_mjy": 2.7414,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 11,
+          "wavelength_um": 0.9935,
+          "flux_mjy": 60.1553,
+          "flux_error_mjy": 2.6598,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 12,
+          "wavelength_um": 1.0147,
+          "flux_mjy": 60.3017,
+          "flux_error_mjy": 2.3033,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 13,
+          "wavelength_um": 1.0359,
+          "flux_mjy": 60.3275,
+          "flux_error_mjy": 2.0569,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 14,
+          "wavelength_um": 1.0571,
+          "flux_mjy": 59.7794,
+          "flux_error_mjy": 2.7482,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 15,
+          "wavelength_um": 1.0782,
+          "flux_mjy": 59.8287,
+          "flux_error_mjy": 2.071,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 16,
+          "wavelength_um": 1.0994,
+          "flux_mjy": 60.3386,
+          "flux_error_mjy": 4.0813,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 17,
+          "wavelength_um": 1.1259,
+          "flux_mjy": 60.3051,
+          "flux_error_mjy": 2.0956,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 18,
+          "wavelength_um": 1.1576,
+          "flux_mjy": 59.8511,
+          "flux_error_mjy": 3.648,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 19,
+          "wavelength_um": 1.1894,
+          "flux_mjy": 60.4749,
+          "flux_error_mjy": 1.9136,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 20,
+          "wavelength_um": 1.2212,
+          "flux_mjy": 60.1371,
+          "flux_error_mjy": 2.1293,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 21,
+          "wavelength_um": 1.2529,
+          "flux_mjy": 60.5272,
+          "flux_error_mjy": 3.9971,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 22,
+          "wavelength_um": 1.2847,
+          "flux_mjy": 59.8993,
+          "flux_error_mjy": 3.2691,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 23,
+          "wavelength_um": 1.3165,
+          "flux_mjy": 59.9857,
+          "flux_error_mjy": 2.427,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 24,
+          "wavelength_um": 1.3482,
+          "flux_mjy": 60.5713,
+          "flux_error_mjy": 2.8384,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 25,
+          "wavelength_um": 1.38,
+          "flux_mjy": 59.8652,
+          "flux_error_mjy": 4.069,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 26,
+          "wavelength_um": 1.4118,
+          "flux_mjy": 59.4576,
+          "flux_error_mjy": 1.7296,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 27,
+          "wavelength_um": 1.4435,
+          "flux_mjy": 60.2163,
+          "flux_error_mjy": 3.5744,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 28,
+          "wavelength_um": 1.4753,
+          "flux_mjy": 59.7642,
+          "flux_error_mjy": 1.725,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 29,
+          "wavelength_um": 1.5071,
+          "flux_mjy": 60.5461,
+          "flux_error_mjy": 3.442,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 30,
+          "wavelength_um": 1.5388,
+          "flux_mjy": 59.8144,
+          "flux_error_mjy": 3.4851,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 31,
+          "wavelength_um": 1.5706,
+          "flux_mjy": 60.5788,
+          "flux_error_mjy": 2.7325,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 32,
+          "wavelength_um": 1.6024,
+          "flux_mjy": 60.3743,
+          "flux_error_mjy": 3.1982,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 33,
+          "wavelength_um": 1.6341,
+          "flux_mjy": 59.8712,
+          "flux_error_mjy": 2.7539,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 34,
+          "wavelength_um": 1.6729,
+          "flux_mjy": 60.2789,
+          "flux_error_mjy": 2.1332,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 35,
+          "wavelength_um": 1.7188,
+          "flux_mjy": 59.6305,
+          "flux_error_mjy": 3.0678,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 36,
+          "wavelength_um": 1.7647,
+          "flux_mjy": 60.2215,
+          "flux_error_mjy": 3.4838,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 37,
+          "wavelength_um": 1.8106,
+          "flux_mjy": 60.5184,
+          "flux_error_mjy": 2.6904,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 38,
+          "wavelength_um": 1.8565,
+          "flux_mjy": 59.7347,
+          "flux_error_mjy": 3.3687,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 39,
+          "wavelength_um": 1.9024,
+          "flux_mjy": 60.0311,
+          "flux_error_mjy": 1.7503,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 40,
+          "wavelength_um": 1.9482,
+          "flux_mjy": 59.5337,
+          "flux_error_mjy": 2.952,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 41,
+          "wavelength_um": 1.9941,
+          "flux_mjy": 60.4114,
+          "flux_error_mjy": 2.3968,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 42,
+          "wavelength_um": 2.04,
+          "flux_mjy": 59.5086,
+          "flux_error_mjy": 2.7393,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 43,
+          "wavelength_um": 2.0859,
+          "flux_mjy": 60.5537,
+          "flux_error_mjy": 1.9416,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 44,
+          "wavelength_um": 2.1318,
+          "flux_mjy": 60.2439,
+          "flux_error_mjy": 3.9294,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 45,
+          "wavelength_um": 2.1776,
+          "flux_mjy": 59.7129,
+          "flux_error_mjy": 2.8387,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 46,
+          "wavelength_um": 2.2235,
+          "flux_mjy": 60.1341,
+          "flux_error_mjy": 2.1202,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 47,
+          "wavelength_um": 2.2694,
+          "flux_mjy": 59.2851,
+          "flux_error_mjy": 3.6199,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 48,
+          "wavelength_um": 2.3153,
+          "flux_mjy": 59.3457,
+          "flux_error_mjy": 2.5241,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 49,
+          "wavelength_um": 2.3612,
+          "flux_mjy": 58.6857,
+          "flux_error_mjy": 3.8653,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 50,
+          "wavelength_um": 2.4071,
+          "flux_mjy": 58.526,
+          "flux_error_mjy": 3.9089,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 51,
+          "wavelength_um": 2.4718,
+          "flux_mjy": 57.2265,
+          "flux_error_mjy": 3.3093,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 52,
+          "wavelength_um": 2.5553,
+          "flux_mjy": 55.287,
+          "flux_error_mjy": 3.4807,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 53,
+          "wavelength_um": 2.6388,
+          "flux_mjy": 50.7928,
+          "flux_error_mjy": 2.0616,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 54,
+          "wavelength_um": 2.7224,
+          "flux_mjy": 44.933,
+          "flux_error_mjy": 1.5849,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 55,
+          "wavelength_um": 2.8059,
+          "flux_mjy": 37.3294,
+          "flux_error_mjy": 1.5939,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 56,
+          "wavelength_um": 2.8894,
+          "flux_mjy": 27.909,
+          "flux_error_mjy": 1.6287,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 57,
+          "wavelength_um": 2.9729,
+          "flux_mjy": 20.5881,
+          "flux_error_mjy": 1.1735,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 58,
+          "wavelength_um": 3.0565,
+          "flux_mjy": 14.7609,
+          "flux_error_mjy": 1.1894,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 59,
+          "wavelength_um": 3.14,
+          "flux_mjy": 12.3848,
+          "flux_error_mjy": 1.2263,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 60,
+          "wavelength_um": 3.2235,
+          "flux_mjy": 14.3339,
+          "flux_error_mjy": 1.0025,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 61,
+          "wavelength_um": 3.3071,
+          "flux_mjy": 18.4594,
+          "flux_error_mjy": 1.123,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 62,
+          "wavelength_um": 3.3906,
+          "flux_mjy": 25.6399,
+          "flux_error_mjy": 1.7429,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 63,
+          "wavelength_um": 3.4741,
+          "flux_mjy": 32.0225,
+          "flux_error_mjy": 2.3588,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 64,
+          "wavelength_um": 3.5576,
+          "flux_mjy": 38.1526,
+          "flux_error_mjy": 2.1362,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 65,
+          "wavelength_um": 3.6412,
+          "flux_mjy": 43.6946,
+          "flux_error_mjy": 2.39,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 66,
+          "wavelength_um": 3.7247,
+          "flux_mjy": 48.0,
+          "flux_error_mjy": 3.2131,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 67,
+          "wavelength_um": 3.8082,
+          "flux_mjy": 49.9295,
+          "flux_error_mjy": 3.206,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 68,
+          "wavelength_um": 3.8671,
+          "flux_mjy": 50.8647,
+          "flux_error_mjy": 2.5319,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 69,
+          "wavelength_um": 3.9012,
+          "flux_mjy": 51.0913,
+          "flux_error_mjy": 3.025,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 70,
+          "wavelength_um": 3.9353,
+          "flux_mjy": 51.0588,
+          "flux_error_mjy": 1.561,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 71,
+          "wavelength_um": 3.9694,
+          "flux_mjy": 50.3563,
+          "flux_error_mjy": 2.7462,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 72,
+          "wavelength_um": 4.0035,
+          "flux_mjy": 50.4763,
+          "flux_error_mjy": 2.624,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 73,
+          "wavelength_um": 4.0376,
+          "flux_mjy": 49.7826,
+          "flux_error_mjy": 3.2839,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 74,
+          "wavelength_um": 4.0718,
+          "flux_mjy": 49.8255,
+          "flux_error_mjy": 2.9236,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 75,
+          "wavelength_um": 4.1059,
+          "flux_mjy": 48.7568,
+          "flux_error_mjy": 3.2812,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 76,
+          "wavelength_um": 4.14,
+          "flux_mjy": 48.9723,
+          "flux_error_mjy": 2.173,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 77,
+          "wavelength_um": 4.1741,
+          "flux_mjy": 48.2083,
+          "flux_error_mjy": 3.0251,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 78,
+          "wavelength_um": 4.2082,
+          "flux_mjy": 47.7394,
+          "flux_error_mjy": 1.8759,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 79,
+          "wavelength_um": 4.2424,
+          "flux_mjy": 46.4124,
+          "flux_error_mjy": 2.5892,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 80,
+          "wavelength_um": 4.2765,
+          "flux_mjy": 46.2952,
+          "flux_error_mjy": 1.866,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 81,
+          "wavelength_um": 4.3106,
+          "flux_mjy": 46.646,
+          "flux_error_mjy": 2.5364,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 82,
+          "wavelength_um": 4.3447,
+          "flux_mjy": 45.9227,
+          "flux_error_mjy": 2.6017,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 83,
+          "wavelength_um": 4.3788,
+          "flux_mjy": 45.5449,
+          "flux_error_mjy": 3.199,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 84,
+          "wavelength_um": 4.4129,
+          "flux_mjy": 46.2612,
+          "flux_error_mjy": 2.7452,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 85,
+          "wavelength_um": 4.4468,
+          "flux_mjy": 46.7702,
+          "flux_error_mjy": 1.9447,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 86,
+          "wavelength_um": 4.4803,
+          "flux_mjy": 47.1087,
+          "flux_error_mjy": 1.6425,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 87,
+          "wavelength_um": 4.5138,
+          "flux_mjy": 47.3061,
+          "flux_error_mjy": 3.1554,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 88,
+          "wavelength_um": 4.5474,
+          "flux_mjy": 47.5678,
+          "flux_error_mjy": 2.2564,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 89,
+          "wavelength_um": 4.5809,
+          "flux_mjy": 47.6189,
+          "flux_error_mjy": 1.9323,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 90,
+          "wavelength_um": 4.6144,
+          "flux_mjy": 48.0482,
+          "flux_error_mjy": 1.6134,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 91,
+          "wavelength_um": 4.6479,
+          "flux_mjy": 48.599,
+          "flux_error_mjy": 2.178,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 92,
+          "wavelength_um": 4.6815,
+          "flux_mjy": 49.9513,
+          "flux_error_mjy": 2.301,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 93,
+          "wavelength_um": 4.715,
+          "flux_mjy": 49.8935,
+          "flux_error_mjy": 1.6134,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 94,
+          "wavelength_um": 4.7485,
+          "flux_mjy": 51.0279,
+          "flux_error_mjy": 2.8331,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 95,
+          "wavelength_um": 4.7821,
+          "flux_mjy": 51.9365,
+          "flux_error_mjy": 2.5027,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 96,
+          "wavelength_um": 4.8156,
+          "flux_mjy": 52.0276,
+          "flux_error_mjy": 2.5384,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 97,
+          "wavelength_um": 4.8491,
+          "flux_mjy": 53.6171,
+          "flux_error_mjy": 1.7184,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 98,
+          "wavelength_um": 4.8826,
+          "flux_mjy": 54.5226,
+          "flux_error_mjy": 2.5755,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 99,
+          "wavelength_um": 4.9162,
+          "flux_mjy": 54.1199,
+          "flux_error_mjy": 2.8221,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 100,
+          "wavelength_um": 4.9497,
+          "flux_mjy": 55.2674,
+          "flux_error_mjy": 3.4856,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 101,
+          "wavelength_um": 4.9832,
+          "flux_mjy": 56.4707,
+          "flux_error_mjy": 2.6042,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        }
+      ],
+      "coverage_mask": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "gaia": {
+        "source_id": "6412596012146801152",
+        "ra_deg": 331.0765,
+        "dec_deg": -56.7938,
+        "parallax_mas": 270.658,
+        "pmra_mas_yr": 3981.98,
+        "pmdec_mas_yr": -2466.83,
+        "pm_total_mas_yr": 4684.166,
+        "phot_g_mean_mag": 18.03,
+        "phot_bp_mean_mag": null,
+        "phot_rp_mean_mag": null,
+        "ruwe": 4.3,
+        "distance_pc": 3.695,
+        "absolute_magnitude_g": 20.192,
+        "tangential_velocity_km_s": 82.033,
+        "parallax_significance": 33.333
+      },
+      "molecules": [
+        {
+          "molecule": "H2O",
+          "feature_label": "Water ice / water bands",
+          "wavelength_um": 3.05,
+          "value": 0.38,
+          "unit": "mag",
+          "error_16_84": [
+            0.33,
+            0.43
+          ],
+          "sigma": 5.0,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": null
+        },
+        {
+          "molecule": "CH4",
+          "feature_label": "Methane dip",
+          "wavelength_um": 3.3,
+          "value": 0.42,
+          "unit": "mag",
+          "error_16_84": [
+            0.37,
+            0.47
+          ],
+          "sigma": 8.0,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": null
+        },
+        {
+          "molecule": "CO2",
+          "feature_label": "Carbon dioxide",
+          "wavelength_um": 4.27,
+          "value": 0.18,
+          "unit": "mag",
+          "error_16_84": [
+            0.13,
+            0.23
+          ],
+          "sigma": 3.0,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": null
+        },
+        {
+          "molecule": "CO",
+          "feature_label": "Carbon monoxide",
+          "wavelength_um": 4.67,
+          "value": 0.07,
+          "unit": "mag",
+          "error_16_84": [
+            0.02,
+            0.12
+          ],
+          "sigma": 1.8,
+          "origin": "Measured",
+          "pct_of_water_ice": null,
+          "refusal_reason": null
+        }
+      ],
+      "blend_share": 0.0,
+      "variable_flag": false,
+      "notes": "Real metadata: Gaia DR3 175 rows, SPHEREx 487 frames, time span 525.6 days."
+    },
+    "identity": {
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.9990643823738203,
+          "Young star": 0.0009356176261797091,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 0.9991,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.6953,
+          0.9873
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 58,
+            "wavelength_um": 3.0565,
+            "label": "3.06 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 1.0,
+          "Young star": 0.0,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 1.0,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.7476,
+          0.9922
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 58,
+            "wavelength_um": 3.0565,
+            "label": "3.06 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Ultracool dwarf",
+        "all_data_top": "Ultracool dwarf",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": false
+      }
+    },
+    "cross_surveys": {
+      "gaia_match": true,
+      "gaia_match_note": "True",
+      "two_mass_match": true,
+      "catwise_match": true,
+      "neowise_match": true,
+      "simbad_type": null,
+      "splices_class": null,
+      "solar_system_object": false
+    }
+  },
+  {
+    "target_name": "R_Draconis",
+    "source_id": "SRC-R-Draconis",
+    "readings": {
+      "source_id": "SRC-R-Draconis",
+      "target_name": "R_Draconis",
+      "spectral_bands": [
+        {
+          "index": 0,
+          "wavelength_um": 0.7606,
+          "flux_mjy": 543.5589,
+          "flux_error_mjy": 22.3401,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 1,
+          "wavelength_um": 0.7818,
+          "flux_mjy": 540.6051,
+          "flux_error_mjy": 31.5288,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 2,
+          "wavelength_um": 0.8029,
+          "flux_mjy": 537.2073,
+          "flux_error_mjy": 30.6636,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 3,
+          "wavelength_um": 0.8241,
+          "flux_mjy": 536.8866,
+          "flux_error_mjy": 22.5238,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 4,
+          "wavelength_um": 0.8453,
+          "flux_mjy": 542.03,
+          "flux_error_mjy": 21.9864,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 5,
+          "wavelength_um": 0.8665,
+          "flux_mjy": 535.8319,
+          "flux_error_mjy": 11.9897,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 6,
+          "wavelength_um": 0.8876,
+          "flux_mjy": 540.2679,
+          "flux_error_mjy": 22.318,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 7,
+          "wavelength_um": 0.9088,
+          "flux_mjy": 536.2898,
+          "flux_error_mjy": 20.3465,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 8,
+          "wavelength_um": 0.93,
+          "flux_mjy": 539.5277,
+          "flux_error_mjy": 17.9363,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 9,
+          "wavelength_um": 0.9512,
+          "flux_mjy": 544.4061,
+          "flux_error_mjy": 18.9895,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 10,
+          "wavelength_um": 0.9724,
+          "flux_mjy": 538.9183,
+          "flux_error_mjy": 24.3382,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 11,
+          "wavelength_um": 0.9935,
+          "flux_mjy": 535.5327,
+          "flux_error_mjy": 27.7401,
+          "covered": true,
+          "band_name": "D1",
+          "flag": "overflow"
+        },
+        {
+          "index": 12,
+          "wavelength_um": 1.0147,
+          "flux_mjy": 539.7664,
+          "flux_error_mjy": 30.2478,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 13,
+          "wavelength_um": 1.0359,
+          "flux_mjy": 534.9488,
+          "flux_error_mjy": 11.7984,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 14,
+          "wavelength_um": 1.0571,
+          "flux_mjy": 543.2502,
+          "flux_error_mjy": 26.2939,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 15,
+          "wavelength_um": 1.0782,
+          "flux_mjy": 538.9354,
+          "flux_error_mjy": 29.9872,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 16,
+          "wavelength_um": 1.0994,
+          "flux_mjy": 540.2952,
+          "flux_error_mjy": 22.0974,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 17,
+          "wavelength_um": 1.1259,
+          "flux_mjy": 541.7828,
+          "flux_error_mjy": 26.5338,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 18,
+          "wavelength_um": 1.1576,
+          "flux_mjy": 542.8923,
+          "flux_error_mjy": 16.0789,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 19,
+          "wavelength_um": 1.1894,
+          "flux_mjy": 537.7257,
+          "flux_error_mjy": 18.2949,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 20,
+          "wavelength_um": 1.2212,
+          "flux_mjy": 543.5965,
+          "flux_error_mjy": 13.9983,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 21,
+          "wavelength_um": 1.2529,
+          "flux_mjy": 543.3169,
+          "flux_error_mjy": 20.6823,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 22,
+          "wavelength_um": 1.2847,
+          "flux_mjy": 534.6754,
+          "flux_error_mjy": 17.6195,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 23,
+          "wavelength_um": 1.3165,
+          "flux_mjy": 541.1768,
+          "flux_error_mjy": 13.2068,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 24,
+          "wavelength_um": 1.3482,
+          "flux_mjy": 544.7625,
+          "flux_error_mjy": 32.6708,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 25,
+          "wavelength_um": 1.38,
+          "flux_mjy": 535.5334,
+          "flux_error_mjy": 22.6758,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 26,
+          "wavelength_um": 1.4118,
+          "flux_mjy": 535.5449,
+          "flux_error_mjy": 23.367,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 27,
+          "wavelength_um": 1.4435,
+          "flux_mjy": 541.8752,
+          "flux_error_mjy": 11.7217,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 28,
+          "wavelength_um": 1.4753,
+          "flux_mjy": 537.015,
+          "flux_error_mjy": 23.5866,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 29,
+          "wavelength_um": 1.5071,
+          "flux_mjy": 538.5136,
+          "flux_error_mjy": 13.3595,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 30,
+          "wavelength_um": 1.5388,
+          "flux_mjy": 538.7283,
+          "flux_error_mjy": 19.1792,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 31,
+          "wavelength_um": 1.5706,
+          "flux_mjy": 542.2491,
+          "flux_error_mjy": 22.119,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 32,
+          "wavelength_um": 1.6024,
+          "flux_mjy": 543.9345,
+          "flux_error_mjy": 30.1197,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 33,
+          "wavelength_um": 1.6341,
+          "flux_mjy": 536.4522,
+          "flux_error_mjy": 27.3679,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 34,
+          "wavelength_um": 1.6729,
+          "flux_mjy": 540.4528,
+          "flux_error_mjy": 20.7333,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 35,
+          "wavelength_um": 1.7188,
+          "flux_mjy": 539.3306,
+          "flux_error_mjy": 26.6208,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 36,
+          "wavelength_um": 1.7647,
+          "flux_mjy": 534.9143,
+          "flux_error_mjy": 19.0567,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 37,
+          "wavelength_um": 1.8106,
+          "flux_mjy": 537.5568,
+          "flux_error_mjy": 18.2917,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 38,
+          "wavelength_um": 1.8565,
+          "flux_mjy": 538.3022,
+          "flux_error_mjy": 14.6931,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 39,
+          "wavelength_um": 1.9024,
+          "flux_mjy": 537.9866,
+          "flux_error_mjy": 20.9141,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 40,
+          "wavelength_um": 1.9482,
+          "flux_mjy": 536.1023,
+          "flux_error_mjy": 28.8767,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 41,
+          "wavelength_um": 1.9941,
+          "flux_mjy": 537.0157,
+          "flux_error_mjy": 15.0792,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 42,
+          "wavelength_um": 2.04,
+          "flux_mjy": 541.8697,
+          "flux_error_mjy": 17.1642,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 43,
+          "wavelength_um": 2.0859,
+          "flux_mjy": 538.4813,
+          "flux_error_mjy": 16.7655,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 44,
+          "wavelength_um": 2.1318,
+          "flux_mjy": 541.4971,
+          "flux_error_mjy": 31.0534,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 45,
+          "wavelength_um": 2.1776,
+          "flux_mjy": 535.3259,
+          "flux_error_mjy": 23.5955,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 46,
+          "wavelength_um": 2.2235,
+          "flux_mjy": 540.437,
+          "flux_error_mjy": 22.4694,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 47,
+          "wavelength_um": 2.2694,
+          "flux_mjy": 540.0076,
+          "flux_error_mjy": 18.8096,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 48,
+          "wavelength_um": 2.3153,
+          "flux_mjy": 543.9122,
+          "flux_error_mjy": 25.2418,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 49,
+          "wavelength_um": 2.3612,
+          "flux_mjy": 534.1158,
+          "flux_error_mjy": 24.4779,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 50,
+          "wavelength_um": 2.4071,
+          "flux_mjy": 538.3636,
+          "flux_error_mjy": 14.7692,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 51,
+          "wavelength_um": 2.4718,
+          "flux_mjy": 540.6514,
+          "flux_error_mjy": 13.9192,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 52,
+          "wavelength_um": 2.5553,
+          "flux_mjy": 536.055,
+          "flux_error_mjy": 20.4973,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 53,
+          "wavelength_um": 2.6388,
+          "flux_mjy": 532.3058,
+          "flux_error_mjy": 28.1412,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 54,
+          "wavelength_um": 2.7224,
+          "flux_mjy": 517.0733,
+          "flux_error_mjy": 16.9358,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 55,
+          "wavelength_um": 2.8059,
+          "flux_mjy": 508.4294,
+          "flux_error_mjy": 29.6909,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 56,
+          "wavelength_um": 2.8894,
+          "flux_mjy": 501.0746,
+          "flux_error_mjy": 17.7285,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 57,
+          "wavelength_um": 2.9729,
+          "flux_mjy": 480.1329,
+          "flux_error_mjy": 26.6389,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 58,
+          "wavelength_um": 3.0565,
+          "flux_mjy": 473.8384,
+          "flux_error_mjy": 19.4667,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 59,
+          "wavelength_um": 3.14,
+          "flux_mjy": 468.787,
+          "flux_error_mjy": 21.5491,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 60,
+          "wavelength_um": 3.2235,
+          "flux_mjy": 470.0123,
+          "flux_error_mjy": 22.2539,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 61,
+          "wavelength_um": 3.3071,
+          "flux_mjy": 473.2602,
+          "flux_error_mjy": 28.5466,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 62,
+          "wavelength_um": 3.3906,
+          "flux_mjy": 478.5207,
+          "flux_error_mjy": 14.9439,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 63,
+          "wavelength_um": 3.4741,
+          "flux_mjy": 490.368,
+          "flux_error_mjy": 24.7612,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 64,
+          "wavelength_um": 3.5576,
+          "flux_mjy": 499.3546,
+          "flux_error_mjy": 26.4109,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 65,
+          "wavelength_um": 3.6412,
+          "flux_mjy": 510.7565,
+          "flux_error_mjy": 25.8437,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 66,
+          "wavelength_um": 3.7247,
+          "flux_mjy": 513.3912,
+          "flux_error_mjy": 21.2202,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 67,
+          "wavelength_um": 3.8082,
+          "flux_mjy": 523.977,
+          "flux_error_mjy": 25.2904,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 68,
+          "wavelength_um": 3.8671,
+          "flux_mjy": 527.1315,
+          "flux_error_mjy": 17.9085,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 69,
+          "wavelength_um": 3.9012,
+          "flux_mjy": 528.4255,
+          "flux_error_mjy": 24.9033,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 70,
+          "wavelength_um": 3.9353,
+          "flux_mjy": 526.6611,
+          "flux_error_mjy": 12.636,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 71,
+          "wavelength_um": 3.9694,
+          "flux_mjy": 525.9834,
+          "flux_error_mjy": 21.6049,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 72,
+          "wavelength_um": 4.0035,
+          "flux_mjy": 528.2973,
+          "flux_error_mjy": 23.3889,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 73,
+          "wavelength_um": 4.0376,
+          "flux_mjy": 529.3732,
+          "flux_error_mjy": 19.8686,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 74,
+          "wavelength_um": 4.0718,
+          "flux_mjy": 520.7593,
+          "flux_error_mjy": 30.9581,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 75,
+          "wavelength_um": 4.1059,
+          "flux_mjy": 524.2642,
+          "flux_error_mjy": 14.5427,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 76,
+          "wavelength_um": 4.14,
+          "flux_mjy": 526.5926,
+          "flux_error_mjy": 22.9235,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 77,
+          "wavelength_um": 4.1741,
+          "flux_mjy": 526.0124,
+          "flux_error_mjy": 14.6346,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 78,
+          "wavelength_um": 4.2082,
+          "flux_mjy": 519.8636,
+          "flux_error_mjy": 10.9154,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 79,
+          "wavelength_um": 4.2424,
+          "flux_mjy": 515.4028,
+          "flux_error_mjy": 23.4659,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 80,
+          "wavelength_um": 4.2765,
+          "flux_mjy": 523.4296,
+          "flux_error_mjy": 13.6743,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 81,
+          "wavelength_um": 4.3106,
+          "flux_mjy": 519.6984,
+          "flux_error_mjy": 22.3926,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 82,
+          "wavelength_um": 4.3447,
+          "flux_mjy": 521.6778,
+          "flux_error_mjy": 28.6366,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 83,
+          "wavelength_um": 4.3788,
+          "flux_mjy": 516.2607,
+          "flux_error_mjy": 21.1276,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 84,
+          "wavelength_um": 4.4129,
+          "flux_mjy": 522.195,
+          "flux_error_mjy": 22.6496,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 85,
+          "wavelength_um": 4.4468,
+          "flux_mjy": 517.1297,
+          "flux_error_mjy": 15.8201,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 86,
+          "wavelength_um": 4.4803,
+          "flux_mjy": 520.2752,
+          "flux_error_mjy": 27.071,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 87,
+          "wavelength_um": 4.5138,
+          "flux_mjy": 519.8222,
+          "flux_error_mjy": 23.8875,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 88,
+          "wavelength_um": 4.5474,
+          "flux_mjy": 523.4849,
+          "flux_error_mjy": 31.6058,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 89,
+          "wavelength_um": 4.5809,
+          "flux_mjy": 519.8941,
+          "flux_error_mjy": 13.4151,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 90,
+          "wavelength_um": 4.6144,
+          "flux_mjy": 520.5808,
+          "flux_error_mjy": 28.0356,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 91,
+          "wavelength_um": 4.6479,
+          "flux_mjy": 524.5072,
+          "flux_error_mjy": 15.4457,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 92,
+          "wavelength_um": 4.6815,
+          "flux_mjy": 523.526,
+          "flux_error_mjy": 29.3137,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 93,
+          "wavelength_um": 4.715,
+          "flux_mjy": 524.2901,
+          "flux_error_mjy": 13.9918,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 94,
+          "wavelength_um": 4.7485,
+          "flux_mjy": 523.8302,
+          "flux_error_mjy": 18.6881,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 95,
+          "wavelength_um": 4.7821,
+          "flux_mjy": 527.4276,
+          "flux_error_mjy": 16.3505,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 96,
+          "wavelength_um": 4.8156,
+          "flux_mjy": 531.4678,
+          "flux_error_mjy": 18.2507,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 97,
+          "wavelength_um": 4.8491,
+          "flux_mjy": 529.3225,
+          "flux_error_mjy": 11.9674,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 98,
+          "wavelength_um": 4.8826,
+          "flux_mjy": 525.0171,
+          "flux_error_mjy": 26.5157,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 99,
+          "wavelength_um": 4.9162,
+          "flux_mjy": 530.003,
+          "flux_error_mjy": 16.4936,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 100,
+          "wavelength_um": 4.9497,
+          "flux_mjy": 535.6514,
+          "flux_error_mjy": 27.7535,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 101,
+          "wavelength_um": 4.9832,
+          "flux_mjy": 534.0554,
+          "flux_error_mjy": 29.3197,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        }
+      ],
+      "coverage_mask": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "gaia": {
+        "source_id": null,
+        "ra_deg": null,
+        "dec_deg": null,
+        "parallax_mas": null,
+        "pmra_mas_yr": null,
+        "pmdec_mas_yr": null,
+        "pm_total_mas_yr": null,
+        "phot_g_mean_mag": 6.37,
+        "phot_bp_mean_mag": null,
+        "phot_rp_mean_mag": null,
+        "ruwe": null,
+        "distance_pc": null,
+        "absolute_magnitude_g": null,
+        "tangential_velocity_km_s": null,
+        "parallax_significance": null
+      },
+      "molecules": [
+        {
+          "molecule": "H2O",
+          "feature_label": "Water ice / water bands",
+          "wavelength_um": 3.05,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: variable flag is True and many bands overflow"
+        },
+        {
+          "molecule": "CH4",
+          "feature_label": "Methane dip",
+          "wavelength_um": 3.3,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: variable flag is True"
+        },
+        {
+          "molecule": "CO2",
+          "feature_label": "Carbon dioxide",
+          "wavelength_um": 4.27,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: variable flag is True"
+        },
+        {
+          "molecule": "CO",
+          "feature_label": "Carbon monoxide",
+          "wavelength_um": 4.67,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: variable flag is True"
+        }
+      ],
+      "blend_share": 0.0,
+      "variable_flag": true,
+      "notes": "Real metadata: Gaia DR3 128 rows, SPHEREx 2588 frames, time span 520.4 days."
+    },
+    "identity": {
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.6859910453916612,
+          "Young star": 0.0,
+          "Evolved giant star": 0.3140089546083387,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.686,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.6021,
+          0.8067
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.9590551260615833,
+          "Young star": 0.0,
+          "Evolved giant star": 0.033674539964449565,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.007270333973967219
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.9591,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.9219,
+          0.9485
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Unclassified",
+        "all_data_top": "Unclassified",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": true
+      }
+    },
+    "cross_surveys": {
+      "gaia_match": false,
+      "gaia_match_note": "No clean high-significance Gaia parallax",
+      "two_mass_match": true,
+      "catwise_match": true,
+      "neowise_match": true,
+      "simbad_type": null,
+      "splices_class": null,
+      "solar_system_object": false
+    }
+  },
+  {
+    "target_name": "RW_Aurigae",
+    "source_id": "SRC-RW-Aurigae",
+    "readings": {
+      "source_id": "SRC-RW-Aurigae",
+      "target_name": "RW_Aurigae",
+      "spectral_bands": [
+        {
+          "index": 0,
+          "wavelength_um": 0.7606,
+          "flux_mjy": 119.9428,
+          "flux_error_mjy": 5.9225,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 1,
+          "wavelength_um": 0.7818,
+          "flux_mjy": 119.7695,
+          "flux_error_mjy": 7.303,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 2,
+          "wavelength_um": 0.8029,
+          "flux_mjy": 118.8404,
+          "flux_error_mjy": 7.5715,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 3,
+          "wavelength_um": 0.8241,
+          "flux_mjy": 120.4899,
+          "flux_error_mjy": 6.7847,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 4,
+          "wavelength_um": 0.8453,
+          "flux_mjy": 120.7275,
+          "flux_error_mjy": 3.887,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 5,
+          "wavelength_um": 0.8665,
+          "flux_mjy": 120.7666,
+          "flux_error_mjy": 6.0696,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 6,
+          "wavelength_um": 0.8876,
+          "flux_mjy": 119.1538,
+          "flux_error_mjy": 6.9883,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 7,
+          "wavelength_um": 0.9088,
+          "flux_mjy": 119.8561,
+          "flux_error_mjy": 6.3552,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 8,
+          "wavelength_um": 0.93,
+          "flux_mjy": 119.0008,
+          "flux_error_mjy": 6.1143,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 9,
+          "wavelength_um": 0.9512,
+          "flux_mjy": 118.8128,
+          "flux_error_mjy": 3.1796,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 10,
+          "wavelength_um": 0.9724,
+          "flux_mjy": 119.053,
+          "flux_error_mjy": 3.0988,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 11,
+          "wavelength_um": 0.9935,
+          "flux_mjy": 120.2133,
+          "flux_error_mjy": 3.9585,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 12,
+          "wavelength_um": 1.0147,
+          "flux_mjy": 119.2722,
+          "flux_error_mjy": 6.7735,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 13,
+          "wavelength_um": 1.0359,
+          "flux_mjy": 120.6472,
+          "flux_error_mjy": 4.8289,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 14,
+          "wavelength_um": 1.0571,
+          "flux_mjy": 119.313,
+          "flux_error_mjy": 6.4293,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 15,
+          "wavelength_um": 1.0782,
+          "flux_mjy": 120.1192,
+          "flux_error_mjy": 4.6264,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 16,
+          "wavelength_um": 1.0994,
+          "flux_mjy": 119.5368,
+          "flux_error_mjy": 4.6322,
+          "covered": true,
+          "band_name": "D1",
+          "flag": null
+        },
+        {
+          "index": 17,
+          "wavelength_um": 1.1259,
+          "flux_mjy": 119.9681,
+          "flux_error_mjy": 3.7582,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 18,
+          "wavelength_um": 1.1576,
+          "flux_mjy": 118.8039,
+          "flux_error_mjy": 5.0879,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 19,
+          "wavelength_um": 1.1894,
+          "flux_mjy": 119.3124,
+          "flux_error_mjy": 3.1534,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 20,
+          "wavelength_um": 1.2212,
+          "flux_mjy": 119.4738,
+          "flux_error_mjy": 6.1046,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 21,
+          "wavelength_um": 1.2529,
+          "flux_mjy": 120.7907,
+          "flux_error_mjy": 3.0585,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 22,
+          "wavelength_um": 1.2847,
+          "flux_mjy": 120.7353,
+          "flux_error_mjy": 4.3783,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 23,
+          "wavelength_um": 1.3165,
+          "flux_mjy": 120.857,
+          "flux_error_mjy": 7.2047,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 24,
+          "wavelength_um": 1.3482,
+          "flux_mjy": 119.5167,
+          "flux_error_mjy": 5.959,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 25,
+          "wavelength_um": 1.38,
+          "flux_mjy": 120.1661,
+          "flux_error_mjy": 4.0437,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 26,
+          "wavelength_um": 1.4118,
+          "flux_mjy": 121.1096,
+          "flux_error_mjy": 6.1006,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 27,
+          "wavelength_um": 1.4435,
+          "flux_mjy": 121.077,
+          "flux_error_mjy": 3.6409,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 28,
+          "wavelength_um": 1.4753,
+          "flux_mjy": 119.4189,
+          "flux_error_mjy": 7.2887,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 29,
+          "wavelength_um": 1.5071,
+          "flux_mjy": 119.5214,
+          "flux_error_mjy": 4.672,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 30,
+          "wavelength_um": 1.5388,
+          "flux_mjy": 119.4571,
+          "flux_error_mjy": 6.8399,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 31,
+          "wavelength_um": 1.5706,
+          "flux_mjy": 119.5154,
+          "flux_error_mjy": 3.4981,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 32,
+          "wavelength_um": 1.6024,
+          "flux_mjy": 119.0664,
+          "flux_error_mjy": 7.2593,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 33,
+          "wavelength_um": 1.6341,
+          "flux_mjy": 118.9348,
+          "flux_error_mjy": 3.6837,
+          "covered": true,
+          "band_name": "D2",
+          "flag": null
+        },
+        {
+          "index": 34,
+          "wavelength_um": 1.6729,
+          "flux_mjy": 119.5994,
+          "flux_error_mjy": 5.5794,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 35,
+          "wavelength_um": 1.7188,
+          "flux_mjy": 120.7995,
+          "flux_error_mjy": 7.6071,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 36,
+          "wavelength_um": 1.7647,
+          "flux_mjy": 119.9353,
+          "flux_error_mjy": 6.13,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 37,
+          "wavelength_um": 1.8106,
+          "flux_mjy": 119.5623,
+          "flux_error_mjy": 5.3545,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 38,
+          "wavelength_um": 1.8565,
+          "flux_mjy": 118.8895,
+          "flux_error_mjy": 6.429,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 39,
+          "wavelength_um": 1.9024,
+          "flux_mjy": 120.0845,
+          "flux_error_mjy": 6.1298,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 40,
+          "wavelength_um": 1.9482,
+          "flux_mjy": 120.8212,
+          "flux_error_mjy": 6.8939,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 41,
+          "wavelength_um": 1.9941,
+          "flux_mjy": 121.1538,
+          "flux_error_mjy": 6.4553,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 42,
+          "wavelength_um": 2.04,
+          "flux_mjy": 119.059,
+          "flux_error_mjy": 4.4441,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 43,
+          "wavelength_um": 2.0859,
+          "flux_mjy": 120.2891,
+          "flux_error_mjy": 3.5222,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 44,
+          "wavelength_um": 2.1318,
+          "flux_mjy": 119.7247,
+          "flux_error_mjy": 4.7479,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 45,
+          "wavelength_um": 2.1776,
+          "flux_mjy": 119.1028,
+          "flux_error_mjy": 4.8716,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 46,
+          "wavelength_um": 2.2235,
+          "flux_mjy": 120.3852,
+          "flux_error_mjy": 7.3851,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 47,
+          "wavelength_um": 2.2694,
+          "flux_mjy": 120.3036,
+          "flux_error_mjy": 5.8604,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 48,
+          "wavelength_um": 2.3153,
+          "flux_mjy": 119.077,
+          "flux_error_mjy": 7.5657,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 49,
+          "wavelength_um": 2.3612,
+          "flux_mjy": 120.4155,
+          "flux_error_mjy": 6.242,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 50,
+          "wavelength_um": 2.4071,
+          "flux_mjy": 119.5807,
+          "flux_error_mjy": 5.5885,
+          "covered": true,
+          "band_name": "D3",
+          "flag": null
+        },
+        {
+          "index": 51,
+          "wavelength_um": 2.4718,
+          "flux_mjy": 118.3197,
+          "flux_error_mjy": 4.2718,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 52,
+          "wavelength_um": 2.5553,
+          "flux_mjy": 117.463,
+          "flux_error_mjy": 7.4944,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 53,
+          "wavelength_um": 2.6388,
+          "flux_mjy": 117.0586,
+          "flux_error_mjy": 5.8853,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 54,
+          "wavelength_um": 2.7224,
+          "flux_mjy": 116.1868,
+          "flux_error_mjy": 5.0096,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 55,
+          "wavelength_um": 2.8059,
+          "flux_mjy": 114.3341,
+          "flux_error_mjy": 7.2733,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 56,
+          "wavelength_um": 2.8894,
+          "flux_mjy": 110.3866,
+          "flux_error_mjy": 2.9094,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 57,
+          "wavelength_um": 2.9729,
+          "flux_mjy": 108.3345,
+          "flux_error_mjy": 4.8883,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 58,
+          "wavelength_um": 3.0565,
+          "flux_mjy": 104.2228,
+          "flux_error_mjy": 5.6125,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 59,
+          "wavelength_um": 3.14,
+          "flux_mjy": 104.2166,
+          "flux_error_mjy": 6.6579,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 60,
+          "wavelength_um": 3.2235,
+          "flux_mjy": 103.8952,
+          "flux_error_mjy": 4.2721,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 61,
+          "wavelength_um": 3.3071,
+          "flux_mjy": 103.5217,
+          "flux_error_mjy": 3.2403,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 62,
+          "wavelength_um": 3.3906,
+          "flux_mjy": 106.6813,
+          "flux_error_mjy": 6.1895,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 63,
+          "wavelength_um": 3.4741,
+          "flux_mjy": 107.9706,
+          "flux_error_mjy": 5.097,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 64,
+          "wavelength_um": 3.5576,
+          "flux_mjy": 110.0197,
+          "flux_error_mjy": 2.7068,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 65,
+          "wavelength_um": 3.6412,
+          "flux_mjy": 112.2814,
+          "flux_error_mjy": 3.4143,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 66,
+          "wavelength_um": 3.7247,
+          "flux_mjy": 115.5024,
+          "flux_error_mjy": 3.2058,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 67,
+          "wavelength_um": 3.8082,
+          "flux_mjy": 115.2356,
+          "flux_error_mjy": 4.7491,
+          "covered": true,
+          "band_name": "D4",
+          "flag": null
+        },
+        {
+          "index": 68,
+          "wavelength_um": 3.8671,
+          "flux_mjy": 117.4267,
+          "flux_error_mjy": 4.1833,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 69,
+          "wavelength_um": 3.9012,
+          "flux_mjy": 116.1382,
+          "flux_error_mjy": 6.3385,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 70,
+          "wavelength_um": 3.9353,
+          "flux_mjy": 116.5929,
+          "flux_error_mjy": 7.0899,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 71,
+          "wavelength_um": 3.9694,
+          "flux_mjy": 116.6942,
+          "flux_error_mjy": 4.1229,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 72,
+          "wavelength_um": 4.0035,
+          "flux_mjy": 117.5482,
+          "flux_error_mjy": 5.7293,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 73,
+          "wavelength_um": 4.0376,
+          "flux_mjy": 116.3808,
+          "flux_error_mjy": 6.6891,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 74,
+          "wavelength_um": 4.0718,
+          "flux_mjy": 115.93,
+          "flux_error_mjy": 3.7674,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 75,
+          "wavelength_um": 4.1059,
+          "flux_mjy": 115.4627,
+          "flux_error_mjy": 4.0086,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 76,
+          "wavelength_um": 4.14,
+          "flux_mjy": 116.6893,
+          "flux_error_mjy": 6.6275,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 77,
+          "wavelength_um": 4.1741,
+          "flux_mjy": 115.0073,
+          "flux_error_mjy": 2.9547,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 78,
+          "wavelength_um": 4.2082,
+          "flux_mjy": 114.8661,
+          "flux_error_mjy": 2.8384,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 79,
+          "wavelength_um": 4.2424,
+          "flux_mjy": 115.68,
+          "flux_error_mjy": 4.3483,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 80,
+          "wavelength_um": 4.2765,
+          "flux_mjy": 115.6537,
+          "flux_error_mjy": 3.5741,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 81,
+          "wavelength_um": 4.3106,
+          "flux_mjy": 115.5936,
+          "flux_error_mjy": 6.2954,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 82,
+          "wavelength_um": 4.3447,
+          "flux_mjy": 114.6443,
+          "flux_error_mjy": 7.2571,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 83,
+          "wavelength_um": 4.3788,
+          "flux_mjy": 114.5845,
+          "flux_error_mjy": 7.3508,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "blend"
+        },
+        {
+          "index": 84,
+          "wavelength_um": 4.4129,
+          "flux_mjy": 116.2682,
+          "flux_error_mjy": 7.0359,
+          "covered": true,
+          "band_name": "D5",
+          "flag": null
+        },
+        {
+          "index": 85,
+          "wavelength_um": 4.4468,
+          "flux_mjy": 114.9572,
+          "flux_error_mjy": 6.5222,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 86,
+          "wavelength_um": 4.4803,
+          "flux_mjy": 116.2473,
+          "flux_error_mjy": 4.4846,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 87,
+          "wavelength_um": 4.5138,
+          "flux_mjy": 115.9514,
+          "flux_error_mjy": 4.446,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 88,
+          "wavelength_um": 4.5474,
+          "flux_mjy": 114.8431,
+          "flux_error_mjy": 6.8895,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 89,
+          "wavelength_um": 4.5809,
+          "flux_mjy": 116.1128,
+          "flux_error_mjy": 6.3255,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 90,
+          "wavelength_um": 4.6144,
+          "flux_mjy": 114.7522,
+          "flux_error_mjy": 4.7074,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 91,
+          "wavelength_um": 4.6479,
+          "flux_mjy": 114.8684,
+          "flux_error_mjy": 5.1407,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 92,
+          "wavelength_um": 4.6815,
+          "flux_mjy": 116.3302,
+          "flux_error_mjy": 4.6375,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 93,
+          "wavelength_um": 4.715,
+          "flux_mjy": 116.3418,
+          "flux_error_mjy": 4.9026,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 94,
+          "wavelength_um": 4.7485,
+          "flux_mjy": 115.5328,
+          "flux_error_mjy": 4.6095,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 95,
+          "wavelength_um": 4.7821,
+          "flux_mjy": 117.4928,
+          "flux_error_mjy": 5.2986,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 96,
+          "wavelength_um": 4.8156,
+          "flux_mjy": 116.0003,
+          "flux_error_mjy": 3.7764,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 97,
+          "wavelength_um": 4.8491,
+          "flux_mjy": 116.732,
+          "flux_error_mjy": 2.9478,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 98,
+          "wavelength_um": 4.8826,
+          "flux_mjy": 117.4128,
+          "flux_error_mjy": 3.966,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 99,
+          "wavelength_um": 4.9162,
+          "flux_mjy": 117.7898,
+          "flux_error_mjy": 6.3465,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 100,
+          "wavelength_um": 4.9497,
+          "flux_mjy": 119.2996,
+          "flux_error_mjy": 5.5142,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        },
+        {
+          "index": 101,
+          "wavelength_um": 4.9832,
+          "flux_mjy": 117.544,
+          "flux_error_mjy": 7.0907,
+          "covered": true,
+          "band_name": "D6",
+          "flag": null
+        }
+      ],
+      "coverage_mask": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "gaia": {
+        "source_id": null,
+        "ra_deg": null,
+        "dec_deg": null,
+        "parallax_mas": null,
+        "pmra_mas_yr": null,
+        "pmdec_mas_yr": null,
+        "pm_total_mas_yr": null,
+        "phot_g_mean_mag": 9.9,
+        "phot_bp_mean_mag": null,
+        "phot_rp_mean_mag": null,
+        "ruwe": null,
+        "distance_pc": null,
+        "absolute_magnitude_g": null,
+        "tangential_velocity_km_s": null,
+        "parallax_significance": null
+      },
+      "molecules": [
+        {
+          "molecule": "H2O",
+          "feature_label": "Water ice / water bands",
+          "wavelength_um": 3.05,
+          "value": 0.3,
+          "unit": "mag",
+          "error_16_84": [
+            0.25,
+            0.35
+          ],
+          "sigma": 2.0,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: blend_share > 0.3 (binary pair)"
+        },
+        {
+          "molecule": "CH4",
+          "feature_label": "Methane dip",
+          "wavelength_um": 3.3,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: blend_share > 0.3"
+        },
+        {
+          "molecule": "CO2",
+          "feature_label": "Carbon dioxide",
+          "wavelength_um": 4.27,
+          "value": 0.12,
+          "unit": "mag",
+          "error_16_84": [
+            0.07,
+            0.17
+          ],
+          "sigma": 1.5,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: blend_share > 0.3"
+        },
+        {
+          "molecule": "CO",
+          "feature_label": "Carbon monoxide",
+          "wavelength_um": 4.67,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: blend_share > 0.3 (binary pair)"
+        }
+      ],
+      "blend_share": 0.42,
+      "variable_flag": true,
+      "notes": "Real metadata: Gaia DR3 769 rows, SPHEREx 343 frames, time span 510.1 days."
+    },
+    "identity": {
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.6722544895081998,
+          "Young star": 0.022019845412521135,
+          "Evolved giant star": 0.3057256650792792,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.6723,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.579,
+          0.7635
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.9381589306482889,
+          "Young star": 0.023703946941756687,
+          "Evolved giant star": 0.03153619467503961,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.006600927734914819
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.9382,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.8853,
+          0.9104
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Unclassified",
+        "all_data_top": "Unclassified",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": true
+      }
+    },
+    "cross_surveys": {
+      "gaia_match": false,
+      "gaia_match_note": "No clean high-significance Gaia parallax",
+      "two_mass_match": true,
+      "catwise_match": true,
+      "neowise_match": true,
+      "simbad_type": null,
+      "splices_class": null,
+      "solar_system_object": false
+    }
+  },
+  {
+    "target_name": "WISE_0855",
+    "source_id": "SRC-WISE-0855",
+    "readings": {
+      "source_id": "SRC-WISE-0855",
+      "target_name": "WISE_0855",
+      "spectral_bands": [
+        {
+          "index": 0,
+          "wavelength_um": 0.7606,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 1,
+          "wavelength_um": 0.7818,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 2,
+          "wavelength_um": 0.8029,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 3,
+          "wavelength_um": 0.8241,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 4,
+          "wavelength_um": 0.8453,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 5,
+          "wavelength_um": 0.8665,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 6,
+          "wavelength_um": 0.8876,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 7,
+          "wavelength_um": 0.9088,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 8,
+          "wavelength_um": 0.93,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 9,
+          "wavelength_um": 0.9512,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 10,
+          "wavelength_um": 0.9724,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 11,
+          "wavelength_um": 0.9935,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 12,
+          "wavelength_um": 1.0147,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 13,
+          "wavelength_um": 1.0359,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 14,
+          "wavelength_um": 1.0571,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 15,
+          "wavelength_um": 1.0782,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 16,
+          "wavelength_um": 1.0994,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D1",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 17,
+          "wavelength_um": 1.1259,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 18,
+          "wavelength_um": 1.1576,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 19,
+          "wavelength_um": 1.1894,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 20,
+          "wavelength_um": 1.2212,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 21,
+          "wavelength_um": 1.2529,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 22,
+          "wavelength_um": 1.2847,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 23,
+          "wavelength_um": 1.3165,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 24,
+          "wavelength_um": 1.3482,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 25,
+          "wavelength_um": 1.38,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 26,
+          "wavelength_um": 1.4118,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 27,
+          "wavelength_um": 1.4435,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 28,
+          "wavelength_um": 1.4753,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 29,
+          "wavelength_um": 1.5071,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 30,
+          "wavelength_um": 1.5388,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 31,
+          "wavelength_um": 1.5706,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 32,
+          "wavelength_um": 1.6024,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 33,
+          "wavelength_um": 1.6341,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D2",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 34,
+          "wavelength_um": 1.6729,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 35,
+          "wavelength_um": 1.7188,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 36,
+          "wavelength_um": 1.7647,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 37,
+          "wavelength_um": 1.8106,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 38,
+          "wavelength_um": 1.8565,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 39,
+          "wavelength_um": 1.9024,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 40,
+          "wavelength_um": 1.9482,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 41,
+          "wavelength_um": 1.9941,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 42,
+          "wavelength_um": 2.04,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 43,
+          "wavelength_um": 2.0859,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 44,
+          "wavelength_um": 2.1318,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 45,
+          "wavelength_um": 2.1776,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 46,
+          "wavelength_um": 2.2235,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 47,
+          "wavelength_um": 2.2694,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 48,
+          "wavelength_um": 2.3153,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 49,
+          "wavelength_um": 2.3612,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 50,
+          "wavelength_um": 2.4071,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D3",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 51,
+          "wavelength_um": 2.4718,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 52,
+          "wavelength_um": 2.5553,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 53,
+          "wavelength_um": 2.6388,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 54,
+          "wavelength_um": 2.7224,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 55,
+          "wavelength_um": 2.8059,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 56,
+          "wavelength_um": 2.8894,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 57,
+          "wavelength_um": 2.9729,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 58,
+          "wavelength_um": 3.0565,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 59,
+          "wavelength_um": 3.14,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 60,
+          "wavelength_um": 3.2235,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 61,
+          "wavelength_um": 3.3071,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 62,
+          "wavelength_um": 3.3906,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 63,
+          "wavelength_um": 3.4741,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 64,
+          "wavelength_um": 3.5576,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 65,
+          "wavelength_um": 3.6412,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 66,
+          "wavelength_um": 3.7247,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 67,
+          "wavelength_um": 3.8082,
+          "flux_mjy": null,
+          "flux_error_mjy": null,
+          "covered": false,
+          "band_name": "D4",
+          "flag": "non_detection_upper_limit"
+        },
+        {
+          "index": 68,
+          "wavelength_um": 3.8671,
+          "flux_mjy": 7.7563,
+          "flux_error_mjy": 0.8125,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 69,
+          "wavelength_um": 3.9012,
+          "flux_mjy": 7.5828,
+          "flux_error_mjy": 0.7492,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 70,
+          "wavelength_um": 3.9353,
+          "flux_mjy": 7.6863,
+          "flux_error_mjy": 0.7428,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 71,
+          "wavelength_um": 3.9694,
+          "flux_mjy": 7.8578,
+          "flux_error_mjy": 0.8711,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 72,
+          "wavelength_um": 4.0035,
+          "flux_mjy": 7.9322,
+          "flux_error_mjy": 0.4465,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 73,
+          "wavelength_um": 4.0376,
+          "flux_mjy": 7.792,
+          "flux_error_mjy": 0.6323,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 74,
+          "wavelength_um": 4.0718,
+          "flux_mjy": 8.0145,
+          "flux_error_mjy": 0.8857,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 75,
+          "wavelength_um": 4.1059,
+          "flux_mjy": 7.9328,
+          "flux_error_mjy": 0.7285,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 76,
+          "wavelength_um": 4.14,
+          "flux_mjy": 7.9216,
+          "flux_error_mjy": 0.6377,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 77,
+          "wavelength_um": 4.1741,
+          "flux_mjy": 8.2752,
+          "flux_error_mjy": 0.5677,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 78,
+          "wavelength_um": 4.2082,
+          "flux_mjy": 8.2847,
+          "flux_error_mjy": 0.5839,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 79,
+          "wavelength_um": 4.2424,
+          "flux_mjy": 8.3954,
+          "flux_error_mjy": 0.8892,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 80,
+          "wavelength_um": 4.2765,
+          "flux_mjy": 8.1623,
+          "flux_error_mjy": 0.703,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 81,
+          "wavelength_um": 4.3106,
+          "flux_mjy": 8.2428,
+          "flux_error_mjy": 0.7953,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 82,
+          "wavelength_um": 4.3447,
+          "flux_mjy": 8.3059,
+          "flux_error_mjy": 0.8317,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 83,
+          "wavelength_um": 4.3788,
+          "flux_mjy": 8.304,
+          "flux_error_mjy": 0.595,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 84,
+          "wavelength_um": 4.4129,
+          "flux_mjy": 8.4988,
+          "flux_error_mjy": 0.5845,
+          "covered": true,
+          "band_name": "D5",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 85,
+          "wavelength_um": 4.4468,
+          "flux_mjy": 8.6428,
+          "flux_error_mjy": 0.4537,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 86,
+          "wavelength_um": 4.4803,
+          "flux_mjy": 8.4244,
+          "flux_error_mjy": 0.7163,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 87,
+          "wavelength_um": 4.5138,
+          "flux_mjy": 8.4941,
+          "flux_error_mjy": 0.5828,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 88,
+          "wavelength_um": 4.5474,
+          "flux_mjy": 8.5832,
+          "flux_error_mjy": 0.8931,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 89,
+          "wavelength_um": 4.5809,
+          "flux_mjy": 8.8626,
+          "flux_error_mjy": 0.5345,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 90,
+          "wavelength_um": 4.6144,
+          "flux_mjy": 8.7928,
+          "flux_error_mjy": 0.8675,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 91,
+          "wavelength_um": 4.6479,
+          "flux_mjy": 8.7441,
+          "flux_error_mjy": 0.8523,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 92,
+          "wavelength_um": 4.6815,
+          "flux_mjy": 9.0731,
+          "flux_error_mjy": 0.8298,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 93,
+          "wavelength_um": 4.715,
+          "flux_mjy": 8.7618,
+          "flux_error_mjy": 0.5512,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 94,
+          "wavelength_um": 4.7485,
+          "flux_mjy": 8.9632,
+          "flux_error_mjy": 0.8329,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 95,
+          "wavelength_um": 4.7821,
+          "flux_mjy": 8.8673,
+          "flux_error_mjy": 0.4938,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 96,
+          "wavelength_um": 4.8156,
+          "flux_mjy": 8.6975,
+          "flux_error_mjy": 0.8664,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 97,
+          "wavelength_um": 4.8491,
+          "flux_mjy": 8.7433,
+          "flux_error_mjy": 0.8719,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 98,
+          "wavelength_um": 4.8826,
+          "flux_mjy": 8.6132,
+          "flux_error_mjy": 0.9109,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 99,
+          "wavelength_um": 4.9162,
+          "flux_mjy": 8.8511,
+          "flux_error_mjy": 0.5139,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 100,
+          "wavelength_um": 4.9497,
+          "flux_mjy": 8.5925,
+          "flux_error_mjy": 0.9447,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        },
+        {
+          "index": 101,
+          "wavelength_um": 4.9832,
+          "flux_mjy": 8.7328,
+          "flux_error_mjy": 0.9708,
+          "covered": true,
+          "band_name": "D6",
+          "flag": "spacecraft_glow_suspected"
+        }
+      ],
+      "coverage_mask": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "gaia": null,
+      "molecules": [
+        {
+          "molecule": "H2O",
+          "feature_label": "Water ice / water bands",
+          "wavelength_um": 3.05,
+          "value": 0.1,
+          "unit": "mag",
+          "error_16_84": [
+            0.05,
+            0.15
+          ],
+          "sigma": 0.5,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: spacecraft glow in D5/D6"
+        },
+        {
+          "molecule": "CH4",
+          "feature_label": "Methane dip",
+          "wavelength_um": 3.3,
+          "value": 0.35,
+          "unit": "mag",
+          "error_16_84": [
+            0.3,
+            0.4
+          ],
+          "sigma": 2.5,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: spacecraft glow in D5/D6; low signal"
+        },
+        {
+          "molecule": "CO2",
+          "feature_label": "Carbon dioxide",
+          "wavelength_um": 4.27,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: fewer than 3 bands cover the feature"
+        },
+        {
+          "molecule": "CO",
+          "feature_label": "Carbon monoxide",
+          "wavelength_um": 4.67,
+          "value": null,
+          "unit": "mag",
+          "error_16_84": null,
+          "sigma": null,
+          "origin": "Estimated",
+          "pct_of_water_ice": null,
+          "refusal_reason": "Not measured: spacecraft glow in D5/D6"
+        }
+      ],
+      "blend_share": 0.0,
+      "variable_flag": false,
+      "notes": "Real metadata: Gaia DR3 194 rows, SPHEREx 264 frames, time span 384.6 days."
+    },
+    "identity": {
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 1.0,
+          "Young star": 0.0,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 1.0,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.9922,
+          0.9922
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 0,
+            "wavelength_um": 0.7606,
+            "label": "0.76 \u00b5m not measured"
+          },
+          {
+            "band_index": 1,
+            "wavelength_um": 0.7818,
+            "label": "0.78 \u00b5m not measured"
+          },
+          {
+            "band_index": 2,
+            "wavelength_um": 0.8029,
+            "label": "0.80 \u00b5m not measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U1",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 1.0,
+          "Young star": 0.0,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 1.0,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.99,
+          0.99
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 0,
+            "wavelength_um": 0.7606,
+            "label": "0.76 \u00b5m not measured"
+          },
+          {
+            "band_index": 1,
+            "wavelength_um": 0.7818,
+            "label": "0.78 \u00b5m not measured"
+          },
+          {
+            "band_index": 2,
+            "wavelength_um": 0.8029,
+            "label": "0.80 \u00b5m not measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U1",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Ultracool dwarf",
+        "all_data_top": "Ultracool dwarf",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": false
+      }
+    },
+    "cross_surveys": {
+      "gaia_match": false,
+      "gaia_match_note": "No optical Gaia counterpart (ultracool Y-dwarf)",
+      "two_mass_match": false,
+      "catwise_match": true,
+      "neowise_match": false,
+      "simbad_type": null,
+      "splices_class": null,
+      "solar_system_object": false
+    }
+  }
+]

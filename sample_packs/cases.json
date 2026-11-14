@@ -1,0 +1,144 @@
+[
+  {
+    "case_id": "CASE-Barnards-Star",
+    "source_id": "SRC-Barnards-Star",
+    "target_name": "Barnards_Star",
+    "verification_stage": 1,
+    "discovery_class": "U2",
+    "blind_review_vote_tally": {
+      "Star": 0,
+      "Ultracool dwarf": 0,
+      "Young star": 0,
+      "Evolved giant star": 0,
+      "Unclassified": 0
+    },
+    "spectral_reputation_weight": 0.0,
+    "forum_unlock_status": false,
+    "export_packets": {
+      "backyard_worlds": null,
+      "aavso_vsx": null,
+      "mpc_ades": null
+    },
+    "notes": "Vote tally empty until Pillar 3 blind review opens."
+  },
+  {
+    "case_id": "CASE-Epsilon-Indi-B",
+    "source_id": "SRC-Epsilon-Indi-B",
+    "target_name": "Epsilon_Indi_B",
+    "verification_stage": 4,
+    "discovery_class": "U2",
+    "blind_review_vote_tally": {
+      "Star": 0,
+      "Ultracool dwarf": 0,
+      "Young star": 0,
+      "Evolved giant star": 0,
+      "Unclassified": 0
+    },
+    "spectral_reputation_weight": 0.0,
+    "forum_unlock_status": true,
+    "export_packets": {
+      "backyard_worlds": {
+        "candidate_id": "PW-Epsilon_Indi_B",
+        "ra_deg": 331.0765,
+        "dec_deg": -56.7938,
+        "w1_mag": null,
+        "w2_mag": null,
+        "w1_w2_color": null,
+        "proper_motion_mas_yr": null,
+        "spectral_type_guess": "T6",
+        "notes": "T dwarf candidate from SPHEREx CH4 dip"
+      },
+      "aavso_vsx": null,
+      "mpc_ades": null
+    },
+    "notes": "Vote tally empty until Pillar 3 blind review opens."
+  },
+  {
+    "case_id": "CASE-R-Draconis",
+    "source_id": "SRC-R-Draconis",
+    "target_name": "R_Draconis",
+    "verification_stage": 3,
+    "discovery_class": "U4",
+    "blind_review_vote_tally": {
+      "Star": 0,
+      "Ultracool dwarf": 0,
+      "Young star": 0,
+      "Evolved giant star": 0,
+      "Unclassified": 0
+    },
+    "spectral_reputation_weight": 0.0,
+    "forum_unlock_status": true,
+    "export_packets": {
+      "backyard_worlds": null,
+      "aavso_vsx": {
+        "name": "R Dra",
+        "ra_deg": 247.0,
+        "dec_deg": 67.0,
+        "variability_type": "M",
+        "period_days": 245.4,
+        "epoch_mjd": null,
+        "mag_min": null,
+        "mag_max": null,
+        "band": "V",
+        "notes": "Mira variable; overflow in many bands"
+      },
+      "mpc_ades": null
+    },
+    "notes": "Vote tally empty until Pillar 3 blind review opens."
+  },
+  {
+    "case_id": "CASE-RW-Aurigae",
+    "source_id": "SRC-RW-Aurigae",
+    "target_name": "RW_Aurigae",
+    "verification_stage": 3,
+    "discovery_class": "U4",
+    "blind_review_vote_tally": {
+      "Star": 0,
+      "Ultracool dwarf": 0,
+      "Young star": 0,
+      "Evolved giant star": 0,
+      "Unclassified": 0
+    },
+    "spectral_reputation_weight": 0.0,
+    "forum_unlock_status": true,
+    "export_packets": {
+      "backyard_worlds": null,
+      "aavso_vsx": {
+        "name": "RW Aur",
+        "ra_deg": 76.9,
+        "dec_deg": 30.0,
+        "variability_type": "T",
+        "period_days": null,
+        "epoch_mjd": null,
+        "mag_min": null,
+        "mag_max": null,
+        "band": "V",
+        "notes": "T Tauri binary, blended pair"
+      },
+      "mpc_ades": null
+    },
+    "notes": "Vote tally empty until Pillar 3 blind review opens."
+  },
+  {
+    "case_id": "CASE-WISE-0855",
+    "source_id": "SRC-WISE-0855",
+    "target_name": "WISE_0855",
+    "verification_stage": 5,
+    "discovery_class": "U1",
+    "blind_review_vote_tally": {
+      "Star": 0,
+      "Ultracool dwarf": 7,
+      "Young star": 0,
+      "Evolved giant star": 0,
+      "Unclassified": 0
+    },
+    "spectral_reputation_weight": 1.0,
+    "forum_unlock_status": true,
+    "export_packets": {
+      "backyard_worlds": null,
+      "aavso_vsx": null,
+      "mpc_ades": null
+    },
+    "notes": "Consensus reached: Ultracool dwarf with 100% agreement (7 votes). Follow-Up Packet ready."
+  }
+]

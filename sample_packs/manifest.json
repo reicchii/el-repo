@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-11-14T03:37:20.295190+00:00",
+  "project": "Phantom Worlds",
+  "challenge": "NASA Space Apps Challenge 2026",
+  "targets": [
+    "Barnards_Star",
+    "Epsilon_Indi_B",
+    "R_Draconis",
+    "RW_Aurigae",
+    "WISE_0855"
+  ],
+  "source_count": 5,
+  "case_count": 5,
+  "band_count": 102,
+  "band_wavelength_range_um": [
+    0.75,
+    5.0
+  ],
+  "sources_file": "sources.json",
+  "cases_file": "cases.json",
+  "discovery_class_legend": {
+    "U1": "Uncatalogued in Gaia optical \u2014 detected via IR moving source / D5-D6 residual (new object)",
+    "U2": "Spectrum-only confidence, awaiting multi-survey corroboration",
+    "U3": "Candidate with a plausible but unverified reading (invites review)",
+    "U4": "New Behavior \u2014 102-colour variability not explained by existing taxa (reported honestly)"
+  },
+  "notes": [
+    "Schemas: app/schemas.py (Pydantic v2).",
+    "Synthetic 102-band spectra and Estimated Layer 2/3 numbers are seeded (SEED=42) and clearly labelled.",
+    "WISE_0855_gaia_dr3.csv contains 194 Gaia field rows but no true counterpart (optical-invisible Y dwarf).",
+    "Replace Estimated values with real ML pipeline outputs (T43a..T43g) before any public release."
+  ]
+}

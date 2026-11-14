@@ -1,0 +1,27 @@
+# Phantom Worlds — Tier A & Tier B backend
+# Pin exact versions so the M1-M3 pipeline is reproducible (NASA Space Apps 2026).
+# Install with `uv` (NEVER `pip`), see README.md.
+#
+#   uv venv .venv
+#   uv pip install -r requirements.txt
+
+numpy==2.5.4
+scipy==1.18.1
+pandas==3.1.1
+joblib==1.6.0
+
+fastapi==0.162.7
+uvicorn==0.54.0
+pydantic==2.14.3
+pydantic-core==2.50.4
+starlette==1.10.0
+httpx==0.28.1
+anyio==4.16.0
+annotated-types==0.8.0
+typing-extensions==4.16.0
+
+scikit-learn==1.9.1
+xgboost==3.4.1
+
+# Test-only
+pytest==9.2.0
