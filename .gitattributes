@@ -18,3 +18,13 @@ docs/decisions.md merge=union
 # Docs and prompts count as documentation in GitHub's language bar.
 docs/** linguist-documentation=true
 prompts/** linguist-documentation=true
+
+# Backend ML artefacts (Tier A/B) - binary, never diffed as text.
+*.joblib binary
+*.pkl binary
+*.npz binary
+
+# Generated benchmark packs: collapsed in diffs, excluded from language stats.
+sample_packs/sources.json linguist-generated=true
+sample_packs/cases.json linguist-generated=true
+sample_packs/benchmark_report.json linguist-generated=true

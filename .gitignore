@@ -21,3 +21,8 @@ web/dist/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+
+# Temporary scratch scripts (backend), never shipped.
+*_tmp.py
+*_scratch.py
+probe_*.py
