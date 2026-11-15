@@ -59,3 +59,22 @@
   * **K28 (`VERIFIED`):** PyPI/GitHub checks show `xcavation` (`1.1.0`) = **MIT**, `SPIFF` code = **MIT** (data `CC-BY-4.0`), `mapie` (`1.6.0`, API changed vs `0.x`) = **BSD-3-Clause**, while `spxquery` (`0.4.1`) declares **no SPDX license metadata** on PyPI (`do NOT vendor/import` without repository license confirmation).
   * **Installed `scikit-learn 1.9.0` & Foundation Models (`VERIFIED`):** Local verification confirms `RandomForestClassifier` and `ExtraTreesClassifier` in `scikit-learn==1.9.0` support `NaN` natively; arXiv abstracts confirm `AION-1` (`2510.17960`) and `SpecCLIP` (`2507.01939`) exclude SPHEREx spectrophotometry.
 * **Consequences:** All unbundled legacy planning note references are retired in favor of this workspace's real contracts, ADRs, and test suite.
+
+
+### ADR 006: Tier-B Residual Engine, Real S3 Level-2 WCS Cutouts & Hash-Verified Pipeline Checkpoint
+
+**Status**: Implemented (2026-11-15)  
+**Supersedes**: Planned status notes in ADR 001 (static S/N cutout note) and ADR 002 (Tier-B M1/SPIFF/input-ladder roadmap items)
+
+**Decision**:
+1. Replace synthetic Tier-A placeholder patches with real SPHEREx S3 Level-2 WCS cutouts (`phantom_worlds/fits_cutout.py`) and implement the full Tier-B processing and verification stack across `phantom_worlds/tier_b_engine.py`, `phantom_worlds/tier_b_detectors.py`, `phantom_worlds/tier_b_proof.py`, and `proof/run.py`:
+   - Crowded-field PSF subtraction using Gaia DR3 + 2MASS + CatWISE2020 positions propagated to frame epochs (`W1925` Galactic Plane and `RW Aurigae` off-plane fields).
+   - Multi-band mover/leftover detection with H2RG mirrored crosstalk and quadrant optical-ghost vetting, paired with an in-memory calibrated `RandomForestClassifier` (`M1`, 160 trees, passing Proof B6 at `0.9048` recall @ 1% FPR).
+   - Spectral discovery dataset (`ml/real_training_dataset.npz`, `763` SPHEREx DR1 + SPIFF + SPLICES + Gaia/SIMBAD/ALLWISE spectra, including `47` SPIFF ultracool dwarf hybrid templates), Tier-B UCD Level-2 subtyping (`B11`), S3-vs-SPIFF cross-extraction check (`B12`), Input Ladder Rungs 1–5 (`B13`), and Proof v2 report generation (`proof/report.json`, `proof/report.md`: `10 PASS, 3 FAIL, 0 NOT_MEASURED`).
+2. Persist the trained Layer 1–3 spectral ensemble (`SpectralDiscoveryPipeline` + `e1_templates`) from `ml/train.py` to `ml/spectral_discovery_pipeline.pkl.gz` (`1,844,039` bytes) alongside a hash-verified metadata sidecar `ml/spectral_discovery_pipeline.meta.json` using Python stdlib `gzip` + `pickle` (`HIGHEST_PROTOCOL`) with atomic temp-file writes (`os.replace`) and `realpath`/`commonpath` containment checks.
+3. Require `get_cached_ml_pipeline()` in `phantom_worlds/tier_b_detectors.py` (`load_pipeline_checkpoint`) to verify exact `model_version`, `max_per_class`, `random_state`, `sklearn_version`, `numpy_version`, source `code_sha256`, `dataset_sha256`, and `hmac.compare_digest` over `checkpoint_sha256` before calling `pickle.loads`, transparently falling back to `train_from_real_dataset` on mismatch or absence.
+
+**Consequences**:
+- Cold backend startup for ML inference drops from `~41.9s` (`live_fit`) to `~0.03s` (`disk_checkpoint`) without adding external serialization dependencies (`joblib`/`skops`) or triggering NumPy 2.5 `DeprecationWarning`s.
+- Because Python `pickle` is unsafe against arbitrary untrusted payloads, checkpoints are scoped strictly to local verified builds matching pinned `scikit-learn==1.9.0` and `numpy==2.5.1`; public consumers must call the FastAPI HTTP endpoints rather than ingesting untrusted `.pkl.gz` files.
+- See also the detailed Indonesian technical model card in [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md), usage guide in [`docs/USAGE.md`](docs/USAGE.md), and chronological project decisions in [`docs/decisions.md`](docs/decisions.md).
