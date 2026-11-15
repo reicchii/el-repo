@@ -406,3 +406,51 @@ vm.runInNewContext(viewerSrc, sandbox);
                 self.assertEqual(client_warm.get("/health").status_code, 200)
             self.assertTrue(client_warm.app.state.prewarm_stop.is_set())
         self.assertIn("phantom-prewarm", started_names)
+
+    def test_backend_autoloads_exported_checkpoint_and_falls_back_when_stale(self):
+        import os
+        import shutil
+        import tempfile
+        from unittest.mock import patch
+        from phantom_worlds import api as api_mod
+        from phantom_worlds import tier_b_detectors
+        from phantom_worlds.ml_pipeline import CHECKPOINT_FILENAME, CHECKPOINT_META_FILENAME
+
+        d_path = os.path.abspath(api_mod.DEFAULT_REAL_DATASET_NPZ)
+        ckpt_path = os.path.join(os.path.dirname(d_path), CHECKPOINT_FILENAME)
+        meta_path = os.path.join(os.path.dirname(d_path), CHECKPOINT_META_FILENAME)
+        self.assertTrue(os.path.exists(ckpt_path), f"Missing exported checkpoint: {ckpt_path}")
+        self.assertTrue(os.path.exists(meta_path), f"Missing checkpoint metadata: {meta_path}")
+
+        with tier_b_detectors._CACHE_LOCK:
+            saved_cache = dict(tier_b_detectors._TRAINED_PIPE_CACHE)
+            tier_b_detectors._TRAINED_PIPE_CACHE.clear()
+        try:
+            with patch.object(
+                tier_b_detectors,
+                "train_from_real_dataset",
+                side_effect=AssertionError("Should auto-load exported checkpoint without fitting"),
+            ):
+                bundle = tier_b_detectors.get_cached_ml_pipeline(d_path)
+            self.assertEqual(bundle["load_source"], "disk_checkpoint")
+            self.assertTrue(bundle["pipeline"].fitted_)
+
+            # When checkpoint is absent or stale for a dataset, backend falls back to live fit.
+            with tempfile.TemporaryDirectory() as tmpdir:
+                copy_npz = os.path.join(tmpdir, "real_training_dataset.npz")
+                shutil.copy2(d_path, copy_npz)
+                with patch.object(
+                    tier_b_detectors,
+                    "train_from_real_dataset",
+                    wraps=tier_b_detectors.train_from_real_dataset,
+                ) as spy_fit:
+                    fallback_bundle = tier_b_detectors.get_cached_ml_pipeline(copy_npz)
+                self.assertEqual(spy_fit.call_count, 1)
+                self.assertEqual(fallback_bundle["load_source"], "live_fit")
+                self.assertTrue(fallback_bundle["pipeline"].fitted_)
+                with tier_b_detectors._CACHE_LOCK:
+                    tier_b_detectors._TRAINED_PIPE_CACHE.pop(os.path.abspath(copy_npz), None)
+        finally:
+            with tier_b_detectors._CACHE_LOCK:
+                tier_b_detectors._TRAINED_PIPE_CACHE.clear()
+                tier_b_detectors._TRAINED_PIPE_CACHE.update(saved_cache)

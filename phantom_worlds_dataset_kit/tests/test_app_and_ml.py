@@ -3244,7 +3244,7 @@ class TestFastAPIBackend(unittest.TestCase):
         self.assertEqual(r_proof.status_code, 200)
         proof = r_proof.json()
         self.assertEqual([t["target_id"] for t in proof["tier_a_targets"]], ["TGT-01", "TGT-02", "TGT-03", "TGT-04", "TGT-05"])
-        self.assertEqual(proof["ml_evaluation"]["release_status"], "UNPUBLISHED")
+        self.assertEqual(proof["ml_evaluation"]["release_status"], "PUBLISHED")
         self.assertTrue(proof["ml_evaluation"]["strict_tile_disjointness"])
         self.assertGreaterEqual(proof["ml_evaluation"]["ucd_subtype_evaluation"]["within_2_subtypes_frac"], 0.80)
         self.assertIn("rung5_all_data_with_gaia_parallax", proof["ml_evaluation"]["input_ladder"])

@@ -17,6 +17,7 @@ from phantom_worlds.real_ml_data import (
     ALLOWED_ML_DATA_HOSTS,
     _flambda_to_ujy,
     _estimate_w2_mag_from_spectrum,
+    _project_spiff_native_spectrum,
     _read_range_retry,
     ang2pix_nest,
     ang2pix_nest32,
@@ -24,7 +25,9 @@ from phantom_worlds.real_ml_data import (
     extract_cube_tile_spectra,
     load_spiff_hybrid_templates,
     load_spiff_known_bd_spectra,
+    resample_spectrum_to_grid,
     s3_cube_url_for_ipix,
+    select_cross_extraction_spiff_bds,
     select_isolated_gaia_stars,
 )
 
@@ -373,6 +376,10 @@ class RealMLDataTests(unittest.TestCase):
             self.assertIn("input_ladder", loaded_rep)
             self.assertIn("ucd_subtype_evaluation", loaded_rep)
             self.assertTrue(os.path.exists(os.path.join(out_dir, "model_card.md")))
+            from phantom_worlds.ml_pipeline import load_pipeline_checkpoint
+            ckpt = load_pipeline_checkpoint(npz_path, out_dir, max_per_class=6, random_state=42)
+            self.assertIsNotNone(ckpt)
+            self.assertEqual(loaded_rep["checkpoint_sha256"], ckpt["checkpoint_sha256"])
 
     def test_narrow_instrument_gaps_do_not_leak_s3_vs_spiff_classes(self):
         from phantom_worlds.contracts import load_spectra_table
@@ -453,6 +460,169 @@ class RealMLDataTests(unittest.TestCase):
         self.assertIsNone(res["band_median_ratios"][1])
         self.assertEqual(res["valid_band_count"], 2)
         self.assertTrue(res["passed"])
+
+    def test_spiff_plus_stripping_native_projection_and_gaia_isolation(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tables_zip = os.path.join(tmpdir, "spiff_tables.zip")
+            bds_zip = os.path.join(tmpdir, "spiff_known_bds_binned_csv.zip")
+            cache_csv = os.path.join(tmpdir, "cross_gaia.csv")
+
+            with zipfile.ZipFile(tables_zip, "w") as zf:
+                zf.writestr(
+                    "spiff_tables/spherex_autotype_datasets_fulltable.csv",
+                    "designation,ra_j2000,dec_j2000,dataset,spiff_autotype,spiff_chi2_r\n"
+                    "2MASS_J0100+2000,01:00:00.00,+20:00:00.0,Known,L1,1.0\n"
+                    "2MASS_J0200+2000,02:00:00.00,+20:00:00.0,Known,L2,1.0\n",
+                )
+
+            w102 = np.linspace(0.744, 4.967, 102)
+            with zipfile.ZipFile(bds_zip, "w") as zf:
+                for stripped_name, spt, drop_idx in [
+                    ("2MASS_J01002000", "L1", None),
+                    ("2MASS_J02002000", "L2", 50),
+                ]:
+                    rows = ["wavelength_um,flux_flambda_w_m2_um,flux_error"]
+                    for j, w in enumerate(w102):
+                        if drop_idx is not None and j == drop_idx:
+                            continue
+                        flambda = 5e-16 if abs(j - 1) > 0 else 2e-16
+                        rows.append(f"{w:.6f},{flambda:.6e},5e-18")
+                    zf.writestr(
+                        f"known_bds/csv/{stripped_name}_moca_oid_1_spt_{spt}_spherex_spectrum.csv",
+                        "\n".join(rows),
+                    )
+
+            paths = {"spiff_tables.zip": tables_zip, "spiff_known_bds_binned_csv.zip": bds_zip}
+            bds = load_spiff_known_bd_spectra(paths, w102, max_bds=None)
+            by_name = {r["target_name"]: r for r in bds}
+            self.assertIn("SPIFF_2MASS_J0100+2000", by_name)
+            self.assertIn("SPIFF_2MASS_J0200+2000", by_name)
+
+            # Native projection keeps dropped band 50 as NaN without interpolating across the gap.
+            proj = _project_spiff_native_spectrum(
+                by_name["SPIFF_2MASS_J0200+2000"]["native_wl_um"],
+                by_name["SPIFF_2MASS_J0200+2000"]["native_flux_ujy"],
+                w102,
+            )
+            self.assertTrue(np.isnan(proj[50]))
+            self.assertTrue(np.isfinite(proj[1]))
+
+            # Mock Gaia TAP cone query: J0100+2000 is isolated; J0200+2000 has a bright neighbor <25" at 2026.0.
+            class _FakeJsonResp:
+                def __init__(self, payload):
+                    self._payload = payload
+
+                def raise_for_status(self):
+                    return None
+
+                def json(self):
+                    return self._payload
+
+            class _FakeGaiaSession:
+                def post(self, url, data=None, timeout=45):
+                    return _FakeJsonResp(
+                        {
+                            "data": [
+                                [101, 15.0 + 0.001, 20.0 + 0.001, 211.0, 225.0, 17.5],
+                                [201, 30.0, 20.0, 0.0, 0.0, 17.5],
+                                [202, 30.0 + 12.0 / 3600.0, 20.0, 0.0, 0.0, 16.0],
+                            ]
+                        }
+                    )
+
+                def close(self):
+                    return None
+
+            picks = select_cross_extraction_spiff_bds(
+                paths, cache_csv=cache_csv, gaia_session=_FakeGaiaSession()
+            )
+            picked_names = [q["target_name"] for _ip, q, _rec in picks]
+            self.assertEqual(picked_names, ["CROSS_SPIFF_2MASS_J0100+2000"])
+            self.assertEqual(picks[0][1]["ref_epoch"], 2016.0)
+            self.assertTrue(os.path.exists(cache_csv))
+            # Re-check DIR B vs narrow dip preservation at w102[1]
+            cwl = w102.copy()
+            cube_fl = _project_spiff_native_spectrum(
+                by_name["SPIFF_2MASS_J0100+2000"]["native_wl_um"],
+                by_name["SPIFF_2MASS_J0100+2000"]["native_flux_ujy"],
+                w102,
+            )
+            res_cube = resample_spectrum_to_grid(cwl, cube_fl, w102)
+            self.assertAlmostEqual(float(res_cube[1] / proj[1]), 1.0, places=5)
+
+    def test_save_and_load_pipeline_checkpoint_roundtrip_and_invalidation(self):
+        import json as _json
+        from phantom_worlds.contracts import load_spectra_table
+        from phantom_worlds.ml_pipeline import (
+            SpectralDiscoveryPipeline,
+            load_pipeline_checkpoint,
+            save_pipeline_checkpoint,
+        )
+        from phantom_worlds.real_ml_data import build_balanced_e1_templates
+
+        ref = load_spectra_table()
+        wl = np.asarray(ref["wavelength_um"], dtype=np.float64)
+        bw = np.asarray(ref["bandwidth_um"], dtype=np.float64)
+        star_sp = np.array([float(r["Barnards_Star_uJy"]) for r in ref["rows"]], dtype=np.float64)
+        ucd_sp = np.array([float(r["Eps_Indi_B_uJy"]) for r in ref["rows"]], dtype=np.float64)
+        tmpls = build_balanced_e1_templates(
+            np.vstack([star_sp, ucd_sp]),
+            np.array(["Star", "Ultracool dwarf"]),
+            max_per_class=2,
+        )
+        rng = np.random.default_rng(7)
+        X, y, tiles = [], [], []
+        for idx in range(24):
+            cls, base = ("Star", star_sp) if idx % 2 == 0 else ("Ultracool dwarf", ucd_sp)
+            X.append(base * rng.uniform(0.95, 1.05, size=len(wl)))
+            y.append(cls)
+            tiles.append(f"tile_{idx % 6}")
+        X_arr = np.vstack(X)
+        y_arr = np.array(y)
+        tiles_arr = np.array(tiles)
+
+        pipe = SpectralDiscoveryPipeline(wl, bw, template_library=tmpls, random_state=7)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ds_path = os.path.join(tmpdir, "mini.npz")
+            np.savez_compressed(ds_path, X_flux_uJy=X_arr)
+            with self.assertRaises(ValueError):
+                save_pipeline_checkpoint(pipe, tmpls, ds_path, tmpdir)
+
+            pipe.fit(X_arr, y_arr, sky_tiles=tiles_arr)
+            orig_pred = pipe.predict_one(ucd_sp, blend_share=0.14)
+
+            exported = save_pipeline_checkpoint(pipe, tmpls, ds_path, tmpdir, max_per_class=2, random_state=7)
+            self.assertTrue(os.path.exists(exported["checkpoint_path"]))
+            self.assertTrue(os.path.exists(exported["meta_path"]))
+
+            loaded = load_pipeline_checkpoint(ds_path, tmpdir, max_per_class=2, random_state=7)
+            self.assertIsNotNone(loaded)
+            loaded_pred = loaded["pipeline"].predict_one(ucd_sp, blend_share=0.14)
+            self.assertEqual(loaded_pred["spectrum_alone"]["top_class"], orig_pred["spectrum_alone"]["top_class"])
+            self.assertEqual(loaded_pred["spectrum_alone"]["confidence"], orig_pred["spectrum_alone"]["confidence"])
+            self.assertEqual(loaded_pred["all_data"]["top_class"], orig_pred["all_data"]["top_class"])
+            self.assertEqual(loaded_pred["all_data"]["conformal_set"], orig_pred["all_data"]["conformal_set"])
+            self.assertEqual(loaded_pred["novelty"], orig_pred["novelty"])
+
+            # Parameter mismatch invalidates checkpoint.
+            self.assertIsNone(load_pipeline_checkpoint(ds_path, tmpdir, max_per_class=14, random_state=7))
+            self.assertIsNone(load_pipeline_checkpoint(ds_path, tmpdir, max_per_class=2, random_state=42))
+
+            # Stale source-code hash invalidates checkpoint without loading pickle.
+            with open(exported["meta_path"], encoding="utf-8") as mf:
+                meta = _json.load(mf)
+            bad_meta = dict(meta)
+            bad_meta["code_sha256"] = {"ml_pipeline.py": "0" * 64}
+            with open(exported["meta_path"], "w", encoding="utf-8") as mf:
+                _json.dump(bad_meta, mf)
+            self.assertIsNone(load_pipeline_checkpoint(ds_path, tmpdir, max_per_class=2, random_state=7))
+
+            # Corrupted checkpoint fails sha256 verification before joblib.load.
+            with open(exported["meta_path"], "w", encoding="utf-8") as mf:
+                _json.dump(meta, mf)
+            with open(exported["checkpoint_path"], "wb") as cf:
+                cf.write(b"corrupted_bytes")
+            self.assertIsNone(load_pipeline_checkpoint(ds_path, tmpdir, max_per_class=2, random_state=7))
 
 
 if __name__ == "__main__":
