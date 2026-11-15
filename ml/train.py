@@ -2,7 +2,6 @@
 
 import argparse
 from datetime import datetime, timezone
-import hashlib
 import json
 import math
 import os
@@ -16,9 +15,11 @@ if REPO_ROOT not in sys.path:
 
 from phantom_worlds.contracts import load_spectra_table
 from phantom_worlds.ml_pipeline import (
+    DEFAULT_PIPELINE_MODEL_VERSION,
     evaluate_cross_extraction_ratio,
     evaluate_fixed_targets,
     evaluate_input_ladder,
+    save_pipeline_checkpoint,
     train_from_real_dataset,
 )
 from phantom_worlds.real_ml_data import (
@@ -28,7 +29,7 @@ from phantom_worlds.real_ml_data import (
     resample_spectrum_to_grid,
 )
 
-MODEL_VERSION = "spherex-dr1-e1e2-v2"
+MODEL_VERSION = DEFAULT_PIPELINE_MODEL_VERSION
 PIPELINE_VERSION = "phantom-ml-tierb"
 
 
@@ -87,14 +88,6 @@ def _evaluate_multiclass_subset(pipe, X_sub, y_sub, blends_sub, err_sub=None):
         "agreement_rate": agree_rate,
         "per_class": per_class,
     }
-
-
-def _file_sha256(path):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 def _display_path(path):
@@ -198,7 +191,7 @@ def _format_model_card(report):
 def run_training(
     dataset_path=os.path.join(DEFAULT_ML_DIR, "real_training_dataset.npz"),
     output_dir=DEFAULT_ML_DIR,
-    max_per_class=6,
+    max_per_class=14,
     seed=42,
     log_file=None,
 ):
@@ -328,6 +321,20 @@ def run_training(
 
     disp_dataset = _display_path(dataset_path)
     os.makedirs(output_dir, exist_ok=True)
+    ckpt_res = save_pipeline_checkpoint(
+        pipe,
+        fit_res["e1_templates"],
+        dataset_path,
+        output_dir,
+        model_version=MODEL_VERSION,
+        max_per_class=max_per_class,
+        random_state=seed,
+    )
+    ckpt_meta = ckpt_res["meta"]
+    _log(
+        f"Exported model checkpoint: {ckpt_res['checkpoint_path']} "
+        f"({ckpt_meta['checkpoint_bytes']} B, sha256={ckpt_meta['checkpoint_sha256'][:16]}...)"
+    )
     report = _sanitize_json(
         {
             "model_version": MODEL_VERSION,
@@ -340,7 +347,9 @@ def run_training(
                 "phantom_worlds/real_ml_data.py",
             ],
             "dataset_path": disp_dataset,
-            "dataset_sha256": _file_sha256(dataset_path),
+            "dataset_sha256": ckpt_meta["dataset_sha256"],
+            "checkpoint_file": _display_path(ckpt_res["checkpoint_path"]),
+            "checkpoint_sha256": ckpt_meta["checkpoint_sha256"],
             "total_spectra": int(len(y)),
             "strict_tile_disjointness": fit_res["strict_tile_disjointness"],
             "conformal_q": round(float(pipe.conformal_q_), 4),
@@ -378,7 +387,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Train and evaluate the SPHEREx + SPIFF discovery pipeline.")
     parser.add_argument("--dataset", default=os.path.join(DEFAULT_ML_DIR, "real_training_dataset.npz"))
     parser.add_argument("--output-dir", default=DEFAULT_ML_DIR)
-    parser.add_argument("--max-per-class", type=int, default=6)
+    parser.add_argument("--max-per-class", type=int, default=14)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--log-file", default=None)
     args = parser.parse_args(argv)

@@ -1,0 +1,15 @@
+{
+  "model_version": "spherex-dr1-e1e2-v2",
+  "checkpoint_file": "spectral_discovery_pipeline.pkl.gz",
+  "checkpoint_sha256": "bcbe95a85020a0288e7f7c45424e957019ca2b165bbe94b049203b3e7ebdf89d",
+  "checkpoint_bytes": 1844039,
+  "dataset_sha256": "2de6d2bd822725c08f741b79079487859c29a82ae56f2dcad458589ead0c6221",
+  "code_sha256": {
+    "ml_pipeline.py": "e5eb5dd30cda93e9fd5e974a72f261fd34cef9e3eecfb4acdf653885a7031887",
+    "real_ml_data.py": "f223972bae7871051b3622418f1204db61ce9f45c263a53208f6d2260b4dfc32"
+  },
+  "max_per_class": 14,
+  "random_state": 42,
+  "sklearn_version": "1.9.0",
+  "numpy_version": "2.5.1"
+}

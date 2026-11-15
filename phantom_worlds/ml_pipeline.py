@@ -1,14 +1,22 @@
+import gzip
+import hashlib
+import hmac
+import json
 import math
 import os
+import pickle
 import re
+import tempfile
 
 # Guard loky/joblib before importing scikit-learn so Windows worker pools avoid subprocess core probing hangs.
 os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
 
 import numpy as np
+import sklearn
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor, IsolationForest
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
+from sklearn.neighbors import KNeighborsClassifier
 
 CONTINUUM_WINDOWS = ((2.50, 2.72), (3.80, 4.02), (4.90, 5.01))
 MOLECULE_WINDOWS = {
@@ -304,7 +312,7 @@ class _PowerCalibrator:
         return np.power(arr, self.inv_temp)
 
 
-def _fit_temperature_inv(raw_probs, y_true, classes):
+def _fit_temperature_inv(raw_probs, y_true, classes, sample_weight=None):
     probs = np.clip(np.asarray(raw_probs, dtype=np.float64), 1e-6, 1.0)
     class_to_col = {c: idx for idx, c in enumerate(classes)}
     cols = [class_to_col.get(val, -1) for val in y_true]
@@ -314,6 +322,13 @@ def _fit_temperature_inv(raw_probs, y_true, classes):
     sub_p = probs[valid_rows]
     sub_cols = np.array([cols[i] for i in valid_rows], dtype=int)
     log_p = np.log(sub_p)
+    if sample_weight is not None:
+        raw_w = np.asarray(sample_weight, dtype=np.float64)[valid_rows]
+        sub_w = np.where(np.isfinite(raw_w) & (raw_w > 0), raw_w, 1.0)
+        w_sum = float(np.sum(sub_w))
+    else:
+        sub_w = None
+        w_sum = 1.0
 
     def _nll(inv_t):
         scaled = log_p * inv_t
@@ -321,7 +336,10 @@ def _fit_temperature_inv(raw_probs, y_true, classes):
         exp_s = np.exp(scaled)
         norm_p = exp_s / np.sum(exp_s, axis=1, keepdims=True)
         picked = np.clip(norm_p[np.arange(len(sub_cols)), sub_cols], 1e-12, 1.0)
-        return float(-np.mean(np.log(picked)))
+        losses = -np.log(picked)
+        if sub_w is not None and w_sum > 0:
+            return float(np.sum(sub_w * losses) / w_sum)
+        return float(np.mean(losses))
 
     best_t = 1.0
     best_loss = _nll(1.0)
@@ -364,7 +382,7 @@ class SpectralDiscoveryPipeline:
         self.random_state = random_state
         self.classes_ = sorted(self.template_library.keys())
         self.tree_model = self._build_tree()
-        self.meta_combiner = LogisticRegression(max_iter=500, C=0.5, class_weight="balanced", random_state=random_state)
+        self.meta_combiner = LogisticRegression(max_iter=500, C=5.0, random_state=random_state)
         self.novelty_forest = IsolationForest(contamination=0.05, random_state=random_state)
         self.subtype_regressor = HistGradientBoostingRegressor(
             max_iter=60,
@@ -380,6 +398,8 @@ class SpectralDiscoveryPipeline:
         self.isotonic_size_ = 0
         self.conformal_q_ = 0.85
         self.silver_weight_applied_ = 1.0
+        self.e1_knn_ = None
+        self.e1_knn_weight_ = 0.12
         self.fitted_ = False
 
     @staticmethod
@@ -441,7 +461,7 @@ class SpectralDiscoveryPipeline:
     def _spectral_colors(self, flux):
         log_fl, swl = self._sorted_log_flux(flux)
         n = len(log_fl)
-        k = max(1, min(12, n // 4))
+        k = max(1, min(18 if n >= 36 else 12, n // 4))
         broad = log_fl[k:] - log_fl[: n - k]
         if n > 1:
             local_idx = np.linspace(0, n - 2, k, dtype=int)
@@ -456,10 +476,28 @@ class SpectralDiscoveryPipeline:
                     bm = (swl >= lo) & hi_mask & finite
                     if np.any(bm):
                         bvals[idx] = float(np.median(log_fl[bm]))
-                # Pack physical band levels + long-baseline slopes into local[:k-4] while keeping len == len(wl).
+
+                def _band_diff(wlo, whi, rlo, rhi):
+                    wm = (swl >= wlo) & (swl <= whi) & finite
+                    rm = (swl >= rlo) & (swl <= rhi) & finite
+                    return (
+                        float(np.mean(log_fl[rm])) - float(np.mean(log_fl[wm]))
+                        if (np.any(wm) and np.any(rm))
+                        else np.nan
+                    )
+
+                extra_feats = [
+                    bvals[4] - bvals[3],
+                    bvals[5] - bvals[4],
+                    _band_diff(2.29, 2.42, 2.08, 2.24),
+                    _band_diff(1.34, 1.49, 1.56, 1.70),
+                    _band_diff(3.24, 3.38, 3.45, 3.62),
+                    _band_diff(1.80, 2.02, 2.08, 2.24),
+                ]
+                # Pack physical band levels + NIR/MIR slopes & bands into local[:k-4] while keeping len == len(wl).
                 shape_feats = np.concatenate([
                     bvals - ref if np.isfinite(ref) else np.full(len(bands), np.nan, dtype=np.float64),
-                    np.array([bvals[2] - bvals[0], bvals[5] - bvals[2]], dtype=np.float64),
+                    np.array([bvals[2] - bvals[0], bvals[5] - bvals[2]] + extra_feats, dtype=np.float64),
                 ])
                 n_pack = min(k - 4, len(shape_feats))
                 if n_pack > 0 and np.any(np.isfinite(shape_feats[:n_pack])):
@@ -503,7 +541,7 @@ class SpectralDiscoveryPipeline:
                 ne_valid = ne[valid]
                 good_e = np.isfinite(ne_valid) & (ne_valid > 0)
                 if np.any(good_e):
-                    err = np.where(good_e, np.maximum(ne_valid, 0.01), fallback_err)
+                    err = np.where(good_e, np.maximum(ne_valid, 0.02), fallback_err)
                     w = 1.0 / (err ** 2)
                     scale = float(np.dot(w * nf, tp) / max(float(np.dot(w * tp, tp)), 1e-9))
                 else:
@@ -524,11 +562,41 @@ class SpectralDiscoveryPipeline:
             chi2_terms = np.sort(chi2_terms)[:-outlier_drop]
         return float(np.mean(chi2_terms)) * coverage_penalty
 
+    @staticmethod
+    def _fit_e1_knn(norm_rows, y_rows):
+        clean_rows = np.nan_to_num(np.asarray(norm_rows, dtype=np.float64), nan=0.0, posinf=0.0, neginf=0.0)
+        n_rows = len(clean_rows)
+        if n_rows < 2 or len(set(str(v) for v in y_rows.tolist())) < 2:
+            return None
+        knn = KNeighborsClassifier(n_neighbors=min(9, n_rows), metric="cosine", weights="distance")
+        knn.fit(clean_rows, y_rows)
+        return knn
+
     def _predict_template_class(self, norm_flux, norm_err=None):
         scores = {
             label: min(self._reduced_chi2(norm_flux, tmpl, norm_err=norm_err) for tmpl in variants)
             for label, variants in self.template_variants_.items()
         }
+        knn_w = float(getattr(self, "e1_knn_weight_", 0.0))
+        knn = getattr(self, "e1_knn_", None)
+        if (
+            knn is not None
+            and knn_w > 0.0
+            and np.count_nonzero(np.isfinite(norm_flux)) >= 5
+            and any(math.isfinite(float(v)) for v in scores.values())
+        ):
+            vec = np.nan_to_num(np.asarray(norm_flux, dtype=np.float64), nan=0.0, posinf=0.0, neginf=0.0).reshape(1, -1)
+            if vec.shape[1] == getattr(knn, "n_features_in_", vec.shape[1]):
+                kp = knn.predict_proba(vec)[0]
+                kmap = {str(c): float(p) for c, p in zip(knn.classes_, kp)}
+                scores = {
+                    c: (
+                        (1.0 - knn_w) * float(v) + knn_w * (-2.0 * math.log(max(kmap.get(c, 0.05), 0.05)))
+                        if math.isfinite(float(v))
+                        else float(v)
+                    )
+                    for c, v in scores.items()
+                }
         best = min(scores, key=scores.get)
         return best, scores
 
@@ -542,7 +610,7 @@ class SpectralDiscoveryPipeline:
             best_val = min(finite_vals)
             raw = np.array(
                 [
-                    math.exp(-0.5 * min(max(0.0, float(chi2_map[c]) - best_val), 100.0))
+                    math.exp(-0.20 * min(max(0.0, float(chi2_map[c]) - best_val), 100.0))
                     if c in chi2_map and math.isfinite(float(chi2_map[c]))
                     else 0.0
                     for c in self.classes_
@@ -617,24 +685,25 @@ class SpectralDiscoveryPipeline:
 
     def _build_tree(self):
         return HistGradientBoostingClassifier(
-            max_iter=80,
-            max_depth=4,
-            min_samples_leaf=3,
-            l2_regularization=0.4,
-            max_features=0.35,
-            learning_rate=0.08,
+            max_iter=150,
+            max_depth=5,
+            min_samples_leaf=4,
+            l2_regularization=0.8,
+            max_features=0.25,
+            learning_rate=0.05,
             class_weight="balanced",
             random_state=self.random_state,
         )
 
     def _augment_masked_training(self, X_subset, y_subset, weights_subset=None):
-        # Simulate missing SPHEREx detector blocks and sensor gaps during E2 training without affecting calibration splits.
+        # Simulate missing SPHEREx detector blocks and sensor gaps at reduced weight so clean SEDs remain primary.
         n_bands = X_subset.shape[1]
         segs = min(5, max(1, n_bands // 2))
         block = max(1, n_bands // segs)
         feat_parts = [self._extract_features(X_subset)]
         y_parts = [y_subset]
         w_parts = [weights_subset] if weights_subset is not None else []
+        aug_weight = (weights_subset * 0.50) if weights_subset is not None else None
         if n_bands >= 6:
             for seg in range(segs):
                 masked_rows = X_subset.copy()
@@ -643,8 +712,8 @@ class SpectralDiscoveryPipeline:
                 masked_rows[:, lo:hi] = np.nan
                 feat_parts.append(self._extract_features(masked_rows))
                 y_parts.append(y_subset)
-                if weights_subset is not None:
-                    w_parts.append(weights_subset)
+                if aug_weight is not None:
+                    w_parts.append(aug_weight)
         if n_bands >= 16:
             edge_mid_rows = X_subset.copy()
             edge_mid_rows[:, :2] = np.nan
@@ -653,8 +722,8 @@ class SpectralDiscoveryPipeline:
             edge_mid_rows[:, max(0, mid - 2) : min(n_bands, mid + 2)] = np.nan
             feat_parts.append(self._extract_features(edge_mid_rows))
             y_parts.append(y_subset)
-            if weights_subset is not None:
-                w_parts.append(weights_subset)
+            if aug_weight is not None:
+                w_parts.append(aug_weight)
         aug_w = np.concatenate(w_parts) if w_parts else None
         return np.vstack(feat_parts), np.concatenate(y_parts), aug_w
 
@@ -682,32 +751,58 @@ class SpectralDiscoveryPipeline:
                 self.silver_weight_applied_ = 0.5
 
         _, tr_counts = np.unique(y[train_idx], return_counts=True)
-        n_cv = max(2, min(3, int(np.min(tr_counts))))
+        min_tr_count = int(np.min(tr_counts)) if len(tr_counts) else 0
         tree_classes = np.array(sorted(set(y[train_idx].tolist())))
-        skf = StratifiedKFold(n_splits=n_cv, shuffle=True, random_state=self.random_state)
-        oof_e2 = np.zeros((len(train_idx), len(tree_classes)), dtype=np.float64)
         tr_weights = sample_weights[train_idx]
-        for sub_tr, sub_va in skf.split(feats[train_idx], y[train_idx]):
-            aug_f, aug_y, aug_w = self._augment_masked_training(
-                X[train_idx][sub_tr], y[train_idx][sub_tr], tr_weights[sub_tr]
-            )
-            fold_tree = self._build_tree()
-            fold_tree.fit(aug_f, aug_y, sample_weight=aug_w)
-            oof_e2[sub_va] = fold_tree.predict_proba(feats[train_idx][sub_va])
+        tr_nerr = norm_errs[train_idx] if norm_errs is not None else None
+        if min_tr_count >= 2:
+            n_cv = min(4, min_tr_count)
+            skf = StratifiedKFold(n_splits=n_cv, shuffle=True, random_state=self.random_state)
+            oof_e2 = np.zeros((len(train_idx), len(tree_classes)), dtype=np.float64)
+            oof_e1 = np.zeros((len(train_idx), len(self.classes_)), dtype=np.float64)
+            for sub_tr, sub_va in skf.split(feats[train_idx], y[train_idx]):
+                aug_f, aug_y, aug_w = self._augment_masked_training(
+                    X[train_idx][sub_tr], y[train_idx][sub_tr], tr_weights[sub_tr]
+                )
+                fold_tree = self._build_tree()
+                fold_tree.fit(aug_f, aug_y, sample_weight=aug_w)
+                oof_e2[sub_va] = fold_tree.predict_proba(feats[train_idx][sub_va])
+                # Fit fold-local E1 kNN strictly on sub_tr so meta_combiner trains on leak-free E1 predictions.
+                self.e1_knn_ = self._fit_e1_knn(normed[train_idx][sub_tr], y[train_idx][sub_tr])
+                for va_i in sub_va:
+                    va_nerr = tr_nerr[va_i] if tr_nerr is not None else None
+                    oof_e1[va_i] = self._template_probs(
+                        *self._predict_template_class(normed[train_idx][va_i], norm_err=va_nerr)
+                    )
+        else:
+            oof_e2 = None
+            oof_e1 = None
 
         full_aug_f, full_aug_y, full_aug_w = self._augment_masked_training(
             X[train_idx], y[train_idx], tr_weights
         )
         self.tree_model.fit(full_aug_f, full_aug_y, sample_weight=full_aug_w)
-        tr_nerr = norm_errs[train_idx] if norm_errs is not None else None
-        meta_train = self._combined_meta_features(normed[train_idx], oof_e2, norm_errs=tr_nerr)
+        self.e1_knn_ = self._fit_e1_knn(normed[train_idx], y[train_idx])
+        if oof_e2 is None or oof_e1 is None:
+            oof_e2 = self.tree_model.predict_proba(feats[train_idx])
+            meta_train = self._combined_meta_features(normed[train_idx], oof_e2, norm_errs=tr_nerr)
+        else:
+            meta_train = np.hstack([oof_e1, oof_e2])
         self.meta_combiner.fit(meta_train, y[train_idx], sample_weight=tr_weights)
 
-        # Stage 2: fit rank-preserving temperature scaling strictly on held-out iso_idx
+        # Stage 2: fit Gold-prioritized rank-preserving temperature scaling strictly on held-out iso_idx
         iso_nerr = norm_errs[iso_idx] if norm_errs is not None else None
         iso_meta = self._combined_meta_features(normed[iso_idx], self.tree_model.predict_proba(feats[iso_idx]), norm_errs=iso_nerr)
         raw_iso_probs = self.meta_combiner.predict_proba(iso_meta)
-        self.temperature_inv_ = _fit_temperature_inv(raw_iso_probs, y[iso_idx], self.meta_combiner.classes_)
+        iso_weights = None
+        if label_grades is not None:
+            iso_grades = [str(label_grades[i]).strip().lower() for i in iso_idx]
+            if any(g == "gold" for g in iso_grades):
+                iso_weights = np.array([1.0 if g == "gold" else 0.10 for g in iso_grades], dtype=np.float64)
+        fit_tinv = _fit_temperature_inv(
+            raw_iso_probs, y[iso_idx], self.meta_combiner.classes_, sample_weight=iso_weights
+        )
+        self.temperature_inv_ = float(np.clip(fit_tinv, 0.65, 1.20))
         self.calibrators_ = {
             str(cls): _PowerCalibrator(self.temperature_inv_) for cls in self.meta_combiner.classes_
         }
@@ -721,7 +816,9 @@ class SpectralDiscoveryPipeline:
         nonconformity = [1.0 - float(cal_conf_probs[i, class_to_col[y[conf_idx][i]]]) for i in range(len(conf_idx))]
         n = len(nonconformity)
         q_level = min(math.ceil((n + 1) * 0.90) / n, 1.0)
-        self.conformal_q_ = float(np.quantile(nonconformity, q_level, method="higher"))
+        raw_q = float(np.quantile(nonconformity, q_level, method="higher"))
+        # Prevent error-free tiny calibration splits (e.g. n=30) from collapsing conformal_q_ below 1/(n+1) discretization.
+        self.conformal_q_ = max(raw_q, 1.0 / max(n + 1, 2))
         self.calibration_size_ = n
 
         clean_mask = np.ones(len(train_idx), dtype=bool)
@@ -1062,7 +1159,7 @@ def split_by_sky_tile(sky_tiles, y=None, label_grades=None, train_frac=0.60, cal
     }
 
 
-def train_from_real_dataset(dataset, build_templates_fn, max_per_class=6, random_state=42):
+def train_from_real_dataset(dataset, build_templates_fn, max_per_class=14, random_state=42):
     """Single shared zero-leakage training entrypoint used by both ml/train.py and phantom_worlds/api.py."""
     wl = np.asarray(dataset["wavelength_um"], dtype=np.float64)
     bw = np.asarray(dataset["bandwidth_um"], dtype=np.float64)
@@ -1276,3 +1373,176 @@ def evaluate_fixed_targets(wavelengths, bandwidths, spectra_by_slug, pipeline, e
             "passed": bool(ok),
         }
     return {"all_passed": all_passed, "targets": results}
+
+
+DEFAULT_PIPELINE_MODEL_VERSION = "spherex-dr1-e1e2-v2"
+CHECKPOINT_FILENAME = "spectral_discovery_pipeline.pkl.gz"
+CHECKPOINT_META_FILENAME = "spectral_discovery_pipeline.meta.json"
+
+
+def sha256_file(path):
+    """Return hex SHA-256 digest of a file."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _checkpoint_source_hashes():
+    pkg_dir = os.path.dirname(os.path.abspath(__file__))
+    out = {}
+    for fname in ("ml_pipeline.py", "real_ml_data.py"):
+        fpath = os.path.join(pkg_dir, fname)
+        if os.path.exists(fpath):
+            out[fname] = sha256_file(fpath)
+    return out
+
+
+def _resolved_checkpoint_paths(base_dir):
+    root_abs = os.path.realpath(base_dir)
+    ckpt_path = os.path.realpath(os.path.join(root_abs, CHECKPOINT_FILENAME))
+    meta_path = os.path.realpath(os.path.join(root_abs, CHECKPOINT_META_FILENAME))
+    if (
+        os.path.commonpath([root_abs, ckpt_path]) != root_abs
+        or os.path.commonpath([root_abs, meta_path]) != root_abs
+    ):
+        raise ValueError("Checkpoint paths must stay inside base_dir")
+    return root_abs, ckpt_path, meta_path
+
+
+def _atomic_write_bytes(target_path, raw_bytes, out_dir):
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=out_dir, prefix=".tmp_", suffix=".part", delete=False) as tf:
+            tmp_path = tf.name
+            tf.write(raw_bytes)
+        os.replace(tmp_path, target_path)
+        tmp_path = None
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+
+
+def save_pipeline_checkpoint(
+    pipe,
+    e1_templates,
+    dataset_path,
+    output_dir,
+    model_version=DEFAULT_PIPELINE_MODEL_VERSION,
+    max_per_class=14,
+    random_state=42,
+    compresslevel=3,
+):
+    """Atomically export a fitted SpectralDiscoveryPipeline and hash-verified metadata sidecar."""
+    if not getattr(pipe, "fitted_", False):
+        raise ValueError("Refusing to export an unfitted SpectralDiscoveryPipeline")
+    out_dir, ckpt_path, meta_path = _resolved_checkpoint_paths(output_dir)
+    os.makedirs(out_dir, exist_ok=True)
+    ds_abs = os.path.realpath(dataset_path)
+    if not os.path.exists(ds_abs):
+        raise FileNotFoundError(f"Training dataset not found: {ds_abs}")
+
+    payload = {
+        "model_version": str(model_version),
+        "pipeline": pipe,
+        "e1_templates": {
+            str(cls): [np.asarray(arr, dtype=np.float64) for arr in vs]
+            for cls, vs in (e1_templates or {}).items()
+        },
+    }
+    raw_ckpt = gzip.compress(pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL), compresslevel=compresslevel)
+    _atomic_write_bytes(ckpt_path, raw_ckpt, out_dir)
+
+    meta = {
+        "model_version": str(model_version),
+        "checkpoint_file": CHECKPOINT_FILENAME,
+        "checkpoint_sha256": hashlib.sha256(raw_ckpt).hexdigest(),
+        "checkpoint_bytes": len(raw_ckpt),
+        "dataset_sha256": sha256_file(ds_abs),
+        "code_sha256": _checkpoint_source_hashes(),
+        "max_per_class": int(max_per_class),
+        "random_state": int(random_state),
+        "sklearn_version": str(sklearn.__version__),
+        "numpy_version": str(np.__version__),
+    }
+    _atomic_write_bytes(meta_path, json.dumps(meta, indent=2).encode("utf-8"), out_dir)
+    return {
+        "checkpoint_path": ckpt_path,
+        "meta_path": meta_path,
+        "meta": meta,
+    }
+
+
+def load_pipeline_checkpoint(
+    dataset_path,
+    checkpoint_dir=None,
+    model_version=DEFAULT_PIPELINE_MODEL_VERSION,
+    max_per_class=14,
+    random_state=42,
+):
+    """Load hash- and version-verified SpectralDiscoveryPipeline from disk, or return None if missing/stale."""
+    ds_abs = os.path.realpath(dataset_path)
+    if not os.path.exists(ds_abs):
+        return None
+    base_dir = checkpoint_dir if checkpoint_dir is not None else os.path.dirname(ds_abs)
+    try:
+        _, ckpt_path, meta_path = _resolved_checkpoint_paths(base_dir)
+    except ValueError:
+        return None
+    if not (os.path.exists(ckpt_path) and os.path.exists(meta_path)):
+        return None
+    try:
+        with open(meta_path, encoding="utf-8") as mf:
+            meta = json.load(mf)
+    except (OSError, ValueError, TypeError):
+        return None
+    if not isinstance(meta, dict):
+        return None
+
+    expected_code = _checkpoint_source_hashes()
+    if (
+        meta.get("model_version") != str(model_version)
+        or meta.get("checkpoint_file") != CHECKPOINT_FILENAME
+        or meta.get("max_per_class") != int(max_per_class)
+        or meta.get("random_state") != int(random_state)
+        or meta.get("sklearn_version") != str(sklearn.__version__)
+        or meta.get("numpy_version") != str(np.__version__)
+        or meta.get("code_sha256") != expected_code
+    ):
+        return None
+
+    if not hmac.compare_digest(str(meta.get("dataset_sha256", "")), sha256_file(ds_abs)):
+        return None
+
+    try:
+        with open(ckpt_path, "rb") as cf:
+            raw_ckpt = cf.read()
+    except OSError:
+        return None
+    actual_ckpt_sha = hashlib.sha256(raw_ckpt).hexdigest()
+    if not hmac.compare_digest(str(meta.get("checkpoint_sha256", "")), actual_ckpt_sha):
+        return None
+
+    try:
+        bundle = pickle.loads(gzip.decompress(raw_ckpt))
+    except Exception:
+        return None
+    if not isinstance(bundle, dict) or bundle.get("model_version") != str(model_version):
+        return None
+    pipe = bundle.get("pipeline")
+    if not isinstance(pipe, SpectralDiscoveryPipeline) or not getattr(pipe, "fitted_", False):
+        return None
+    templates = bundle.get("e1_templates")
+    if not isinstance(templates, dict):
+        templates = getattr(pipe, "template_variants_", {})
+    return {
+        "pipeline": pipe,
+        "e1_templates": templates,
+        "model_version": str(model_version),
+        "checkpoint_path": ckpt_path,
+        "checkpoint_sha256": actual_ckpt_sha,
+    }

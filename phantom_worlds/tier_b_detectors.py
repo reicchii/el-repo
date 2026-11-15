@@ -18,7 +18,12 @@ from phantom_worlds.contracts import (
     VALID_DETECTORS,
 )
 from phantom_worlds.fits_cutout import PIXEL_SCALE_ARCSEC, _MJY_SR_TO_UJY_PX, build_target_canvas_wcs
-from phantom_worlds.ml_pipeline import compute_molecule_readings, train_from_real_dataset
+from phantom_worlds.ml_pipeline import (
+    DEFAULT_PIPELINE_MODEL_VERSION,
+    compute_molecule_readings,
+    load_pipeline_checkpoint,
+    train_from_real_dataset,
+)
 from phantom_worlds.real_ml_data import (
     DEFAULT_ML_DIR,
     build_balanced_e1_templates,
@@ -86,18 +91,33 @@ def get_cached_ml_pipeline(dataset_path=None):
             cached = _TRAINED_PIPE_CACHE.get(d_path)
             if cached is not None:
                 return cached
-        dataset = load_real_training_dataset(d_path)
-        fit_res = train_from_real_dataset(dataset, build_balanced_e1_templates, max_per_class=6, random_state=42)
+        loaded = load_pipeline_checkpoint(
+            d_path,
+            model_version=DEFAULT_PIPELINE_MODEL_VERSION,
+            max_per_class=14,
+            random_state=42,
+        )
+        if loaded is not None:
+            pipe_obj = loaded["pipeline"]
+            e1_templates = loaded["e1_templates"]
+            load_source = "disk_checkpoint"
+        else:
+            dataset = load_real_training_dataset(d_path)
+            fit_res = train_from_real_dataset(dataset, build_balanced_e1_templates, max_per_class=14, random_state=42)
+            pipe_obj = fit_res["pipeline"]
+            e1_templates = fit_res["e1_templates"]
+            load_source = "live_fit"
         eval_report_path = os.path.join(os.path.dirname(d_path), "evaluation_report.json")
         eval_report = {}
         if os.path.exists(eval_report_path):
             with open(eval_report_path, encoding="utf-8") as ef:
                 eval_report = json.load(ef)
         out = {
-            "pipeline": fit_res["pipeline"],
-            "e1_templates": fit_res["e1_templates"],
+            "pipeline": pipe_obj,
+            "e1_templates": e1_templates,
             "evaluation_report": eval_report,
-            "model_version": eval_report.get("model_version", "spherex-dr1-e1e2-v2"),
+            "model_version": eval_report.get("model_version", DEFAULT_PIPELINE_MODEL_VERSION),
+            "load_source": load_source,
         }
         with _CACHE_LOCK:
             _TRAINED_PIPE_CACHE[d_path] = out
