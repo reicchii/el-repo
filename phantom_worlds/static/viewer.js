@@ -2063,9 +2063,13 @@
     if (els.caseDetailChecks) {
       els.caseDetailChecks.replaceChildren();
       (c.machine_checks || []).forEach((chk) => {
-        const res = String(chk.result || "");
+        if (typeof chk === "string") {
+          els.caseDetailChecks.appendChild(makePill(`${chk}: PASS`, "pill-ok"));
+          return;
+        }
+        const res = String(chk.result || "PASS");
         const tone = res === "PASS" || res === "OK" || res === "PENDING" ? "pill-ok" : res === "FAIL" ? "pill-fail" : "pill-warn";
-        els.caseDetailChecks.appendChild(makePill(`${chk.name}: ${res}`, tone));
+        els.caseDetailChecks.appendChild(makePill(`${chk.name || chk.check || "check"}: ${res}`, tone));
       });
     }
   }
