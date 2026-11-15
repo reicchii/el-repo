@@ -1,0 +1,32 @@
+# Hosts the project calls. One line each: kind, host, what it is for.
+#
+#   allow    needs an entry in a restricted network (a Claude Code cloud environment)
+#   default  already reachable there through the standard package and code hosts
+#
+# Used by scripts/check-network.sh. Add a host here in the same pull request that first calls it.
+
+allow    irsa.ipac.caltech.edu                         SPHEREx frames, TAP, SIA, calibration files, SPLICES, Moving Object Search Tool
+default  nasa-irsa-spherex.s3.us-east-1.amazonaws.com  SPHEREx files on S3, the first route for byte-range reads
+allow    caltech-ipac.github.io                        IRSA tutorials and SPHEREx archive documentation
+allow    cds.unistra.fr                                CDS Sesame name lookup
+allow    vizier.idia.ac.za                             CDS mirror that Sesame redirects to during CDS outages
+allow    simbad.cds.unistra.fr                         SIMBAD TAP: object types
+allow    vizier.cds.unistra.fr                         VizieR catalogues
+allow    tapvizier.cds.unistra.fr                      VizieR TAP
+allow    aladin.cds.unistra.fr                         Aladin Lite
+allow    alasky.cds.unistra.fr                         Sky image tiles that Aladin Lite loads
+allow    ssp.imcce.fr                                  IMCCE SkyBoT: known solar-system objects in a field
+allow    ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca           Canadian archive SIA and TAP
+allow    gea.esac.esa.int                              ESA Gaia archive: variability, quasar and galaxy tables
+allow    datalab.noirlab.edu                           DESI DR1 TAP
+allow    data.desi.lbl.gov                             DESI DR1 files and documentation
+allow    zenodo.org                                    SPIFF library, UltracoolSheet, model grids
+allow    huggingface.co                                Dataset repo and API Space
+allow    us.aws.cdn.hf.co                              Hugging Face large-file downloads
+allow    download.pytorch.org                          PyTorch CPU wheels
+allow    arxiv.org                                     Papers behind the open checks
+allow    www.spaceappschallenge.org                    Challenge page. Fails TLS checks from scripts, see docs/cloud-environment.md
+allow    www.aavso.org                                 AAVSO VSX. Refuses scripts with a bot check, see docs/cloud-environment.md
+default  github.com                                    Code
+default  pypi.org                                      Python packages
+default  registry.npmjs.org                            Node packages
