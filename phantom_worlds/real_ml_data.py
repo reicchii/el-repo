@@ -322,6 +322,11 @@ def _select_balanced_spiff_bds(records, max_per_letter=80, max_total=80):
     return selected[:max_total]
 
 
+def _spiff_desig_key(desig):
+    """Canonical lookup key stripping spaces/plus signs because SPIFF CSV filenames omit '+'."""
+    return str(desig).strip().replace(" ", "_").replace("+", "")
+
+
 def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_bds=80, ipix_filter=None):
     """Load real SPHEREx 102-band brown dwarf spectra with published J2000 coordinates."""
     tables_zip = spiff_paths["spiff_tables.zip"]
@@ -332,9 +337,10 @@ def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_
         auto_df = pd.read_csv(io.BytesIO(zf.read("spiff_tables/spherex_autotype_datasets_fulltable.csv")))
     for row in auto_df.itertuples(index=False):
         desig = str(row.designation).strip().replace(" ", "_")
-        if desig and desig not in coord_map and pd.notna(row.ra_j2000) and pd.notna(row.dec_j2000):
+        key = _spiff_desig_key(desig)
+        if desig and key not in coord_map and pd.notna(row.ra_j2000) and pd.notna(row.dec_j2000):
             try:
-                coord_map[desig] = (_parse_sexagesimal_hms_deg(row.ra_j2000), _parse_sexagesimal_dms_deg(row.dec_j2000))
+                coord_map[key] = (desig, _parse_sexagesimal_hms_deg(row.ra_j2000), _parse_sexagesimal_dms_deg(row.dec_j2000))
             except ValueError:
                 continue
 
@@ -342,8 +348,9 @@ def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_
         ucd_rows = curated_df[curated_df["ml_class"] == "Ultracool dwarf"]
         for row in ucd_rows.itertuples(index=False):
             sid = str(row.source_id).strip().replace(" ", "_")
-            if sid and sid not in coord_map:
-                coord_map[sid] = (float(row.ra_deg), float(row.dec_deg))
+            key = _spiff_desig_key(sid)
+            if sid and key not in coord_map:
+                coord_map[key] = (sid, float(row.ra_deg), float(row.dec_deg))
 
     records = []
     with zipfile.ZipFile(bds_zip) as zf:
@@ -353,11 +360,11 @@ def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_
             base = os.path.basename(member)
             if "_moca_oid_" not in base or "_spt_" not in base:
                 continue
-            desig = base.split("_moca_oid_")[0]
-            if desig not in coord_map:
+            key = _spiff_desig_key(base.split("_moca_oid_")[0])
+            if key not in coord_map:
                 continue
+            canon_desig, ra_deg, dec_deg = coord_map[key]
             spt = base.split("_spt_")[-1].split("_spherex_spectrum")[0]
-            ra_deg, dec_deg = coord_map[desig]
             ipix5 = ang2pix_nest32(ra_deg, dec_deg)
             if ipix_filter is not None and ipix5 not in ipix_filter:
                 continue
@@ -370,13 +377,17 @@ def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_
                 continue
             fl = np.where(np.isfinite(fl) & (fl > -1e4), fl, np.nan)
             err = np.where(np.isfinite(err) & (err > 0.0), err, np.nan)
+            ok_native = np.isfinite(fl) & (fl > 0.0) & np.isfinite(err) & (err > 0.0)
+            d1_native = ok_native & (wl < 1.15)
+            native_snr_med = float(np.median(fl[ok_native] / err[ok_native])) if np.any(ok_native) else 0.0
+            native_d1_snr = float(np.median(fl[d1_native] / err[d1_native])) if int(np.count_nonzero(d1_native)) >= 5 else 0.0
             res_fl, res_err = resample_spectrum_to_grid(wl, fl, target_wl_um, src_err=err)
             if int(np.count_nonzero(np.isfinite(res_fl) & (res_fl > 0.0))) < 20:
                 continue
             w2_est = _estimate_w2_mag_from_spectrum(target_wl_um, res_fl)
             records.append(
                 {
-                    "target_name": f"SPIFF_{desig}",
+                    "target_name": f"SPIFF_{canon_desig}",
                     "ml_class": "Ultracool dwarf",
                     "subclass": spt,
                     "label_grade": "gold",
@@ -388,15 +399,263 @@ def load_spiff_known_bd_spectra(spiff_paths, target_wl_um, curated_df=None, max_
                     "sky_tile": f"h8_{ang2pix_nest(256, ra_deg, dec_deg)}",
                     "flux_ujy": res_fl,
                     "flux_err_ujy": res_err,
+                    "native_wl_um": wl,
+                    "native_flux_ujy": fl,
+                    "native_err_ujy": err,
+                    "native_snr_med": native_snr_med,
+                    "native_d1_snr": native_d1_snr,
                     "w2_mag_est": w2_est,
                     "blend_share": 0.02,
                     "gaia_parallax_mas": float("nan"),
                     "gaia_g_mag": float("nan"),
                 }
             )
-    if ipix_filter is not None:
+    if ipix_filter is not None or max_bds is None:
         return records
     return _select_balanced_spiff_bds(records, max_per_letter=max(12, int(max_bds)), max_total=max_bds)
+
+
+def _canonical_spiff_wl_grid(spiff_paths, records, fallback_wl):
+    """Return unrounded 102-bin native SPIFF grid when available, else pcat table or cube grid."""
+    for rec in records or ():
+        nwl = np.asarray(rec.get("native_wl_um", ()), dtype=np.float64)
+        if len(nwl) == 102 and np.all(np.isfinite(nwl)):
+            return nwl.copy()
+    tables_zip = (spiff_paths or {}).get("spiff_tables.zip")
+    if tables_zip and os.path.exists(tables_zip):
+        with zipfile.ZipFile(tables_zip) as zf:
+            pcat_member = "spiff_tables/pcat_spherex_bins_bandpasses_fulltable.csv"
+            if pcat_member in zf.namelist():
+                pcat_df = pd.read_csv(io.BytesIO(zf.read(pcat_member)))
+                return pcat_df["wavelength_center_um"].to_numpy(dtype=np.float64)
+    return np.asarray(fallback_wl, dtype=np.float64)
+
+
+def _project_spiff_native_spectrum(native_wl, native_fl, canonical_spiff_wl):
+    """Map native SPIFF CSV bins onto the canonical 102-bin grid without interpolating over gaps."""
+    nwl = np.asarray(native_wl, dtype=np.float64)
+    nfl = np.asarray(native_fl, dtype=np.float64)
+    dst = np.asarray(canonical_spiff_wl, dtype=np.float64)
+    if len(nwl) == 0 or len(dst) == 0:
+        return np.full(len(dst), np.nan, dtype=np.float64)
+    nearest_idx = np.argmin(np.abs(nwl[:, None] - dst[None, :]), axis=1)
+    max_align = float(np.max(np.abs(nwl - dst[nearest_idx])))
+    if max_align > 0.002:
+        return resample_spectrum_to_grid(nwl, nfl, dst)
+    out = np.full(len(dst), np.nan, dtype=np.float64)
+    for src_i, dst_j in enumerate(nearest_idx):
+        if np.isfinite(nfl[src_i]) and nfl[src_i] > 0.0:
+            out[int(dst_j)] = float(nfl[src_i])
+    return out
+
+
+def _query_gaia_cones_for_spiff(cands, cache_csv=None, session=None):
+    """Fetch and cache 60-arcsec Gaia DR3 neighbor cones via allowlisted HTTPS TAP for cross-extraction isolation."""
+    cols = ["candidate_name", "source_id", "ra", "dec", "pmra", "pmdec", "phot_g_mean_mag"]
+    rows_by_cand = {}
+    if cache_csv and os.path.exists(cache_csv):
+        try:
+            cdf = pd.read_csv(cache_csv)
+            for row in cdf.itertuples(index=False):
+                cname = str(row.candidate_name)
+                bucket = rows_by_cand.setdefault(cname, [])
+                sid = int(row.source_id) if pd.notna(row.source_id) else -1
+                if sid >= 0:
+                    bucket.append(
+                        (
+                            sid,
+                            float(row.ra),
+                            float(row.dec),
+                            None if pd.isna(row.pmra) else float(row.pmra),
+                            None if pd.isna(row.pmdec) else float(row.pmdec),
+                            None if pd.isna(row.phot_g_mean_mag) else float(row.phot_g_mean_mag),
+                        )
+                    )
+        except (OSError, ValueError):
+            rows_by_cand = {}
+
+    missing = [c for c in cands if c["target_name"] not in rows_by_cand]
+    if missing:
+        own_sess = session is None
+        sess = session or HardenedHTTPSession(timeout=45, allowed_hosts=frozenset({"gea.esac.esa.int"}))
+        try:
+            for start in range(0, len(missing), 15):
+                chunk = missing[start : start + 15]
+                cond = " OR ".join(
+                    f"1=CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', {c['ra_deg']:.6f}, {c['dec_deg']:.6f}, {60.0 / 3600.0:.6f}))"
+                    for c in chunk
+                )
+                query = f"SELECT source_id, ra, dec, pmra, pmdec, phot_g_mean_mag FROM gaiadr3.gaia_source WHERE {cond}"
+                resp = sess.post(
+                    "https://gea.esac.esa.int/tap-server/tap/sync",
+                    data={"REQUEST": "doQuery", "LANG": "ADQL", "FORMAT": "json", "QUERY": query},
+                    timeout=45,
+                )
+                resp.raise_for_status()
+                data = resp.json().get("data", [])
+                for c in chunk:
+                    cname = c["target_name"]
+                    ra0, dec0 = float(c["ra_deg"]), float(c["dec_deg"])
+                    cosd = max(0.1, math.cos(math.radians(dec0)))
+                    matched = []
+                    for g in data:
+                        gra, gdec = float(g[1]), float(g[2])
+                        if abs(gdec - dec0) <= 0.05 and abs((gra - ra0) * cosd) <= 0.05:
+                            matched.append(
+                                (
+                                    int(g[0]),
+                                    gra,
+                                    gdec,
+                                    None if g[3] is None else float(g[3]),
+                                    None if g[4] is None else float(g[4]),
+                                    None if g[5] is None else float(g[5]),
+                                )
+                            )
+                    rows_by_cand[cname] = matched
+        except (requests.RequestException, ValueError, RuntimeError) as exc:
+            print(f"[cross-extract Gaia lookup skipped/offline: {exc}]", flush=True)
+            return {}
+        finally:
+            if own_sess:
+                sess.close()
+
+        if cache_csv:
+            os.makedirs(os.path.dirname(os.path.abspath(cache_csv)), exist_ok=True)
+            flat_rows = []
+            for cname in sorted(rows_by_cand.keys()):
+                entries = rows_by_cand[cname]
+                if not entries:
+                    flat_rows.append((cname, -1, float("nan"), float("nan"), float("nan"), float("nan"), float("nan")))
+                else:
+                    for e in entries:
+                        flat_rows.append((cname, e[0], e[1], e[2], e[3], e[4], e[5]))
+            pd.DataFrame(flat_rows, columns=cols).to_csv(cache_csv, index=False)
+
+    return rows_by_cand
+
+
+def select_cross_extraction_spiff_bds(
+    spiff_paths,
+    curated_df=None,
+    tile_groups=None,
+    cache_csv=None,
+    min_snr_med=60.0,
+    min_d1_snr=10.0,
+    min_valid_bands=85,
+    neighbor_radius_arcsec=25.0,
+    max_targets=200,
+    gaia_session=None,
+):
+    """Select bright, Gaia-isolated SPIFF brown dwarfs for S3 cube vs SPIFF cross-extraction verification."""
+    seed_wl = np.linspace(0.75, 5.0, 102, dtype=np.float64)
+    all_spiff = load_spiff_known_bd_spectra(spiff_paths, seed_wl, curated_df=curated_df, max_bds=None)
+    bright = [
+        r
+        for r in all_spiff
+        if int(np.count_nonzero(np.isfinite(r["native_flux_ujy"]) & (r["native_flux_ujy"] > 0.0))) >= int(min_valid_bands)
+        and float(r.get("native_snr_med", 0.0)) >= float(min_snr_med)
+        and float(r.get("native_d1_snr", 0.0)) >= float(min_d1_snr)
+    ]
+    bright.sort(key=lambda r: (-float(r.get("native_snr_med", 0.0)), str(r["target_name"])))
+    cands = bright[: int(max_targets)]
+
+    selected = []
+    if cands:
+        gaia_by_cand = _query_gaia_cones_for_spiff(cands, cache_csv=cache_csv, session=gaia_session)
+        for rec in cands:
+            nbrs = gaia_by_cand.get(rec["target_name"], [])
+            if not nbrs:
+                continue
+            ra0, dec0 = float(rec["ra_deg"]), float(rec["dec_deg"])
+            cosd = max(0.1, math.cos(math.radians(dec0)))
+            best, best_sep00 = None, 999.0
+            for _sid, gra, gdec, pmr_raw, pmd_raw, gmag_raw in nbrs:
+                if pmr_raw is None:
+                    continue
+                pmr = float(pmr_raw)
+                pmd = 0.0 if pmd_raw is None else float(pmd_raw)
+                gmag = 99.0 if gmag_raw is None else float(gmag_raw)
+                r00 = gra - (pmr / 3600000.0) * 16.0 / cosd
+                d00 = gdec - (pmd / 3600000.0) * 16.0
+                sep00 = math.hypot((r00 - ra0) * cosd, d00 - dec0) * 3600.0
+                if sep00 < best_sep00:
+                    best_sep00 = sep00
+                    best = (gra, gdec, pmr, pmd, gmag)
+            if best is None or best_sep00 > 5.0:
+                continue
+            gra, gdec, pmr, pmd, self_g = best
+            ra26 = gra + (pmr / 3600000.0) * 10.0 / cosd
+            dec26 = gdec + (pmd / 3600000.0) * 10.0
+            is_blended = False
+            for _sid, nra, ndec, npmr_raw, npmd_raw, ng_raw in nbrs:
+                if abs(nra - gra) < 1e-7 and abs(ndec - gdec) < 1e-7:
+                    continue
+                npmr = 0.0 if npmr_raw is None else float(npmr_raw)
+                npmd = 0.0 if npmd_raw is None else float(npmd_raw)
+                ng = 99.0 if ng_raw is None else float(ng_raw)
+                nr26 = nra + (npmr / 3600000.0) * 10.0 / cosd
+                nd26 = ndec + (npmd / 3600000.0) * 10.0
+                sep26 = math.hypot((nr26 - ra26) * cosd, nd26 - dec26) * 3600.0
+                if sep26 < float(neighbor_radius_arcsec) and ng < self_g + 2.0:
+                    is_blended = True
+                    break
+            if is_blended:
+                continue
+            selected.append(
+                (
+                    ang2pix_nest32(ra26, dec26),
+                    {
+                        "target_name": f"CROSS_{rec['target_name']}",
+                        "ra_deg": gra,
+                        "dec_deg": gdec,
+                        "pmra": pmr,
+                        "pmdec": pmd,
+                        "ref_epoch": 2016.0,
+                        "ml_class": "Ultracool dwarf",
+                        "subclass": rec["subclass"],
+                        "label_grade": "gold",
+                        "label_source": rec["label_source"],
+                    },
+                    rec,
+                )
+            )
+
+    if not selected and tile_groups:
+        tile_ipix = set(int(k) for k in tile_groups.keys())
+        for rec in all_spiff:
+            sipix = int(rec["ipix5"])
+            if sipix not in tile_ipix:
+                continue
+            desig_norm = str(rec["target_name"]).removeprefix("SPIFF_").lower().replace("_", "")
+            s_ra, s_dec = float(rec["ra_deg"]), float(rec["dec_deg"])
+            cosd = max(0.1, math.cos(math.radians(s_dec)))
+            matched_bm = None
+            for bm in BENCHMARK_TARGETS:
+                bslug = bm["slug"].lower().replace("_", "")
+                bname = bm["target_name"].lower().replace("_", "")
+                if desig_norm in (bslug, bname) or math.hypot((s_ra - float(bm["ra_deg"])) * cosd, s_dec - float(bm["dec_deg"])) < 0.01:
+                    matched_bm = bm
+                    break
+            selected.append(
+                (
+                    sipix,
+                    {
+                        "target_name": f"CROSS_{rec['target_name']}",
+                        "ra_deg": float(matched_bm["ra_deg"]) if matched_bm is not None else s_ra,
+                        "dec_deg": float(matched_bm["dec_deg"]) if matched_bm is not None else s_dec,
+                        "pmra": float(matched_bm["pmra"]) if matched_bm is not None else 0.0,
+                        "pmdec": float(matched_bm["pmdec"]) if matched_bm is not None else 0.0,
+                        "ref_epoch": float(matched_bm["ref_epoch"]) if matched_bm is not None else 2000.0,
+                        "ml_class": "Ultracool dwarf",
+                        "subclass": rec["subclass"],
+                        "label_grade": "gold",
+                        "label_source": rec["label_source"],
+                    },
+                    rec,
+                )
+            )
+
+    return selected
 
 
 def _strip_axis3_wcs(img_header):
@@ -622,7 +881,11 @@ def extract_cube_tile_spectra(
             raise ValueError(f"SPECTRAL_CHANNELS rows {len(wl_um)} != NAXIS3 {nchan}")
 
         w2 = _strip_axis3_wcs(img_hdr)
-        mjy_sr_to_ujy = float(w2.proj_plane_pixel_area().to_value("sr")) * 1e12
+        pix_area_sr = float(w2.proj_plane_pixel_area().to_value("sr"))
+        if "HPX" in str(img_hdr.get("CTYPE1", "")).upper():
+            # Calabretta & Roukema (2007) HPX projection plane exceeds true sphere HEALPix pixel solid angle by 3*pi/8.
+            pix_area_sr *= 8.0 / (3.0 * math.pi)
+        mjy_sr_to_ujy = pix_area_sr * 1e12
 
         prop_coords = [
             propagate_position(
@@ -894,23 +1157,91 @@ def select_isolated_gaia_stars(
     return pd.DataFrame(chosen, columns=cols)
 
 
+def _galactic_abs_b_array(ra_deg, dec_deg):
+    ra = np.radians(np.asarray(ra_deg, dtype=np.float64))
+    dec = np.radians(np.asarray(dec_deg, dtype=np.float64))
+    ra_p = math.radians(192.85948)
+    dec_p = math.radians(27.12825)
+    sin_b = np.sin(dec) * math.sin(dec_p) + np.cos(dec) * math.cos(dec_p) * np.cos(ra - ra_p)
+    return np.abs(np.degrees(np.arcsin(np.clip(sin_b, -1.0, 1.0))))
+
+
+def _plan_dynamic_curated_tiles(work):
+    """Build dynamic, cube-shared, multi-Norder8 tile caps from curated rows cleanly separated off-plane."""
+    specs = (
+        ("Star", 80, 16, None),
+        ("Young star with ice or dust", 180, 22, None),
+        ("Evolved giant star", 130, 20, None),
+        ("Active galaxy or quasar", 200, 60, "QSO"),
+        ("Galaxy", 130, 36, None),
+    )
+    selected_shared_ipix = set()
+    plan = {}
+    for ml_cls, max_t, max_cubes, mode in specs:
+        sub = work[work["ml_class"] == ml_cls]
+        if sub.empty:
+            continue
+        if ml_cls == "Star":
+            star_tiles = set(int(t) for t in _FULL_BAND_STAR_TILES)
+            cands = sub[sub["ipix5"].isin(star_tiles)]
+            tiles = sorted(cands["ipix5"].unique().tolist()) if not cands.empty else sorted(sub["ipix5"].unique().tolist())[:max_cubes]
+            plan[ml_cls] = {"max_targets": max_t, "candidate_tiles": [int(t) for t in tiles]}
+            selected_shared_ipix.update(plan[ml_cls]["candidate_tiles"])
+            continue
+
+        by_tile = {}
+        for r in sub.itertuples(index=False):
+            ip = int(r.ipix5)
+            info = by_tile.setdefault(ip, {"h8": set(), "n": 0, "very_bright": 0, "bright_qso": 0})
+            info["h8"].add(int(r.h8))
+            info["n"] += 1
+            if mode == "QSO" and str(getattr(r, "subclass", "")).startswith("QSO_G"):
+                try:
+                    g_val = float(str(r.subclass)[5:])
+                    if g_val < 16.0:
+                        info["very_bright"] += 1
+                    if g_val < 16.6:
+                        info["bright_qso"] += 1
+                except ValueError:
+                    pass
+
+        ranked_tiles = sorted(
+            by_tile.keys(),
+            key=lambda ip: (
+                -(ip in selected_shared_ipix),
+                -min(2, by_tile[ip]["very_bright"]) if mode == "QSO" else 0,
+                -min(3, by_tile[ip]["bright_qso"]) if mode == "QSO" else 0,
+                -len(by_tile[ip]["h8"]),
+                -by_tile[ip]["n"],
+                ip,
+            ),
+        )[:max_cubes]
+        plan[ml_cls] = {"max_targets": max_t, "candidate_tiles": [int(t) for t in ranked_tiles]}
+        selected_shared_ipix.update(plan[ml_cls]["candidate_tiles"])
+    return plan
+
+
 def select_curated_cube_targets(curated_df, tiles_per_class=None):
     """Select compact, multi-Norder8-tile clusters per class so extraction stays fast on S3 cubes."""
-    default_plan = {
-        "Evolved giant star": {"max_targets": 55, "candidate_tiles": [7370, 7467, 7198, 7199, 8001, 7348, 7631, 7419, 3615, 7368, 7371]},
-        "Galaxy": {"max_targets": 100, "candidate_tiles": [7370, 7467, 3622, 7198, 7199, 7221]},
-        "Active galaxy or quasar": {"max_targets": 120, "candidate_tiles": [3428, 3429, 3434, 4801, 4802, 4803, 4804, 4805, 7489, 7492]},
-        "Young star with ice or dust": {"max_targets": 180, "candidate_tiles": [5701, 5359]},
-        "Star": {"max_targets": 80, "candidate_tiles": list(_FULL_BAND_STAR_TILES)},
-    }
-    plan = tiles_per_class or default_plan
     work = curated_df.copy()
     work["ipix5"] = [ang2pix_nest32(r.ra_deg, r.dec_deg) for r in work.itertuples(index=False)]
     work["h8"] = [ang2pix_nest(256, r.ra_deg, r.dec_deg) for r in work.itertuples(index=False)]
+    work["abs_gal_b"] = _galactic_abs_b_array(work["ra_deg"].to_numpy(dtype=np.float64), work["dec_deg"].to_numpy(dtype=np.float64))
     gx, gy = _global_hpx_wcs().world_to_pixel_values(work["ra_deg"].to_numpy(dtype=np.float64), work["dec_deg"].to_numpy(dtype=np.float64))
     work["px"] = gx - 512.0 * np.floor(gx / 512.0)
     work["py"] = gy - 512.0 * np.floor(gy / 512.0)
     work = work[(work["px"] >= 3.0) & (work["px"] <= 508.0) & (work["py"] >= 3.0) & (work["py"] <= 508.0)].copy()
+
+    if tiles_per_class is None:
+        extragal_mask = work["ml_class"].isin(["Active galaxy or quasar", "Galaxy"]) & (work["abs_gal_b"] < 20.0)
+        if np.any(~extragal_mask & work["ml_class"].isin(["Active galaxy or quasar", "Galaxy"])):
+            work = work[~extragal_mask].copy()
+        evolved_mask = (work["ml_class"] == "Evolved giant star") & (work["abs_gal_b"] < 10.0)
+        if np.any((work["ml_class"] == "Evolved giant star") & ~evolved_mask):
+            work = work[~evolved_mask].copy()
+        plan = _plan_dynamic_curated_tiles(work)
+    else:
+        plan = tiles_per_class
 
     covered_rows = {}
     selected_indices = set()
@@ -1010,47 +1341,21 @@ def build_real_training_dataset(
         bipix = ang2pix_nest32(b["ra_deg"], b["dec_deg"])
         tile_groups.setdefault(bipix, []).append(dict(b))
 
-    # Queue SPIFF brown dwarfs falling in scheduled S3 cube tiles so cross-extraction comparison costs zero extra cubes.
-    spiff_seed_wl = np.linspace(0.75, 5.0, 102, dtype=np.float64)
-    tile_ipix_set = set(tile_groups.keys())
-    spiff_candidates = load_spiff_known_bd_spectra(
-        spiff_paths, spiff_seed_wl, curated_df=curated_df, max_bds=max(max_bds, 300), ipix_filter=tile_ipix_set
+    # Queue bright, Gaia-isolated SPIFF brown dwarfs for S3 cube vs SPIFF cross-extraction verification.
+    cross_gaia_csv = os.path.join(os.path.dirname(os.path.abspath(cube_cache_dir)), "spiff_cross_gaia_dr3.csv")
+    cross_picks = select_cross_extraction_spiff_bds(
+        spiff_paths,
+        curated_df=curated_df,
+        tile_groups=tile_groups,
+        cache_csv=cross_gaia_csv,
     )
     cross_targets = {}
-    for srec in spiff_candidates:
-        sipix = int(srec["ipix5"])
-        if sipix not in tile_groups:
-            continue
-        xname = f"CROSS_{srec['target_name']}"
+    for ip26, q_entry, srec in cross_picks:
+        xname = str(q_entry["target_name"])
         if xname in cross_targets:
             continue
         cross_targets[xname] = srec
-        desig_norm = str(srec["target_name"]).removeprefix("SPIFF_").lower().replace("_", "")
-        s_ra = float(srec["ra_deg"])
-        s_dec = float(srec["dec_deg"])
-        cosd = max(0.1, math.cos(math.radians(s_dec)))
-        matched_bm = None
-        for bm in BENCHMARK_TARGETS:
-            bslug = bm["slug"].lower().replace("_", "")
-            bname = bm["target_name"].lower().replace("_", "")
-            d_arcdeg = math.hypot((s_ra - float(bm["ra_deg"])) * cosd, s_dec - float(bm["dec_deg"]))
-            if desig_norm in (bslug, bname) or d_arcdeg < 0.01:
-                matched_bm = bm
-                break
-        tile_groups[sipix].append(
-            {
-                "target_name": xname,
-                "ra_deg": float(matched_bm["ra_deg"]) if matched_bm is not None else s_ra,
-                "dec_deg": float(matched_bm["dec_deg"]) if matched_bm is not None else s_dec,
-                "pmra": float(matched_bm["pmra"]) if matched_bm is not None else 0.0,
-                "pmdec": float(matched_bm["pmdec"]) if matched_bm is not None else 0.0,
-                "ref_epoch": float(matched_bm["ref_epoch"]) if matched_bm is not None else 2000.0,
-                "ml_class": "Ultracool dwarf",
-                "subclass": srec["subclass"],
-                "label_grade": "gold",
-                "label_source": srec["label_source"],
-            }
-        )
+        tile_groups.setdefault(int(ip26), []).append(q_entry)
 
     canonical_wl = None
     canonical_bw = None
@@ -1084,7 +1389,8 @@ def build_real_training_dataset(
             if tname not in extracted:
                 continue
             sp = extracted[tname]
-            fl = sp["flux_ujy"]
+            raw_fl = sp["flux_ujy"]
+            fl = raw_fl
             ferr = sp["flux_err_ujy"]
             if needs_resample:
                 fl, ferr = resample_spectrum_to_grid(wl_um, fl, canonical_wl, src_err=ferr)
@@ -1101,8 +1407,8 @@ def build_real_training_dataset(
                 }
                 continue
             if tname in cross_targets:
-                if n_valid >= 20:
-                    cross_extracted[tname] = {"ours": fl, "spiff_rec": cross_targets[tname]}
+                if int(np.count_nonzero(np.isfinite(raw_fl) & (raw_fl > 0.0))) >= 20:
+                    cross_extracted[tname] = {"cube_wl": wl_um, "ours_raw": raw_fl, "spiff_rec": cross_targets[tname]}
                 continue
             if n_valid < 20:
                 continue
@@ -1156,14 +1462,24 @@ def build_real_training_dataset(
     if not hybrid_templates:
         raise RuntimeError("No valid SPIFF hybrid templates loaded")
 
-    spiff_cross_records = load_spiff_known_bd_spectra(
-        spiff_paths, canonical_wl, curated_df=curated_df, ipix_filter=tile_ipix_set
+    cross_wl = _canonical_spiff_wl_grid(
+        spiff_paths, [v["spiff_rec"] for v in cross_extracted.values()], canonical_wl
     )
-    cross_refs_by_name = {r["target_name"]: r["flux_ujy"] for r in spiff_cross_records}
-    matched_cross_names = [
-        k for k in sorted(cross_extracted.keys())
-        if cross_extracted[k]["spiff_rec"]["target_name"] in cross_refs_by_name
-    ]
+    cross_slugs, cross_ours, cross_refs = [], [], []
+    for k in sorted(cross_extracted.keys()):
+        entry = cross_extracted[k]
+        srec = entry["spiff_rec"]
+        our_cross = resample_spectrum_to_grid(entry["cube_wl"], entry["ours_raw"], cross_wl)
+        ref_cross = _project_spiff_native_spectrum(
+            srec.get("native_wl_um", canonical_wl), srec.get("native_flux_ujy", srec["flux_ujy"]), cross_wl
+        )
+        mutual_ok = int(
+            np.count_nonzero(np.isfinite(our_cross) & (our_cross > 0.0) & np.isfinite(ref_cross) & (ref_cross > 0.0))
+        )
+        if mutual_ok >= 20:
+            cross_slugs.append(srec["target_name"])
+            cross_ours.append(our_cross)
+            cross_refs.append(ref_cross)
 
     names = [r["target_name"] for r in all_records]
     payload = {
@@ -1189,14 +1505,11 @@ def build_real_training_dataset(
         "benchmark_flux_uJy": np.vstack([bench_extracted[s]["flux_ujy"] for s in sorted(bench_extracted.keys())]),
         "benchmark_err_uJy": np.vstack([bench_extracted[s]["flux_err_ujy"] for s in sorted(bench_extracted.keys())]),
     }
-    if matched_cross_names:
-        payload["cross_extract_slugs"] = np.array(
-            [cross_extracted[k]["spiff_rec"]["target_name"] for k in matched_cross_names], dtype="U64"
-        )
-        payload["cross_extract_ours_uJy"] = np.vstack([cross_extracted[k]["ours"] for k in matched_cross_names])
-        payload["cross_extract_ref_uJy"] = np.vstack(
-            [cross_refs_by_name[cross_extracted[k]["spiff_rec"]["target_name"]] for k in matched_cross_names]
-        )
+    if cross_slugs:
+        payload["cross_extract_wl_um"] = cross_wl
+        payload["cross_extract_slugs"] = np.array(cross_slugs, dtype="U64")
+        payload["cross_extract_ours_uJy"] = np.vstack(cross_ours)
+        payload["cross_extract_ref_uJy"] = np.vstack(cross_refs)
     np.savez_compressed(output_npz, **payload)
 
     class_counts = {}
