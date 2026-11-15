@@ -4,7 +4,7 @@
     "source_id": "SRC-Barnards-Star",
     "target_name": "Barnards_Star",
     "verification_stage": 1,
-    "discovery_class": "U2",
+    "discovery_class": "U1",
     "blind_review_vote_tally": {
       "Star": 0,
       "Ultracool dwarf": 0,
@@ -26,7 +26,7 @@
     "source_id": "SRC-Epsilon-Indi-B",
     "target_name": "Epsilon_Indi_B",
     "verification_stage": 4,
-    "discovery_class": "U2",
+    "discovery_class": "U1",
     "blind_review_vote_tally": {
       "Star": 0,
       "Ultracool dwarf": 0,
@@ -127,7 +127,7 @@
     "discovery_class": "U1",
     "blind_review_vote_tally": {
       "Star": 0,
-      "Ultracool dwarf": 7,
+      "Ultracool dwarf": 11,
       "Young star": 0,
       "Evolved giant star": 0,
       "Unclassified": 0
@@ -139,6 +139,6 @@
       "aavso_vsx": null,
       "mpc_ades": null
     },
-    "notes": "Consensus reached: Ultracool dwarf with 100% agreement (7 votes). Follow-Up Packet ready."
+    "notes": "Consensus reached: Ultracool dwarf with 100% agreement (11 votes). Follow-Up Packet ready."
   }
 ]

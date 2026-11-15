@@ -57,10 +57,13 @@ import numpy as np  # noqa: E402
 
 from fastapi import FastAPI, HTTPException, Query  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, ConfigDict, Field  # noqa: E402
 
-from app.physics import molecules, surveys  # noqa: E402
+from app.physics import closeup, molecules, surveys  # noqa: E402
 from app.routers import cases as cases_router  # noqa: E402
+from app.routers import community, ml_adapter  # noqa: E402
 from app.schemas import MoleculeReading, Readings, SourceRecord  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -72,6 +75,10 @@ SAMPLE_PACK_DIR = BACKEND_DIR / "sample_packs"
 SOURCES_FILE = SAMPLE_PACK_DIR / "sources.json"
 CASES_FILE = SAMPLE_PACK_DIR / "cases.json"
 MANIFEST_FILE = SAMPLE_PACK_DIR / "manifest.json"
+
+# Frontend SPA assets, served at / (index.html) and /pw/{*.js,*.css}.
+STATIC_DIR = BACKEND_DIR / "pw"
+INDEX_FILE = BACKEND_DIR / "index.html"
 
 API_VERSION = "1.0.0"
 SPHEREX_FULL_FOV_DEG = 3.5  # single SPHEREx frame is 3.5 x 11 deg; 3.5 is the tight axis
@@ -613,12 +620,47 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # hackathon build; pin to the frontend origin before release
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def no_store_for_app_shell(request, call_next):
+    """Never let a browser reuse an old copy of the app shell or its scripts.
+
+    A stale cached ``core.js`` is what makes a fixed build keep showing the old
+    behaviour, so the shell and its assets are always revalidated. Data endpoints
+    keep their own caching rules.
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path in ("/", "/index.html") or path.startswith("/pw/"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # Register the Pillar 3/4 citizen-science router (votes + dossier exports).
 app.include_router(cases_router.router)
+
+# Community finds store (SPA: share, comments, up/down votes, Lab review).
+app.include_router(community.router)
+
+# ML adapter ("ML Nyusul" ready): GET /api/ml/predict/{field}/{src_id}.
+app.include_router(ml_adapter.router)
+
+# SPA static assets. /pw mirrors <link href="pw/app.css"> and <script src="pw/core.js">.
+if STATIC_DIR.is_dir():
+    app.mount("/pw", StaticFiles(directory=str(STATIC_DIR)), name="pw")
+
+
+@app.get("/", include_in_schema=False)
+def index() -> FileResponse:
+    """Serve the vanilla-JS single page app at the root."""
+    if INDEX_FILE.exists():
+        return FileResponse(INDEX_FILE)
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health", tags=["ops"])
@@ -1029,6 +1071,157 @@ def cron_ingest(
 def list_cases() -> list[dict[str, Any]]:
     """Frozen Pillar 3/4 case records (verification stage, vote tally, exports)."""
     return load_cases()
+
+
+# ---------------------------------------------------------------------------
+# Close-up rendering for Sky Explorer (Source and Pixel zoom levels)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/v1/cutout/{field}/{src_id}", tags=["layer1"])
+def cutout(
+    field: str,
+    src_id: str,
+    zoom: Annotated[
+        str,
+        Query(
+            description=(
+                "Zoom level from the interface: sky, field, source or pixel. "
+                "Source and pixel return the 4x oversampled close-up."
+            )
+        ),
+    ] = "field",
+    os_factor: Annotated[
+        int,
+        Query(alias="os", ge=1, le=8, description="Oversampling factor. 1 returns the raw binned frame."),
+    ] = 0,
+    size: Annotated[int, Query(ge=8, le=128, description="Cutout width in native 6.15\" pixels.")] = 24,
+) -> dict[str, Any]:
+    """Return one field source at the requested zoom level.
+
+    Section 10.3: the ``Source`` level shows *"4x upsampled stacks"*; the ``Pixel``
+    level shows *"the 6.15\" pixel grid with values on hover"*.  Section 10.1.7
+    requires honest images, so the response always names which of the two renderings
+    it is and what its numbers are worth:
+
+    * ``mode: raw``      — the binned frame. ``origin: Measured``.
+    * ``mode: enhanced`` — 4x oversampled. ``origin: Estimated``.
+
+    A field or source the pack does not hold is a 404 with the empty-state sentence
+    from section 5.6, not an empty grid.
+    """
+    zoom_key = (zoom or "field").strip().lower()
+    if zoom_key not in ("sky", "field", "source", "pixel"):
+        raise HTTPException(
+            status_code=422,
+            detail="zoom must be one of sky, field, source or pixel. Open a field and try again.",
+        )
+
+    mode = closeup.mode_for_zoom(zoom_key)
+    if os_factor:
+        # The caller may pin the factor: 1 is the raw frame, anything else is the
+        # oversampled rendering, and the label follows so the readout never lies.
+        mode = closeup.MODES["raw"] if os_factor == 1 else {
+            **closeup.MODES["enhanced"],
+            "oversample": os_factor,
+            "pixel_arcsec": round(closeup.PIXEL_ARCSEC / os_factor, 4),
+            "label": f"{os_factor}x oversampled PSF model (Estimated)",
+        }
+
+    pack = _pack_for_field(field)
+    if pack is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"SPHEREx has no prepared frames of the {field} field yet. "
+                "Open one of the ready-made test fields."
+            ),
+        )
+
+    source = next((s for s in pack["sources"] if s.get("id") == src_id), None)
+    if source is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"{src_id} is not in the {field} field. Pick a source on the image.",
+        )
+
+    detector = str(source.get("detector") or "D6")
+    visit = int(source.get("visit") or 1)
+    try:
+        rendered = closeup.render_closeup(
+            field=pack,
+            source=source,
+            detector=detector,
+            visit=visit,
+            mode=mode,
+            size=size,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"{exc}. Lower the cutout size and retry.") from exc
+
+    return {
+        "field": field,
+        "source_id": src_id,
+        "zoom": zoom_key,
+        "ra_deg": pack.get("ra"),
+        "dec_deg": pack.get("dec"),
+        "data_as_of": pack.get("data_as_of"),
+        "pipeline_version": pack.get("pipeline_version"),
+        **rendered,
+    }
+
+
+def _pack_for_field(field: str) -> Optional[dict[str, Any]]:
+    """Build the render table for a field from the frozen pack.
+
+    The pack holds the five benchmark targets.  Each becomes a one-source field so
+    the same renderer serves them and any later real pack without changing shape.
+    The source is listed under both its archive source id and its target name, so a
+    caller may address it either way.
+    """
+    sources = load_sources()
+    record = sources.get(MAPPED_TARGETS.get(field, field))
+    if record is None:
+        return None
+    bands = [b.model_dump() for b in record.readings.spectral_bands]
+    entry = {
+        "x": 0.0,
+        "y": 0.0,
+        "flux": None,
+        "spectral_bands": bands,
+        "sn": None,
+        "detector": "D6",
+        "visit": 1,
+    }
+    ids = {record.target_name, record.source_id or record.target_name, MAPPED_SOURCE_ID.get(field, "")}
+    return {
+        "id": field,
+        "ra": None,
+        "dec": None,
+        "data_as_of": (load_manifest() or {}).get("generated_at"),
+        "pipeline_version": API_VERSION,
+        "sources": [{"id": sid, **entry} for sid in sorted(i for i in ids if i)],
+    }
+
+
+#: Field identifiers the interface uses, mapped to the benchmark target names.
+MAPPED_TARGETS: dict[str, str] = {
+    "wise0855": "WISE_0855",
+    "barnard": "Barnards_Star",
+    "epsindi": "Epsilon_Indi_B",
+    "rwaur": "RW_Aurigae",
+    "rdra": "R_Draconis",
+}
+
+#: The source id the interface puts in the URL for each field.
+MAPPED_SOURCE_ID: dict[str, str] = {
+    "wise0855": "W0855",
+    "barnard": "BARN",
+    "epsindi": "EPSB",
+    "rwaur": "RWAUR",
+    "rdra": "RDRA",
+}
+
 
 
 @app.get("/api/v1/manifest", tags=["ops"])
