@@ -1,0 +1,623 @@
+{
+  "generated_at": "2026-11-14T07:15:39.764289+00:00",
+  "metrics": {
+    "spectrum_alone_balanced_accuracy": 0.993333,
+    "spectrum_alone_calibration_error": 0.020714,
+    "spectrum_alone_n_test": 135,
+    "spectrum_alone_conformal_coverage": 0.933333,
+    "all_data_balanced_accuracy": 1.0,
+    "all_data_calibration_error": 0.006139,
+    "all_data_n_test": 135,
+    "all_data_conformal_coverage": 0.940741
+  },
+  "pass_marks": {
+    "level1_recall": 0.8,
+    "calibration_error_max": 0.05,
+    "conformal_low": 0.88,
+    "conformal_high": 0.92,
+    "subtype_within_2_frac": 0.8
+  },
+  "targets": [
+    {
+      "target_name": "Barnards_Star",
+      "artefact": {
+        "p_real": 0.9895,
+        "is_artefact": false
+      },
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.7259903324078835,
+          "Ultracool dwarf": 0.10618346052622181,
+          "Young star": 0.07729692605299257,
+          "Evolved giant star": 0.09052928101290217,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.726,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.0148,
+          0.4348
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 7,
+            "wavelength_um": 0.9088,
+            "label": "0.91 \u00b5m measured"
+          },
+          {
+            "band_index": 8,
+            "wavelength_um": 0.93,
+            "label": "0.93 \u00b5m measured"
+          },
+          {
+            "band_index": 9,
+            "wavelength_um": 0.9512,
+            "label": "0.95 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Galaxy",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.9901898305632639,
+          "Ultracool dwarf": 0.006354880551188438,
+          "Young star": 0.0,
+          "Evolved giant star": 0.003455288885547653,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Star",
+        "raw_confidence": 0.9902,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Star"
+        ],
+        "resampled_confidence_range": [
+          0.1231,
+          0.8646
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 7,
+            "wavelength_um": 0.9088,
+            "label": "0.91 \u00b5m measured"
+          },
+          {
+            "band_index": 8,
+            "wavelength_um": 0.93,
+            "label": "0.93 \u00b5m measured"
+          },
+          {
+            "band_index": 9,
+            "wavelength_um": 0.9512,
+            "label": "0.95 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Galaxy",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Unclassified",
+        "all_data_top": "Star",
+        "agreement": false,
+        "capped_at_50": true,
+        "final_label_unclassified": false
+      },
+      "novelty": {
+        "percentile": 0.0,
+        "is_novel": false,
+        "discovery_class": "U3",
+        "reasons": [
+          "Ordinary contamination: detector flag: overflow_suspected"
+        ],
+        "reduced_chi2": null
+      }
+    },
+    {
+      "target_name": "Epsilon_Indi_B",
+      "artefact": {
+        "p_real": 0.9992,
+        "is_artefact": false
+      },
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.9990643823738203,
+          "Young star": 0.0009356176261797091,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 0.9991,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.6953,
+          0.9873
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 58,
+            "wavelength_um": 3.0565,
+            "label": "3.06 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 1.0,
+          "Young star": 0.0,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 1.0,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.7476,
+          0.9922
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 58,
+            "wavelength_um": 3.0565,
+            "label": "3.06 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U2",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Ultracool dwarf",
+        "all_data_top": "Ultracool dwarf",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": false
+      },
+      "novelty": {
+        "percentile": 77.4,
+        "is_novel": false,
+        "discovery_class": "U2",
+        "reasons": [],
+        "reduced_chi2": 0.001
+      }
+    },
+    {
+      "target_name": "R_Draconis",
+      "artefact": {
+        "p_real": 0.9992,
+        "is_artefact": false
+      },
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.6859910453916612,
+          "Young star": 0.0,
+          "Evolved giant star": 0.3140089546083387,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.686,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.6021,
+          0.8067
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.9590551260615833,
+          "Young star": 0.0,
+          "Evolved giant star": 0.033674539964449565,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.007270333973967219
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.9591,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.9219,
+          0.9485
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Unclassified",
+        "all_data_top": "Unclassified",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": true
+      },
+      "novelty": {
+        "percentile": 0.0,
+        "is_novel": false,
+        "discovery_class": "U3",
+        "reasons": [
+          "Ordinary contamination: visit-to-visit variability"
+        ],
+        "reduced_chi2": null
+      }
+    },
+    {
+      "target_name": "RW_Aurigae",
+      "artefact": {
+        "p_real": 0.9992,
+        "is_artefact": false
+      },
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.6722544895081998,
+          "Young star": 0.022019845412521135,
+          "Evolved giant star": 0.3057256650792792,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.6723,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.579,
+          0.7635
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 0.9381589306482889,
+          "Young star": 0.023703946941756687,
+          "Evolved giant star": 0.03153619467503961,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.006600927734914819
+        },
+        "top_class": "Unclassified",
+        "raw_confidence": 0.9382,
+        "display_confidence": 0.49,
+        "unclassified": true,
+        "conformal_set_90": [],
+        "resampled_confidence_range": [
+          0.8853,
+          0.9104
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 61,
+            "wavelength_um": 3.3071,
+            "label": "3.31 \u00b5m measured"
+          },
+          {
+            "band_index": 60,
+            "wavelength_um": 3.2235,
+            "label": "3.22 \u00b5m measured"
+          },
+          {
+            "band_index": 59,
+            "wavelength_um": 3.14,
+            "label": "3.14 \u00b5m measured"
+          }
+        ],
+        "e1_top_class": "Evolved giant star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U4",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Unclassified",
+        "all_data_top": "Unclassified",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": true
+      },
+      "novelty": {
+        "percentile": 0.0,
+        "is_novel": false,
+        "discovery_class": "U3",
+        "reasons": [
+          "Ordinary contamination: blend_share > 0.3"
+        ],
+        "reduced_chi2": null
+      }
+    },
+    {
+      "target_name": "WISE_0855",
+      "artefact": {
+        "p_real": 0.9767,
+        "is_artefact": false
+      },
+      "spectrum_alone": {
+        "experiment": "spectrum_alone",
+        "experts": [
+          "E1",
+          "E2"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 1.0,
+          "Young star": 0.0,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 1.0,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.9922,
+          0.9922
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 0,
+            "wavelength_um": 0.7606,
+            "label": "0.76 \u00b5m not measured"
+          },
+          {
+            "band_index": 1,
+            "wavelength_um": 0.7818,
+            "label": "0.78 \u00b5m not measured"
+          },
+          {
+            "band_index": 2,
+            "wavelength_um": 0.8029,
+            "label": "0.80 \u00b5m not measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U1",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "all_data": {
+        "experiment": "all_data",
+        "experts": [
+          "E1",
+          "E2",
+          "E4",
+          "E5",
+          "E6",
+          "E7"
+        ],
+        "probabilities": {
+          "Star": 0.0,
+          "Ultracool dwarf": 1.0,
+          "Young star": 0.0,
+          "Evolved giant star": 0.0,
+          "Galaxy": 0.0,
+          "Active galaxy or quasar": 0.0
+        },
+        "top_class": "Ultracool dwarf",
+        "raw_confidence": 1.0,
+        "display_confidence": 0.5,
+        "unclassified": false,
+        "conformal_set_90": [
+          "Ultracool dwarf"
+        ],
+        "resampled_confidence_range": [
+          0.99,
+          0.99
+        ],
+        "deciding_bands": [
+          {
+            "band_index": 0,
+            "wavelength_um": 0.7606,
+            "label": "0.76 \u00b5m not measured"
+          },
+          {
+            "band_index": 1,
+            "wavelength_um": 0.7818,
+            "label": "0.78 \u00b5m not measured"
+          },
+          {
+            "band_index": 2,
+            "wavelength_um": 0.8029,
+            "label": "0.80 \u00b5m not measured"
+          }
+        ],
+        "e1_top_class": "Star",
+        "e2_top_class": "Ultracool dwarf",
+        "honest_ui_rule_applied": true,
+        "discovery_class": "U1",
+        "note": "Real M1..M3 pipeline output (synthetic corpus)."
+      },
+      "honest_ui": {
+        "spectrum_alone_top": "Ultracool dwarf",
+        "all_data_top": "Ultracool dwarf",
+        "agreement": true,
+        "capped_at_50": true,
+        "final_label_unclassified": false
+      },
+      "novelty": {
+        "percentile": 63.1,
+        "is_novel": false,
+        "discovery_class": "U1",
+        "reasons": [],
+        "reduced_chi2": null
+      }
+    }
+  ]
+}
