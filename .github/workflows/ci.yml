@@ -1,0 +1,142 @@
+# CI for every push to main and every pull request.
+#
+#   Repository rules   AGENTS.md rules a script can check. Always runs.
+#   Python             uv, ruff, pytest for engine/, ml/, api/, proof/. Runs once pyproject.toml exists (T01-E).
+#   Web                pnpm lint, test, build, Playwright for web/. Runs once web/package.json exists (T01-W).
+#
+# A job skipped because its lane has no code yet reports success, so all three can be required checks.
+# Lanes extend this file. They do not add a second CI workflow.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect lanes
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.files.outputs.python }}
+      web: ${{ steps.files.outputs.web }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: files
+        run: |
+          echo "python=$([ -f pyproject.toml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "web=$([ -f web/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  rules:
+    name: Repository rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: AGENTS.md stays under 32 KiB
+        run: |
+          size=$(wc -c < AGENTS.md)
+          echo "AGENTS.md is $size bytes of 32768"
+          test "$size" -lt 32768
+
+      - name: No secrets, data or build output in git (AGENTS.md rules 9 and 13)
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)\.env(\..*)?$|^data/|\.fits(\.gz)?$|(^|/)node_modules/' | grep -vE '(^|/)\.env\.example$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::These files must not be in git:"
+            echo "$bad"
+            exit 1
+          fi
+          if git grep -nE 'hf_[A-Za-z0-9]{30,}' -- . ':!*.lock' ':!*lock.yaml'; then
+            echo "::error::A Hugging Face token pattern is in a tracked file. Remove it and revoke the token."
+            exit 1
+          fi
+
+      - name: Agent config files parse
+        run: |
+          python3 -c 'import json; json.load(open(".claude/settings.json"))'
+          python3 -c 'import tomllib; tomllib.load(open(".codex/config.toml", "rb"))'
+
+      - name: Shell scripts pass ShellCheck
+        run: shellcheck scripts/*.sh
+
+      - name: Relative links in the docs resolve
+        run: python3 scripts/check-docs.py
+
+      - name: Contract changes carry a decisions line (AGENTS.md rule 6)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          changed=$(git diff --name-only "origin/$BASE...HEAD")
+          if echo "$changed" | grep -q '^contracts/' && ! echo "$changed" | grep -qx 'docs/decisions.md'; then
+            echo "::error::contracts/ changed without a line in docs/decisions.md"
+            exit 1
+          fi
+
+      - name: AI log line (AGENTS.md rule 12)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if ! git diff --name-only "origin/$BASE...HEAD" | grep -qx 'docs/ai-log.md'; then
+            echo "::warning::docs/ai-log.md has no new line in this pull request"
+          fi
+
+  python:
+    name: Python (engine, ML, API, proof)
+    needs: detect
+    if: needs.detect.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install from uv.lock
+        run: uv sync --locked --all-packages --all-extras --all-groups
+      - name: Lint
+        run: uv run ruff check .
+      - name: Test
+        run: uv run pytest
+
+  web:
+    name: Web
+    needs: detect
+    if: needs.detect.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Install pnpm 10
+        run: npm install --global pnpm@10
+      - name: Install from pnpm-lock.yaml
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm run --if-present lint
+      - name: Test
+        run: pnpm run --if-present test
+      - name: Build
+        run: pnpm run --if-present build
+      - name: End-to-end
+        if: hashFiles('web/playwright.config.*') != ''
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm run e2e

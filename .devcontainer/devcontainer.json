@@ -1,0 +1,25 @@
+{
+  "name": "Phantom Worlds",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-trixie",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22",
+      "pnpmVersion": "10"
+    }
+  },
+  "postCreateCommand": "pipx install uv && npm install --global @anthropic-ai/claude-code && bash scripts/bootstrap.sh",
+  "forwardPorts": [5173, 8000],
+  "portsAttributes": {
+    "5173": { "label": "web (Vite dev server)" },
+    "8000": { "label": "api (FastAPI)" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}

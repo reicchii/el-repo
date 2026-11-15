@@ -1,0 +1,9 @@
+# Codex reads AGENTS.md automatically. This turns on network inside its workspace sandbox.
+# If a setting seems ignored, pass it on the command line:
+#   codex -c 'sandbox_workspace_write.network_access=true'
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+project_doc_max_bytes = 65536
+
+[sandbox_workspace_write]
+network_access = true

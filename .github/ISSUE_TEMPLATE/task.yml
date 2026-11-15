@@ -1,0 +1,34 @@
+name: Task
+description: A task from the build plan in docs/PROJECT-CONTEXT.md section 12
+title: "<task ID> <what it does>"
+labels: [task]
+body:
+  - type: input
+    id: task
+    attributes:
+      label: Task ID
+      placeholder: T12
+    validations:
+      required: true
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Lane
+      options:
+        - Engine
+        - ML
+        - Web
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: Acceptance check
+      description: Quote it from section 12.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Open checks it depends on, files it touches, anything that blocks it.

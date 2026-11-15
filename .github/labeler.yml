@@ -1,0 +1,34 @@
+# Pull request labels, from the branch prefix and the paths changed.
+# Lane ownership is in AGENTS.md section 5.
+
+"lane: engine":
+  - any:
+      - head-branch: ['^eng/']
+      - changed-files:
+          - any-glob-to-any-file: ['api/**', 'proof/**', '.github/workflows/weekly.yml']
+      - changed-files:
+          - all-globs-to-any-file: ['engine/**', '!engine/phantom/ml/**']
+
+"lane: ml":
+  - any:
+      - head-branch: ['^ml/']
+      - changed-files:
+          - any-glob-to-any-file: ['engine/phantom/ml/**', 'ml/**']
+
+"lane: web":
+  - any:
+      - head-branch: ['^web/']
+      - changed-files:
+          - any-glob-to-any-file: ['web/**', '.github/workflows/deploy-web.yml']
+
+contracts:
+  - changed-files:
+      - any-glob-to-any-file: ['contracts/**']
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ['docs/**', 'prompts/**', '*.md']
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**', '.devcontainer/**', '.claude/**', '.codex/**', 'scripts/**']

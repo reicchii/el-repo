@@ -1,0 +1,43 @@
+# Creates or updates the repository labels.
+# Edit the list below and push to main, or run it from the Actions tab.
+# Each line is: name|colour|description
+
+name: Labels
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/labels.yml]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    name: Sync labels
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Create or update labels
+        run: |
+          while IFS='|' read -r name colour description; do
+            gh label create "$name" --color "$colour" --description "$description" --force
+          done <<'EOF'
+          lane: engine|0e8a16|Engine lane: engine/, api/, proof/, weekly update
+          lane: ml|8250df|ML lane: engine/phantom/ml/, ml/
+          lane: web|1f6feb|Web lane: web/, site deploy
+          contracts|d93f0b|Changes contracts/. Needs a line in docs/decisions.md
+          docs|0075ca|Docs, prompts and agent rules
+          ci|5a5a5a|Workflows, dev container and repository tooling
+          task|c5def5|A task from docs/PROJECT-CONTEXT.md section 12
+          open check|fbca04|A [TO CHECK] fact or K item to answer in docs/decisions.md
+          bug|d73a4a|Works differently from the docs
+          blocked|b60205|Waits on a check, a login or a token
+          needs outside action|e99695|Needs a login, a token or a repository setting
+          tier A|bfd4f2|Tier A scope
+          tier B|bfd4f2|Tier B scope
+          tier C|bfd4f2|Tier C scope
+          EOF

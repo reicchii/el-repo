@@ -1,0 +1,18 @@
+# Labels each pull request by lane. The rules are in .github/labeler.yml.
+# pull_request_target runs the base branch's copy and never checks out pull request code.
+
+name: Labeler
+
+on:
+  pull_request_target:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: Label by lane
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v7

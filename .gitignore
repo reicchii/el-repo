@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# personal agent files
+CLAUDE.local.md
+.claude/settings.local.json
+AGENTS.override.md
+
+# data cache, downloads, logs
+data/
+*.fits
+*.fits.gz
+*.zip
+
+# build output
+node_modules/
+web/dist/
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Temporary scratch scripts (backend), never shipped.
+*_tmp.py
+*_scratch.py
+probe_*.py

@@ -1,0 +1,31 @@
+name: Open check
+description: A fact marked [TO CHECK] or a K item that needs an answer
+title: "<check ID> <the question>"
+labels: ["open check"]
+body:
+  - type: input
+    id: check
+    attributes:
+      label: Check ID
+      description: From docs/PROJECT-CONTEXT.md section 16 or 9.12. Leave empty for a new check.
+      placeholder: K29
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: How to check
+      description: The command, query or URL that answers it.
+  - type: textarea
+    id: unblocks
+    attributes:
+      label: What it unblocks
+  - type: textarea
+    id: answer
+    attributes:
+      label: Answer
+      description: Fill in when known. The answer also goes in docs/decisions.md with the command or URL used.
