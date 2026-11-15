@@ -771,7 +771,7 @@ def generate_proof_report(
     b5_min_rec = gold_high.get("min_recall")
     b5_ece = gold_high.get("ece")
     b5_cov = gold_high.get("conformal_coverage")
-    b5_passed = bool(gold_high.get("passed"))
+    b5_passed = bool(gold_high.get("passed")) and rg.get("release_status") == "PUBLISHED"
 
     b12_max_dev = xext.get("max_abs_deviation")
     b12_passed = bool(xext.get("passed"))
